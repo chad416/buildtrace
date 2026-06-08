@@ -1,3 +1,11 @@
+import csMessages from '../messages/cs.json';
+import deMessages from '../messages/de.json';
+import enMessages from '../messages/en.json';
+import esMessages from '../messages/es.json';
+import frMessages from '../messages/fr.json';
+import plMessages from '../messages/pl.json';
+import skMessages from '../messages/sk.json';
+
 export const locales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
 
 export type Locale = (typeof locales)[number];
@@ -8,33 +16,40 @@ export function isSupportedLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
-export const phaseZeroMessages = {
+export const appMessages = {
   en: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Professional project foundation',
+    appName: enMessages.app.name,
+    phaseName: enMessages.app.phase,
+    languageSwitcher: enMessages.languageSwitcher,
   },
   cs: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Profesionální základ projektu',
+    appName: csMessages.app.name,
+    phaseName: csMessages.app.phase,
+    languageSwitcher: csMessages.languageSwitcher,
   },
   sk: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Profesionálny základ projektu',
+    appName: skMessages.app.name,
+    phaseName: skMessages.app.phase,
+    languageSwitcher: skMessages.languageSwitcher,
   },
   pl: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Profesjonalna podstawa projektu',
+    appName: plMessages.app.name,
+    phaseName: plMessages.app.phase,
+    languageSwitcher: plMessages.languageSwitcher,
   },
   de: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Professionelle Projektgrundlage',
+    appName: deMessages.app.name,
+    phaseName: deMessages.app.phase,
+    languageSwitcher: deMessages.languageSwitcher,
   },
   fr: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Base professionnelle du projet',
+    appName: frMessages.app.name,
+    phaseName: frMessages.app.phase,
+    languageSwitcher: frMessages.languageSwitcher,
   },
   es: {
-    appName: 'BuildTrace Beta',
-    phaseName: 'Base profesional del proyecto',
+    appName: esMessages.app.name,
+    phaseName: esMessages.app.phase,
+    languageSwitcher: esMessages.languageSwitcher,
   },
 } as const;

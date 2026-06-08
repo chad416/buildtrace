@@ -2,5 +2,17 @@
   "app": {
     "name": "BuildTrace Beta",
     "phase": "Professionelle Projektgrundlage"
+  },
+  "languageSwitcher": {
+    "label": "Sprache",
+    "localeLabels": {
+      "en": "English",
+      "cs": "\u010Ce\u0161tina",
+      "sk": "Sloven\u010Dina",
+      "pl": "Polski",
+      "de": "Deutsch",
+      "fr": "Fran\u00E7ais",
+      "es": "Espa\u00F1ol"
+    }
   }
 }
