@@ -4,7 +4,7 @@
 
 Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
-Phase 1 has started, but it is not complete.
+Phase 1 is in progress.
 
 ## Current beta completion
 
@@ -18,15 +18,19 @@ Phase 1 target after full completion: 12%.
 
 Current Phase 1 status: in progress.
 
+Practical Phase 1 progress: approximately 60-65% of Phase 1.
+
+Phase 1 is not complete yet.
+
 ## Latest completed implementation chunk
 
 Phase 1 implementation chunk completed:
 
-- translated app shell/header/footer foundation
+- translated application page-shell skeletons
 
 Latest feature commit:
 
-- `3997c99 feat(web): add translated app shell foundation`
+- `91166dd feat(web): add translated page shell skeletons`
 
 Remote status:
 
@@ -71,6 +75,7 @@ Remote status:
 ## Completed in Phase 1 so far
 
 - Added `LanguageSwitcher` component
+
 - Added language links for:
   - English - en
   - Czech - cs
@@ -81,20 +86,65 @@ Remote status:
   - Spanish - es
 
 - Mounted language switcher into the translated app shell header
+
 - Added `AppShell` component
+
 - Added translated header foundation
+
 - Added translated footer foundation
-- Added translated placeholder navigation labels
+
+- Added route-based app shell navigation for:
+  - Home
+  - Dashboard
+  - Machines
+  - Documents
+  - Tickets
+  - Spare parts
+  - Feedback
+  - Settings
+
+- Updated footer privacy/security/data-protection links to work from localized subpages
+
 - Added translated landing page starter content
+
 - Added translated evidence-readiness and documentation sections
+
 - Added translated privacy/security/data-protection placeholder sections
+
+- Added reusable `PageShell` component
+
+- Added translated login page shell
+
+- Added translated dashboard page shell
+
+- Added translated machines page shell
+
+- Added translated documents page shell
+
+- Added translated tickets page shell
+
+- Added translated spare-parts page shell
+
+- Added translated feedback page shell
+
+- Added translated settings page shell
+
+- Added translated empty-state placeholder copy for the new shell pages
+
 - Added translated language-switcher labels to all 7 locale message files
-- Added translated shell and landing keys to all 7 locale message files
+
+- Added translated shell, landing, and page-shell keys to all 7 locale message files
+
 - Renamed misleading `phaseZeroMessages` export to `appMessages`
-- Exposed shell and landing messages through `packages/i18n/src/index.ts`
+
+- Exposed shell, landing, and page messages through `packages/i18n/src/index.ts`
+
 - Replaced inline switcher layout styling with Tailwind utility classes
+
 - Verified language route switching manually
+
 - Verified app shell/header/footer manually
+
 - Verified footer anchor targets exist and match section IDs
 
 ## Verified locally
@@ -132,6 +182,25 @@ Phase 1 translated app shell foundation verification passed:
 - manual runtime check: language switching works
 - manual runtime check: footer privacy/security/data-protection anchor targets exist
 - VS Code Problems panel verified clean after stale wrong-path tab was closed
+
+Phase 1 translated page-shell skeleton verification passed:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `git diff --check`
+- `git diff --cached --check`
+- staged file review confirmed only intended web/i18n files were included
+- production build confirmed the new localized placeholder routes:
+  - `/[locale]/dashboard`
+  - `/[locale]/documents`
+  - `/[locale]/feedback`
+  - `/[locale]/login`
+  - `/[locale]/machines`
+  - `/[locale]/settings`
+  - `/[locale]/spare-parts`
+  - `/[locale]/tickets`
 
 Individual runtime verification also passed:
 
@@ -175,6 +244,8 @@ Individual runtime verification also passed:
 - VS Code showed a stale `./language-switcher` import error from the old wrong nested file tab. Resolved by closing the stale tab; `pnpm.cmd typecheck` and the VS Problems panel both confirmed the repo was clean.
 - `apps/web/next-env.d.ts` drifted after `next dev`. Resolved by running `pnpm.cmd build`, which restored the tracked build-safe state.
 - PowerShell file-writing with relative paths attempted to write docs under `C:\WINDOWS\system32`. Resolved by using VS Code for file editing and keeping PowerShell for verification/build/Git tasks.
+- New page-shell files temporarily showed VS Code errors while the implementation was only partially applied. Resolved by completing `page-shell.tsx`, all route pages, `packages/i18n/src/index.ts`, and all 7 JSON message files.
+- Prettier found formatting drift after the page-shell skeleton files were added. Resolved with `pnpm.cmd exec prettier --write .`, then re-verified with `format:check`, `typecheck`, `lint`, `build`, and Git whitespace checks.
 
 ## Known quality note: `next-env.d.ts`
 
@@ -215,24 +286,26 @@ Phase 0 does not include:
 
 Phase 1 still needs:
 
-- more complete industrial landing page polish
-- login page shell
-- dashboard shell
-- machines page shell
+- stronger industrial landing page polish
+
+- stronger dashboard shell polish
+
+- stronger login page visual shell polish
+
+- active/current navigation indication
+
 - machine detail shell
-- documents page shell
-- tickets page shell
-- spare parts page shell
-- feedback page shell
-- settings page shell
-- settings placeholders for:
+
+- settings placeholder sections for:
   - user role
   - preferred language
   - future MFA
   - data export
   - security logs
 
-- translated empty/loading/error state placeholders where shell pages need them
+- mobile/layout refinement if needed after manual browser review
+
+- final Phase 1 documentation update after remaining shell work is complete
 
 ## Current not-in-scope items
 
@@ -253,7 +326,7 @@ Not started yet:
 - software timeline
 - spare parts logic
 - quote flow
-- feedback
+- feedback collection logic
 - deployment
 
 ## Next phase milestone
@@ -262,10 +335,10 @@ Continue Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
 Next recommended implementation chunk:
 
-- translated application page-shell skeletons for login, dashboard, machines, documents, tickets, spare parts, feedback, and settings without auth, database, or CRUD
+- industrial UI polish for the existing shell pages, including stronger dashboard/login/settings placeholders and active navigation indication, without auth, database, storage, or CRUD
 
 ## Last git commit
 
-Commit hash: `3997c99`
+Commit hash: `91166dd`
 
-Commit message: `feat(web): add translated app shell foundation`
+Commit message: `feat(web): add translated page shell skeletons`

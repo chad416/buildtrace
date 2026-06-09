@@ -208,3 +208,125 @@ Passed:
 ### Commit message
 
 `feat(web): add translated app shell foundation`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added translated application page-shell skeletons.
+
+This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+
+Practical Phase 1 progress is approximately 60-65%.
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/dashboard/page.tsx
+- apps/web/src/app/[locale]/documents/page.tsx
+- apps/web/src/app/[locale]/feedback/page.tsx
+- apps/web/src/app/[locale]/login/page.tsx
+- apps/web/src/app/[locale]/machines/page.tsx
+- apps/web/src/app/[locale]/settings/page.tsx
+- apps/web/src/app/[locale]/spare-parts/page.tsx
+- apps/web/src/app/[locale]/tickets/page.tsx
+- apps/web/src/components/app-shell.tsx
+- apps/web/src/components/page-shell.tsx
+- packages/i18n/src/index.ts
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `git diff --check`
+- `git diff --cached --check`
+
+### Build result
+
+Production build confirmed the localized placeholder routes:
+
+- `/[locale]/dashboard`
+- `/[locale]/documents`
+- `/[locale]/feedback`
+- `/[locale]/login`
+- `/[locale]/machines`
+- `/[locale]/settings`
+- `/[locale]/spare-parts`
+- `/[locale]/tickets`
+
+### Manual/runtime result
+
+- VS Code Problems panel was fixed before final verification.
+- `apps/web/src/components/page-shell.tsx` existed in the correct folder.
+- TypeScript accepted all new placeholder route pages.
+- Staged file review confirmed only the intended web/i18n implementation files were included.
+
+### Issues found and resolved
+
+- New page-shell files temporarily showed VS Code errors while the implementation was partially applied. Resolved by completing `page-shell.tsx`, all route pages, `packages/i18n/src/index.ts`, and all 7 JSON message files.
+- VS Code showed stale or misleading errors before the full implementation was saved. Resolved before final verification.
+- Prettier found formatting drift after the page-shell skeleton files were added. Resolved with `pnpm.cmd exec prettier --write .`, then re-verified with `format:check`, `typecheck`, `lint`, `build`, and Git whitespace checks.
+- `git diff --stat` initially showed only tracked files and excluded new untracked route pages. Resolved by checking `git ls-files --others --exclude-standard` before staging.
+- The staged batch was reviewed with `git diff --cached --stat`, `git diff --cached --name-status`, and `git diff --cached --check` before commit.
+
+### Security notes
+
+- No auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No tickets backend was added.
+- No CRUD was added.
+- No dashboard data was added.
+- No private file URLs were exposed.
+- No regulatory, legal, safety, CE, Machinery Regulation, or CRA compliance guarantee was added.
+- Placeholder copy stays within evidence readiness, documentation organization, secure-by-default direction, customer-visible files, and private engineering docs.
+
+### i18n notes
+
+- All new route navigation labels use translation keys.
+- All placeholder page titles, descriptions, and empty states use translation keys.
+- Supported locales remain: en, cs, sk, pl, de, fr, es.
+- `appMessages` now exposes `pages` messages.
+- Uploaded document translation is still not included.
+
+### Not included yet
+
+- real authentication
+- Supabase Auth
+- PostgreSQL
+- Prisma
+- tenant isolation
+- RBAC
+- document upload
+- private storage
+- signed URLs
+- QR portal
+- ticket backend
+- machine/customer/document CRUD
+- dashboard data
+- software timeline
+- spare parts logic
+- quote flow
+- feedback collection logic
+- deployment
+
+### Commit message
+
+`feat(web): add translated page shell skeletons`
