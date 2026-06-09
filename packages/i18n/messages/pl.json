@@ -28,7 +28,8 @@
         "tickets": "Zgłoszenia",
         "spareParts": "Części zamienne",
         "feedback": "Opinia",
-        "settings": "Ustawienia"
+        "settings": "Ustawienia",
+        "login": "Logowanie"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Symbol zastępczy dostępu",
-      "title": "Shell strony logowania",
-      "description": "Ta trasa rezerwuje przyszły punkt wejścia bez dodawania uwierzytelniania, kont lub obsługi sesji.",
+      "title": "Shell bezpiecznego logowania",
+      "description": "Ta trasa pokazuje przyszły punkt wejścia bez dodawania uwierzytelniania, kont, obsługi sesji lub pracy z hasłami.",
       "emptyState": {
         "ariaLabel": "Stan zastępczy logowania",
         "title": "Uwierzytelnianie nie jest jeszcze aktywne",
         "body": "Shell strony jest obecny, aby można było sprawdzić przetłumaczoną strukturę produktu przed dodaniem rzeczywistych przepływów dostępu."
+      },
+      "preview": {
+        "ariaLabel": "Podgląd przyszłego logowania",
+        "eyebrow": "Kierunek secure-by-default",
+        "title": "Przygotowane pod przyszły chroniony obszar pracy",
+        "body": "Wizualny shell ustawia oczekiwania dotyczące ostrożnego dostępu, a uwierzytelnianie pozostaje poza zakresem tej fazy.",
+        "identity": {
+          "title": "Miejsce na tożsamość",
+          "body": "Przyszły przepływ logowania może wprowadzić tożsamość konta bez zmiany tego symbolu zastępczego w działający formularz."
+        },
+        "session": {
+          "title": "Miejsce na granicę sesji",
+          "body": "Shell pozostawia miejsce na przyszłe zachowanie sesji, ale tutaj nie są dodawane tokeny, cookies ani kontrole dostępu."
+        },
+        "boundary": {
+          "title": "Granica prywatnego obszaru pracy",
+          "body": "Punkt wejścia opisuje prywatne dokumenty inżynierskie i pliki widoczne dla klienta jako oddzielne przyszłe obszary."
+        },
+        "note": "Ten symbol zastępczy nie zbiera, nie weryfikuje, nie przechowuje ani nie wysyła żadnych danych logowania."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "Stan zastępczy dashboardu",
         "title": "Żadne dane dashboardu nie są podłączone",
         "body": "Shell może później ramować podsumowania dla gotowości dowodowej i organizacji dokumentacji, gdy implementacja dotrze do tego etapu."
+      },
+      "gridAriaLabel": "Sekcje zastępcze dashboardu",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Gotowość przekazania",
+          "title": "Przyszły widok przekazania",
+          "body": "Późniejszy dashboard może organizować przygotowanie przekazania projektu bez sugerowania ukończenia, zatwierdzenia lub wyników zgodności."
+        },
+        "machineRecords": {
+          "eyebrow": "Rekordy maszyn",
+          "title": "Miejsce na kontekst maszyn",
+          "body": "Shell rezerwuje miejsce na rekordy projektów maszyn, podczas gdy nie istnieją dane maszyn, przepływ QR ani CRUD zasobów."
+        },
+        "documentOrganization": {
+          "eyebrow": "Organizacja dokumentacji",
+          "title": "Miejsce na strukturę dokumentów",
+          "body": "Przyszłe podsumowania mogą oddzielać pliki widoczne dla klienta od prywatnych dokumentów inżynierskich bez dodawania przesyłania lub pamięci masowej."
+        },
+        "ticketActivity": {
+          "eyebrow": "Aktywność zgłoszeń",
+          "title": "Miejsce na komunikację",
+          "body": "Dashboard może później odzwierciedlać wsparcie lub opinię, podczas gdy żaden backend zgłoszeń ani przepływ operacyjny nie jest aktywny."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Symbol zastępczy konfiguracji",
       "title": "Shell strony ustawień",
-      "description": "Ta trasa rezerwuje przyszły obszar ustawień bez dodawania kont, uprawnień lub kontroli organizacji.",
+      "description": "Ta trasa rezerwuje przyszły obszar ustawień bez dodawania kont, uprawnień, kontroli organizacji lub wywołań backendu.",
       "emptyState": {
         "ariaLabel": "Stan zastępczy ustawień",
         "title": "Żadne ustawienia nie są konfigurowalne",
         "body": "Shell oznacza miejsce, w którym później mogą znaleźć się preferencje produktu, bez zmiany zachowania aplikacji teraz."
+      },
+      "sectionsAriaLabel": "Sekcje zastępcze ustawień",
+      "sections": {
+        "userRole": {
+          "eyebrow": "Rola użytkownika",
+          "title": "Miejsce na planowanie ról",
+          "body": "Przyszła widoczność ról może pomóc odróżnić pracę wewnętrzną od obszarów widocznych dla klienta bez dodawania uprawnień dzisiaj."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Preferowany język",
+          "title": "Miejsce na preferencje językowe",
+          "body": "Przetłumaczony shell jest gotowy na przyszłą obsługę preferencji, ale ta strona nie zapisuje ustawień języka."
+        },
+        "futureMfa": {
+          "eyebrow": "Przyszłe MFA",
+          "title": "Miejsce na planowanie wieloskładnikowe",
+          "body": "Interfejs zostawia miejsce na przyszłe silniejsze kontrole dostępu bez aktywowania uwierzytelniania lub MFA teraz."
+        },
+        "dataExport": {
+          "eyebrow": "Eksport danych",
+          "title": "Miejsce na planowanie eksportu",
+          "body": "Przyszłe koncepcje eksportu można kształtować wokół organizacji dokumentacji bez dodawania generowania plików lub pamięci masowej."
+        },
+        "securityLogs": {
+          "eyebrow": "Logi bezpieczeństwa",
+          "title": "Miejsce na planowanie ścieżki audytu",
+          "body": "Późniejszy etap produktu może wprowadzić widoczność zdarzeń bezpieczeństwa, ale tutaj żadne logi nie są zbierane ani wyświetlane."
+        }
       }
     }
   }

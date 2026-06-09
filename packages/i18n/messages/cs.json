@@ -28,7 +28,8 @@
         "tickets": "Tikety",
         "spareParts": "Náhradní díly",
         "feedback": "Zpětná vazba",
-        "settings": "Nastavení"
+        "settings": "Nastavení",
+        "login": "Přihlášení"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Zástupná stránka přístupu",
-      "title": "Shell přihlašovací stránky",
-      "description": "Tato trasa vyhrazuje budoucí vstupní místo bez přidání autentizace, účtů nebo správy relací.",
+      "title": "Shell bezpečného přihlášení",
+      "description": "Tato trasa ukazuje budoucí vstupní místo bez přidání autentizace, účtů, správy relací nebo práce s hesly.",
       "emptyState": {
         "ariaLabel": "Zástupný stav přihlášení",
         "title": "Autentizace zatím není aktivní",
         "body": "Shell stránky je připraven, aby bylo možné zkontrolovat přeloženou strukturu produktu před přidáním skutečných přístupových toků."
+      },
+      "preview": {
+        "ariaLabel": "Náhled budoucího přihlášení",
+        "eyebrow": "Směr bezpečně od základu",
+        "title": "Připraveno pro budoucí chráněný pracovní prostor",
+        "body": "Vizuální shell nastavuje očekávání pro pečlivý přístupový zážitek, zatímco autentizace zůstává mimo rozsah této fáze.",
+        "identity": {
+          "title": "Místo pro identitu",
+          "body": "Budoucí přihlašovací tok může zavést identitu účtu, aniž by se tento zástupný stav dnes změnil na funkční formulář."
+        },
+        "session": {
+          "title": "Místo pro hranici relace",
+          "body": "Shell ponechává prostor pro budoucí chování relací, ale zde se nepřidávají žádné tokeny, cookies ani kontroly přístupu."
+        },
+        "boundary": {
+          "title": "Hranice soukromého pracovního prostoru",
+          "body": "Vstupní místo rámuje soukromé technické dokumenty a zákaznicky viditelné soubory jako oddělené budoucí oblasti."
+        },
+        "note": "Z tohoto zástupného stavu se neshromažďují, neověřují, neukládají ani neodesílají žádné přihlašovací údaje."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "Zástupný stav dashboardu",
         "title": "Nejsou připojena žádná data dashboardu",
         "body": "Shell může později rámovat souhrny pro připravenost podkladů a organizaci dokumentace, až implementace dospěje do této fáze."
+      },
+      "gridAriaLabel": "Zástupné sekce dashboardu",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Připravenost předání",
+          "title": "Budoucí pohled na předání",
+          "body": "Pozdější dashboard může organizovat přípravu předání projektu bez naznačování dokončení, schválení nebo výsledků souladu."
+        },
+        "machineRecords": {
+          "eyebrow": "Záznamy strojů",
+          "title": "Místo pro kontext strojů",
+          "body": "Shell vyhrazuje místo pro záznamy strojních projektů, zatímco neexistují žádná data strojů, QR tok ani CRUD prostředků."
+        },
+        "documentOrganization": {
+          "eyebrow": "Organizace dokumentace",
+          "title": "Místo pro strukturu dokumentů",
+          "body": "Budoucí souhrny mohou oddělit zákaznicky viditelné soubory od soukromých technických dokumentů bez přidání nahrávání nebo úložiště."
+        },
+        "ticketActivity": {
+          "eyebrow": "Aktivita tiketů",
+          "title": "Místo pro komunikaci",
+          "body": "Dashboard může později odrážet podporu nebo zpětnou vazbu, zatímco není aktivní žádný tiketový backend ani provozní tok."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Zástupná stránka konfigurace",
       "title": "Shell stránky nastavení",
-      "description": "Tato trasa vyhrazuje budoucí oblast nastavení bez přidání účtů, oprávnění nebo organizačních ovládacích prvků.",
+      "description": "Tato trasa vyhrazuje budoucí oblast nastavení bez přidání účtů, oprávnění, organizačních ovládacích prvků nebo backendových volání.",
       "emptyState": {
         "ariaLabel": "Zástupný stav nastavení",
         "title": "Žádná nastavení nejsou konfigurovatelná",
         "body": "Shell označuje místo, kde mohou později žít produktové preference, aniž by se nyní měnilo chování aplikace."
+      },
+      "sectionsAriaLabel": "Zástupné sekce nastavení",
+      "sections": {
+        "userRole": {
+          "eyebrow": "Role uživatele",
+          "title": "Místo pro plánování rolí",
+          "body": "Budoucí viditelnost rolí může pomoci odlišit interní práci od zákaznicky viditelných oblastí bez dnešního přidání oprávnění."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Preferovaný jazyk",
+          "title": "Místo pro jazykové preference",
+          "body": "Přeložený shell je připraven na budoucí práci s preferencemi, ale tato stránka jazyková nastavení neukládá."
+        },
+        "futureMfa": {
+          "eyebrow": "Budoucí MFA",
+          "title": "Místo pro vícefaktorové plánování",
+          "body": "Rozhraní ponechává prostor pro budoucí silnější řízení přístupu bez aktivace autentizace nebo MFA nyní."
+        },
+        "dataExport": {
+          "eyebrow": "Export dat",
+          "title": "Místo pro plánování exportu",
+          "body": "Budoucí koncepty exportu lze tvarovat kolem organizace dokumentace bez přidání generování souborů nebo úložiště."
+        },
+        "securityLogs": {
+          "eyebrow": "Bezpečnostní logy",
+          "title": "Místo pro plánování auditní stopy",
+          "body": "Pozdější fáze produktu může zavést viditelnost bezpečnostních událostí, ale zde se žádné logy nesbírají ani nezobrazují."
+        }
       }
     }
   }

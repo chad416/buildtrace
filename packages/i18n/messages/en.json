@@ -28,7 +28,8 @@
         "tickets": "Tickets",
         "spareParts": "Spare parts",
         "feedback": "Feedback",
-        "settings": "Settings"
+        "settings": "Settings",
+        "login": "Login"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Access placeholder",
-      "title": "Sign-in page shell",
-      "description": "This route reserves the future entry point without adding authentication, accounts, or session handling.",
+      "title": "Secure sign-in entry shell",
+      "description": "This route presents the future entry point without adding authentication, accounts, session handling, or password workflows.",
       "emptyState": {
         "ariaLabel": "Login placeholder state",
         "title": "Authentication is not active yet",
         "body": "The page shell is present so the translated product structure can be reviewed before real access flows are added."
+      },
+      "preview": {
+        "ariaLabel": "Future sign-in preview",
+        "eyebrow": "Secure-by-default direction",
+        "title": "Prepared for a future protected workspace",
+        "body": "The visual shell sets expectations for a careful access experience while keeping authentication out of scope for this phase.",
+        "identity": {
+          "title": "Identity area placeholder",
+          "body": "A future sign-in flow can introduce account identity without changing this placeholder into a working form today."
+        },
+        "session": {
+          "title": "Session boundary placeholder",
+          "body": "The shell leaves room for future session behavior while no tokens, cookies, or access checks are added here."
+        },
+        "boundary": {
+          "title": "Private workspace boundary",
+          "body": "The entry point frames private engineering docs and customer-visible files as separate future workspace areas."
+        },
+        "note": "No credentials are collected, validated, stored, or submitted from this placeholder."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "Dashboard placeholder state",
         "title": "No dashboard data is connected",
         "body": "The shell can frame future summaries for evidence readiness and documentation organization when implementation reaches that stage."
+      },
+      "gridAriaLabel": "Dashboard placeholder sections",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Handover readiness",
+          "title": "Future handover view",
+          "body": "A later dashboard can organize project handover preparation without implying completion, approval, or compliance outcomes."
+        },
+        "machineRecords": {
+          "eyebrow": "Machine records",
+          "title": "Machine context placeholder",
+          "body": "The shell reserves a place for machine project records while no machine data, QR flow, or asset CRUD exists."
+        },
+        "documentOrganization": {
+          "eyebrow": "Documentation organization",
+          "title": "Document structure placeholder",
+          "body": "Future summaries can separate customer-visible files from private engineering docs without adding uploads or storage here."
+        },
+        "ticketActivity": {
+          "eyebrow": "Ticket activity",
+          "title": "Communication placeholder",
+          "body": "The dashboard can later reflect support or feedback activity while no ticket backend or operational workflow is active."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Configuration placeholder",
       "title": "Settings page shell",
-      "description": "This route reserves a future settings area without adding accounts, permissions, or organization controls.",
+      "description": "This route reserves a future settings area without adding accounts, permissions, organization controls, or backend calls.",
       "emptyState": {
         "ariaLabel": "Settings placeholder state",
         "title": "No settings are configurable",
         "body": "The shell marks where product preferences can live later without changing application behavior now."
+      },
+      "sectionsAriaLabel": "Settings placeholder sections",
+      "sections": {
+        "userRole": {
+          "eyebrow": "User role",
+          "title": "Role planning placeholder",
+          "body": "Future role visibility can help distinguish internal work from customer-visible areas without adding permissions today."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Preferred language",
+          "title": "Language preference placeholder",
+          "body": "The translated shell is ready for future preference handling while this page does not save language settings."
+        },
+        "futureMfa": {
+          "eyebrow": "Future MFA",
+          "title": "Multi-factor planning placeholder",
+          "body": "The interface leaves room for future stronger access controls without activating authentication or MFA now."
+        },
+        "dataExport": {
+          "eyebrow": "Data export",
+          "title": "Export planning placeholder",
+          "body": "Future export concepts can be shaped around documentation organization without adding file generation or storage behavior."
+        },
+        "securityLogs": {
+          "eyebrow": "Security logs",
+          "title": "Audit trail planning placeholder",
+          "body": "A later product stage can introduce security event visibility while no logs are collected or displayed here."
+        }
       }
     }
   }

@@ -28,7 +28,8 @@
         "tickets": "Tickets",
         "spareParts": "Pièces détachées",
         "feedback": "Retour",
-        "settings": "Paramètres"
+        "settings": "Paramètres",
+        "login": "Connexion"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Emplacement d’accès",
-      "title": "Shell de la page de connexion",
-      "description": "Cette route réserve le futur point d’entrée sans ajouter d’authentification, de comptes ou de gestion de session.",
+      "title": "Shell d’entrée sécurisée",
+      "description": "Cette route présente le futur point d’entrée sans ajouter d’authentification, de comptes, de gestion de session ou de traitement des mots de passe.",
       "emptyState": {
         "ariaLabel": "État d’attente de la connexion",
         "title": "L’authentification n’est pas encore active",
         "body": "Le shell de page est présent afin que la structure produit traduite puisse être revue avant l’ajout de vrais flux d’accès."
+      },
+      "preview": {
+        "ariaLabel": "Aperçu de la future connexion",
+        "eyebrow": "Orientation secure-by-default",
+        "title": "Préparé pour un futur espace de travail protégé",
+        "body": "Le shell visuel établit des attentes pour une expérience d’accès soignée, tandis que l’authentification reste hors périmètre pour cette phase.",
+        "identity": {
+          "title": "Emplacement pour l’identité",
+          "body": "Un futur flux de connexion pourra introduire l’identité de compte sans transformer aujourd’hui cet emplacement en formulaire fonctionnel."
+        },
+        "session": {
+          "title": "Emplacement pour la limite de session",
+          "body": "Le shell laisse de la place au futur comportement de session, mais aucun jeton, cookie ou contrôle d’accès n’est ajouté ici."
+        },
+        "boundary": {
+          "title": "Limite de l’espace de travail privé",
+          "body": "Le point d’entrée encadre les documents techniques privés et les fichiers visibles par les clients comme des zones futures séparées."
+        },
+        "note": "Aucun identifiant n’est collecté, validé, stocké ou soumis depuis cet emplacement."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "État d’attente du tableau de bord",
         "title": "Aucune donnée de tableau de bord n’est connectée",
         "body": "Le shell pourra plus tard encadrer des synthèses pour la préparation des preuves et l’organisation documentaire lorsque l’implémentation atteindra cette étape."
+      },
+      "gridAriaLabel": "Sections d’attente du tableau de bord",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Préparation de la remise",
+          "title": "Future vue de remise",
+          "body": "Un tableau de bord ultérieur pourra organiser la préparation de remise du projet sans suggérer d’achèvement, d’approbation ou de résultat de conformité."
+        },
+        "machineRecords": {
+          "eyebrow": "Dossiers machine",
+          "title": "Emplacement pour le contexte machine",
+          "body": "Le shell réserve un emplacement pour les dossiers de projets machine, tandis qu’aucune donnée machine, aucun flux QR ou CRUD d’actifs n’existe."
+        },
+        "documentOrganization": {
+          "eyebrow": "Organisation documentaire",
+          "title": "Emplacement pour la structure documentaire",
+          "body": "De futures synthèses pourront séparer les fichiers visibles par les clients des documents techniques privés sans ajouter de téléversement ou de stockage."
+        },
+        "ticketActivity": {
+          "eyebrow": "Activité des tickets",
+          "title": "Emplacement pour la communication",
+          "body": "Le tableau de bord pourra plus tard refléter l’activité de support ou de retour, tandis qu’aucun backend de tickets ou flux opérationnel n’est actif."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Emplacement configuration",
       "title": "Shell de la page paramètres",
-      "description": "Cette route réserve un futur espace de paramètres sans ajouter de comptes, d’autorisations ou de contrôles d’organisation.",
+      "description": "Cette route réserve un futur espace de paramètres sans ajouter de comptes, d’autorisations, de contrôles d’organisation ou d’appels backend.",
       "emptyState": {
         "ariaLabel": "État d’attente des paramètres",
         "title": "Aucun paramètre n’est configurable",
         "body": "Le shell marque l’endroit où les préférences produit pourront vivre plus tard sans changer le comportement de l’application maintenant."
+      },
+      "sectionsAriaLabel": "Sections d’attente des paramètres",
+      "sections": {
+        "userRole": {
+          "eyebrow": "Rôle utilisateur",
+          "title": "Emplacement pour la planification des rôles",
+          "body": "Une future visibilité des rôles pourra aider à distinguer le travail interne des espaces visibles par les clients sans ajouter d’autorisations aujourd’hui."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Langue préférée",
+          "title": "Emplacement pour la préférence linguistique",
+          "body": "Le shell traduit est prêt pour une future gestion des préférences, mais cette page n’enregistre pas les paramètres de langue."
+        },
+        "futureMfa": {
+          "eyebrow": "Future MFA",
+          "title": "Emplacement pour la planification multifacteur",
+          "body": "L’interface laisse de la place à de futurs contrôles d’accès renforcés sans activer l’authentification ou la MFA maintenant."
+        },
+        "dataExport": {
+          "eyebrow": "Export de données",
+          "title": "Emplacement pour la planification d’export",
+          "body": "Les futurs concepts d’export peuvent être structurés autour de l’organisation documentaire sans ajouter de génération de fichiers ou de stockage."
+        },
+        "securityLogs": {
+          "eyebrow": "Journaux de sécurité",
+          "title": "Emplacement pour la planification de piste d’audit",
+          "body": "Une étape produit ultérieure pourra introduire la visibilité des événements de sécurité, mais aucun journal n’est collecté ou affiché ici."
+        }
       }
     }
   }

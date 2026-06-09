@@ -28,7 +28,8 @@
         "tickets": "Tickets",
         "spareParts": "Repuestos",
         "feedback": "Comentarios",
-        "settings": "Ajustes"
+        "settings": "Ajustes",
+        "login": "Acceso"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Marcador de acceso",
-      "title": "Shell de la página de inicio de sesión",
-      "description": "Esta ruta reserva el futuro punto de entrada sin añadir autenticación, cuentas o gestión de sesiones.",
+      "title": "Shell de entrada segura",
+      "description": "Esta ruta presenta el futuro punto de entrada sin añadir autenticación, cuentas, gestión de sesiones o manejo de contraseñas.",
       "emptyState": {
         "ariaLabel": "Estado marcador de inicio de sesión",
         "title": "La autenticación aún no está activa",
         "body": "El shell de página está presente para revisar la estructura traducida del producto antes de añadir flujos reales de acceso."
+      },
+      "preview": {
+        "ariaLabel": "Vista previa del futuro acceso",
+        "eyebrow": "Dirección secure-by-default",
+        "title": "Preparado para un futuro espacio de trabajo protegido",
+        "body": "El shell visual establece expectativas para una experiencia de acceso cuidadosa, mientras la autenticación permanece fuera del alcance de esta fase.",
+        "identity": {
+          "title": "Espacio para identidad",
+          "body": "Un futuro flujo de acceso puede introducir identidad de cuenta sin convertir hoy este marcador en un formulario funcional."
+        },
+        "session": {
+          "title": "Espacio para límite de sesión",
+          "body": "El shell deja espacio para futuro comportamiento de sesión, pero aquí no se añaden tokens, cookies o comprobaciones de acceso."
+        },
+        "boundary": {
+          "title": "Límite del espacio privado",
+          "body": "El punto de entrada enmarca documentos técnicos privados y archivos visibles para clientes como áreas futuras separadas."
+        },
+        "note": "No se recopilan, validan, almacenan o envían credenciales desde este marcador."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "Estado marcador del panel",
         "title": "No hay datos del panel conectados",
         "body": "El shell podrá enmarcar futuros resúmenes de preparación de evidencias y organización documental cuando la implementación llegue a esa etapa."
+      },
+      "gridAriaLabel": "Secciones marcadoras del panel",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Preparación de entrega",
+          "title": "Vista futura de entrega",
+          "body": "Un panel posterior puede organizar la preparación de entrega del proyecto sin sugerir finalización, aprobación o resultados de conformidad."
+        },
+        "machineRecords": {
+          "eyebrow": "Registros de máquinas",
+          "title": "Espacio para contexto de máquinas",
+          "body": "El shell reserva un lugar para registros de proyectos de máquinas, mientras no existen datos de máquinas, flujo QR o CRUD de activos."
+        },
+        "documentOrganization": {
+          "eyebrow": "Organización documental",
+          "title": "Espacio para estructura documental",
+          "body": "Los futuros resúmenes pueden separar archivos visibles para clientes de documentos técnicos privados sin añadir carga o almacenamiento."
+        },
+        "ticketActivity": {
+          "eyebrow": "Actividad de tickets",
+          "title": "Espacio para comunicación",
+          "body": "El panel puede reflejar más adelante actividad de soporte o comentarios, mientras no hay backend de tickets o flujo operativo activo."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Marcador de configuración",
       "title": "Shell de la página de ajustes",
-      "description": "Esta ruta reserva una futura área de ajustes sin añadir cuentas, permisos o controles de organización.",
+      "description": "Esta ruta reserva una futura área de ajustes sin añadir cuentas, permisos, controles de organización o llamadas backend.",
       "emptyState": {
         "ariaLabel": "Estado marcador de ajustes",
         "title": "No hay ajustes configurables",
         "body": "El shell marca dónde pueden vivir más adelante las preferencias del producto sin cambiar ahora el comportamiento de la aplicación."
+      },
+      "sectionsAriaLabel": "Secciones marcadoras de ajustes",
+      "sections": {
+        "userRole": {
+          "eyebrow": "Rol de usuario",
+          "title": "Espacio para planificación de roles",
+          "body": "La visibilidad futura de roles puede ayudar a distinguir trabajo interno de áreas visibles para clientes sin añadir permisos hoy."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Idioma preferido",
+          "title": "Espacio para preferencia de idioma",
+          "body": "El shell traducido está listo para futuro manejo de preferencias, pero esta página no guarda ajustes de idioma."
+        },
+        "futureMfa": {
+          "eyebrow": "MFA futuro",
+          "title": "Espacio para planificación multifactor",
+          "body": "La interfaz deja espacio para futuros controles de acceso más fuertes sin activar autenticación o MFA ahora."
+        },
+        "dataExport": {
+          "eyebrow": "Exportación de datos",
+          "title": "Espacio para planificación de exportación",
+          "body": "Los futuros conceptos de exportación pueden estructurarse alrededor de la organización documental sin añadir generación de archivos o almacenamiento."
+        },
+        "securityLogs": {
+          "eyebrow": "Registros de seguridad",
+          "title": "Espacio para planificación de auditoría",
+          "body": "Una etapa posterior del producto puede introducir visibilidad de eventos de seguridad, pero aquí no se recopilan ni muestran registros."
+        }
       }
     }
   }

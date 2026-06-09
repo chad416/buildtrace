@@ -1,3 +1,5 @@
+import '../globals.css';
+
 import { AppShell } from '@/components/app-shell';
 import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
 import { notFound } from 'next/navigation';

@@ -28,7 +28,8 @@
         "tickets": "Tickets",
         "spareParts": "Ersatzteile",
         "feedback": "Feedback",
-        "settings": "Einstellungen"
+        "settings": "Einstellungen",
+        "login": "Anmelden"
       }
     },
     "footer": {
@@ -75,12 +76,31 @@
   "pages": {
     "login": {
       "eyebrow": "Zugangsplatzhalter",
-      "title": "Shell der Anmeldeseite",
-      "description": "Diese Route reserviert den zukünftigen Einstiegspunkt, ohne Authentifizierung, Konten oder Sitzungsverwaltung hinzuzufügen.",
+      "title": "Shell für sichere Anmeldung",
+      "description": "Diese Route zeigt den zukünftigen Einstiegspunkt, ohne Authentifizierung, Konten, Sitzungsverwaltung oder Passwortverarbeitung hinzuzufügen.",
       "emptyState": {
         "ariaLabel": "Platzhalterzustand für Anmeldung",
         "title": "Authentifizierung ist noch nicht aktiv",
         "body": "Die Seitenshell ist vorhanden, damit die übersetzte Produktstruktur geprüft werden kann, bevor echte Zugangsabläufe hinzugefügt werden."
+      },
+      "preview": {
+        "ariaLabel": "Vorschau der zukünftigen Anmeldung",
+        "eyebrow": "Secure-by-default-Richtung",
+        "title": "Vorbereitet für einen zukünftigen geschützten Arbeitsbereich",
+        "body": "Die visuelle Shell setzt Erwartungen für ein sorgfältiges Zugangserlebnis, während Authentifizierung in dieser Phase außerhalb des Umfangs bleibt.",
+        "identity": {
+          "title": "Platzhalter für Identität",
+          "body": "Ein zukünftiger Anmeldeablauf kann Kontoidentität einführen, ohne diesen Platzhalter heute in ein funktionierendes Formular zu verwandeln."
+        },
+        "session": {
+          "title": "Platzhalter für Sitzungsgrenze",
+          "body": "Die Shell lässt Raum für zukünftiges Sitzungsverhalten, während hier keine Tokens, Cookies oder Zugriffskontrollen hinzugefügt werden."
+        },
+        "boundary": {
+          "title": "Grenze des privaten Arbeitsbereichs",
+          "body": "Der Einstiegspunkt rahmt private technische Dokumente und kundensichtbare Dateien als getrennte zukünftige Bereiche."
+        },
+        "note": "Aus diesem Platzhalter werden keine Zugangsdaten erfasst, geprüft, gespeichert oder übermittelt."
       }
     },
     "dashboard": {
@@ -91,6 +111,29 @@
         "ariaLabel": "Platzhalterzustand für Dashboard",
         "title": "Keine Dashboard-Daten verbunden",
         "body": "Die Shell kann später Zusammenfassungen für Nachweisbereitschaft und Dokumentationsorganisation rahmen, wenn die Implementierung diese Phase erreicht."
+      },
+      "gridAriaLabel": "Platzhalterbereiche des Dashboards",
+      "cards": {
+        "handoverReadiness": {
+          "eyebrow": "Übergabebereitschaft",
+          "title": "Zukünftige Übergabeansicht",
+          "body": "Ein späteres Dashboard kann die Vorbereitung der Projektübergabe organisieren, ohne Fertigstellung, Freigabe oder Konformitätsergebnisse anzudeuten."
+        },
+        "machineRecords": {
+          "eyebrow": "Maschinendatensätze",
+          "title": "Platzhalter für Maschinenkontext",
+          "body": "Die Shell reserviert einen Ort für Maschinenprojektunterlagen, während keine Maschinendaten, kein QR-Ablauf und kein Asset-CRUD existieren."
+        },
+        "documentOrganization": {
+          "eyebrow": "Dokumentationsorganisation",
+          "title": "Platzhalter für Dokumentstruktur",
+          "body": "Zukünftige Zusammenfassungen können kundensichtbare Dateien von privaten technischen Dokumenten trennen, ohne Uploads oder Speicher hinzuzufügen."
+        },
+        "ticketActivity": {
+          "eyebrow": "Ticketaktivität",
+          "title": "Platzhalter für Kommunikation",
+          "body": "Das Dashboard kann später Support- oder Feedbackaktivität abbilden, während kein Ticket-Backend und kein operativer Ablauf aktiv ist."
+        }
       }
     },
     "machines": {
@@ -146,11 +189,39 @@
     "settings": {
       "eyebrow": "Konfigurationsplatzhalter",
       "title": "Shell der Einstellungsseite",
-      "description": "Diese Route reserviert einen zukünftigen Einstellungsbereich, ohne Konten, Berechtigungen oder Organisationssteuerung hinzuzufügen.",
+      "description": "Diese Route reserviert einen zukünftigen Einstellungsbereich, ohne Konten, Berechtigungen, Organisationssteuerung oder Backend-Aufrufe hinzuzufügen.",
       "emptyState": {
         "ariaLabel": "Platzhalterzustand für Einstellungen",
         "title": "Keine Einstellungen konfigurierbar",
         "body": "Die Shell markiert, wo Produktpräferenzen später leben können, ohne jetzt das Anwendungsverhalten zu ändern."
+      },
+      "sectionsAriaLabel": "Platzhalterbereiche der Einstellungen",
+      "sections": {
+        "userRole": {
+          "eyebrow": "Benutzerrolle",
+          "title": "Platzhalter für Rollenplanung",
+          "body": "Zukünftige Rollensichtbarkeit kann helfen, interne Arbeit von kundensichtbaren Bereichen zu unterscheiden, ohne heute Berechtigungen hinzuzufügen."
+        },
+        "preferredLanguage": {
+          "eyebrow": "Bevorzugte Sprache",
+          "title": "Platzhalter für Sprachpräferenz",
+          "body": "Die übersetzte Shell ist für zukünftige Präferenzbehandlung vorbereitet, während diese Seite keine Spracheinstellungen speichert."
+        },
+        "futureMfa": {
+          "eyebrow": "Zukünftige MFA",
+          "title": "Platzhalter für Mehrfaktorplanung",
+          "body": "Die Oberfläche lässt Raum für zukünftige stärkere Zugriffskontrollen, ohne Authentifizierung oder MFA jetzt zu aktivieren."
+        },
+        "dataExport": {
+          "eyebrow": "Datenexport",
+          "title": "Platzhalter für Exportplanung",
+          "body": "Zukünftige Exportkonzepte können um Dokumentationsorganisation herum gestaltet werden, ohne Dateierzeugung oder Speicherverhalten hinzuzufügen."
+        },
+        "securityLogs": {
+          "eyebrow": "Sicherheitsprotokolle",
+          "title": "Platzhalter für Audit-Trail-Planung",
+          "body": "Eine spätere Produktphase kann Sichtbarkeit für Sicherheitsereignisse einführen, während hier keine Protokolle gesammelt oder angezeigt werden."
+        }
       }
     }
   }
