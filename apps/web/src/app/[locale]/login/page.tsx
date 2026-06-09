@@ -23,7 +23,7 @@ export default async function LoginPage({ params }: PageProps) {
   ] as const;
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-8 px-6 py-12 md:py-16 lg:grid-cols-[1fr_0.85fr] lg:items-start">
+    <div className="mx-auto grid w-full max-w-6xl flex-1 gap-8 px-6 py-12 md:py-16 lg:grid-cols-[1fr_0.85fr] lg:items-start">
       <section aria-labelledby="login-title" className="max-w-3xl">
         <p className="text-sm font-semibold uppercase tracking-normal text-emerald-300">
           {messages.eyebrow}
@@ -66,6 +66,6 @@ export default async function LoginPage({ params }: PageProps) {
           <p className="text-sm leading-6 text-stone-300">{messages.preview.note}</p>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

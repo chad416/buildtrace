@@ -51,7 +51,7 @@ export default async function MachineDetailPage({ params }: PageProps) {
   ] as const;
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-5 py-10 sm:px-6 md:py-14 lg:px-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-5 py-10 sm:px-6 md:py-14 lg:px-8">
       <section
         aria-labelledby="machine-detail-title"
         className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)] lg:items-start"
@@ -106,6 +106,6 @@ export default async function MachineDetailPage({ params }: PageProps) {
           </article>
         ))}
       </section>
-    </main>
+    </div>
   );
 }

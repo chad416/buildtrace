@@ -67,7 +67,7 @@ export default async function LocaleHomePage({ params }: PageProps) {
   ] as const;
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-5 py-10 sm:px-6 md:py-14 lg:px-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-5 py-10 sm:px-6 md:py-14 lg:px-8">
       <section
         id="overview"
         aria-labelledby="landing-title"
@@ -156,6 +156,6 @@ export default async function LocaleHomePage({ params }: PageProps) {
           </article>
         ))}
       </section>
-    </main>
+    </div>
   );
 }

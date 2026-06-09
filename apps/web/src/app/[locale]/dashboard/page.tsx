@@ -24,7 +24,7 @@ export default async function DashboardPage({ params }: PageProps) {
   ] as const;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-12 md:py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 px-6 py-12 md:py-16">
       <section aria-labelledby="dashboard-title" className="max-w-3xl">
         <p className="text-sm font-semibold uppercase tracking-normal text-emerald-300">
           {messages.eyebrow}
@@ -66,6 +66,6 @@ export default async function DashboardPage({ params }: PageProps) {
           {messages.emptyState.body}
         </p>
       </section>
-    </main>
+    </div>
   );
 }
