@@ -21,9 +21,14 @@
       "statusLabel": "Base de la phase 1",
       "navigationLabel": "Navigation principale",
       "navItems": {
-        "overview": "Vue d’ensemble",
-        "evidence": "Préparation des preuves",
-        "documentation": "Documentation"
+        "home": "Accueil",
+        "dashboard": "Tableau de bord",
+        "machines": "Machines",
+        "documents": "Documents",
+        "tickets": "Tickets",
+        "spareParts": "Pièces détachées",
+        "feedback": "Retour",
+        "settings": "Paramètres"
       }
     },
     "footer": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Planification de la protection des données",
         "body": "Les fichiers visibles par les clients et les documents techniques privés sont décrits comme des espaces séparés avant l’ajout de fonctions de gestion documentaire."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Emplacement d’accès",
+      "title": "Shell de la page de connexion",
+      "description": "Cette route réserve le futur point d’entrée sans ajouter d’authentification, de comptes ou de gestion de session.",
+      "emptyState": {
+        "ariaLabel": "État d’attente de la connexion",
+        "title": "L’authentification n’est pas encore active",
+        "body": "Le shell de page est présent afin que la structure produit traduite puisse être revue avant l’ajout de vrais flux d’accès."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Emplacement d’espace de travail",
+      "title": "Shell du tableau de bord",
+      "description": "Cette route réserve l’espace d’une future vue projet sans connexion aux données, au stockage ou aux indicateurs en direct.",
+      "emptyState": {
+        "ariaLabel": "État d’attente du tableau de bord",
+        "title": "Aucune donnée de tableau de bord n’est connectée",
+        "body": "Le shell pourra plus tard encadrer des synthèses pour la préparation des preuves et l’organisation documentaire lorsque l’implémentation atteindra cette étape."
+      }
+    },
+    "machines": {
+      "eyebrow": "Emplacement d’actifs",
+      "title": "Shell de la page machines",
+      "description": "Cette route réserve la future liste de machines sans ajouter d’enregistrements, de flux QR ou de CRUD d’actifs.",
+      "emptyState": {
+        "ariaLabel": "État d’attente des machines",
+        "title": "Aucun enregistrement machine n’est disponible",
+        "body": "L’emplacement garde la navigation visible pendant que les dossiers de projets machine restent un travail futur."
+      }
+    },
+    "documents": {
+      "eyebrow": "Emplacement documentaire",
+      "title": "Shell de la page documents",
+      "description": "Cette route réserve l’espace pour les fichiers visibles par les clients et les documents techniques privés sans ajouter de téléversement ou de stockage.",
+      "emptyState": {
+        "ariaLabel": "État d’attente des documents",
+        "title": "Aucune gestion documentaire n’est active",
+        "body": "Le shell montre où l’organisation documentaire pourra vivre plus tard, tandis que les flux de fichiers restent hors périmètre."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Emplacement support",
+      "title": "Shell de la page tickets",
+      "description": "Cette route réserve un futur espace de communication sans ajouter de création de tickets, d’affectation ou de logique d’état.",
+      "emptyState": {
+        "ariaLabel": "État d’attente des tickets",
+        "title": "Aucun flux de tickets n’est actif",
+        "body": "L’emplacement garde la carte produit complète sans stocker de demandes ni créer d’enregistrements opérationnels."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Emplacement pièces",
+      "title": "Shell de la page pièces détachées",
+      "description": "Cette route réserve un futur espace de pièces détachées sans ajouter d’inventaire, de commande ou de comportement base de données.",
+      "emptyState": {
+        "ariaLabel": "État d’attente des pièces détachées",
+        "title": "Aucune donnée de pièces détachées n’est connectée",
+        "body": "Le shell de page est seulement une structure traduite pour une planification produit ultérieure."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Emplacement retour",
+      "title": "Shell de la page de retour",
+      "description": "Cette route réserve un futur espace de retour sans collecter de messages, de fichiers ou de données client.",
+      "emptyState": {
+        "ariaLabel": "État d’attente du retour",
+        "title": "La collecte de retours n’est pas active",
+        "body": "L’emplacement soutient la revue de navigation tandis que les flux de retour restent un travail futur."
+      }
+    },
+    "settings": {
+      "eyebrow": "Emplacement configuration",
+      "title": "Shell de la page paramètres",
+      "description": "Cette route réserve un futur espace de paramètres sans ajouter de comptes, d’autorisations ou de contrôles d’organisation.",
+      "emptyState": {
+        "ariaLabel": "État d’attente des paramètres",
+        "title": "Aucun paramètre n’est configurable",
+        "body": "Le shell marque l’endroit où les préférences produit pourront vivre plus tard sans changer le comportement de l’application maintenant."
       }
     }
   }

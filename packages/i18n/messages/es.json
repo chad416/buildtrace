@@ -21,9 +21,14 @@
       "statusLabel": "Base de la fase 1",
       "navigationLabel": "Navegación principal",
       "navItems": {
-        "overview": "Resumen",
-        "evidence": "Preparación de evidencias",
-        "documentation": "Documentación"
+        "home": "Inicio",
+        "dashboard": "Panel",
+        "machines": "Máquinas",
+        "documents": "Documentos",
+        "tickets": "Tickets",
+        "spareParts": "Repuestos",
+        "feedback": "Comentarios",
+        "settings": "Ajustes"
       }
     },
     "footer": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Planificación de protección de datos",
         "body": "Los archivos visibles para clientes y los documentos técnicos privados se describen como áreas separadas antes de añadir funciones de gestión documental."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Marcador de acceso",
+      "title": "Shell de la página de inicio de sesión",
+      "description": "Esta ruta reserva el futuro punto de entrada sin añadir autenticación, cuentas o gestión de sesiones.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de inicio de sesión",
+        "title": "La autenticación aún no está activa",
+        "body": "El shell de página está presente para revisar la estructura traducida del producto antes de añadir flujos reales de acceso."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Marcador de espacio de trabajo",
+      "title": "Shell del panel",
+      "description": "Esta ruta reserva espacio para una futura vista general del proyecto sin conectar datos, almacenamiento o métricas en vivo.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador del panel",
+        "title": "No hay datos del panel conectados",
+        "body": "El shell podrá enmarcar futuros resúmenes de preparación de evidencias y organización documental cuando la implementación llegue a esa etapa."
+      }
+    },
+    "machines": {
+      "eyebrow": "Marcador de activos",
+      "title": "Shell de la página de máquinas",
+      "description": "Esta ruta reserva la futura lista de máquinas sin añadir registros, flujos QR o CRUD de activos.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de máquinas",
+        "title": "No hay registros de máquinas disponibles",
+        "body": "El marcador mantiene visible la navegación mientras los registros de proyectos de máquinas siguen siendo trabajo futuro."
+      }
+    },
+    "documents": {
+      "eyebrow": "Marcador de documentación",
+      "title": "Shell de la página de documentos",
+      "description": "Esta ruta reserva espacio para archivos visibles para clientes y documentos técnicos privados sin añadir carga o almacenamiento.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de documentos",
+        "title": "La gestión documental no está activa",
+        "body": "El shell muestra dónde puede vivir más adelante la organización documental mientras los flujos de archivos permanecen fuera de alcance."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Marcador de soporte",
+      "title": "Shell de la página de tickets",
+      "description": "Esta ruta reserva una futura área de comunicación sin añadir creación de tickets, asignación o lógica de estado.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de tickets",
+        "title": "No hay flujo de tickets activo",
+        "body": "El marcador mantiene completo el mapa del producto sin almacenar solicitudes o crear registros operativos."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Marcador de repuestos",
+      "title": "Shell de la página de repuestos",
+      "description": "Esta ruta reserva una futura área de repuestos sin añadir inventario, pedidos o comportamiento de base de datos.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de repuestos",
+        "title": "No hay datos de repuestos conectados",
+        "body": "El shell de página es solo una estructura traducida para planificación futura del producto."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Marcador de comentarios",
+      "title": "Shell de la página de comentarios",
+      "description": "Esta ruta reserva una futura área de comentarios sin recopilar mensajes, archivos o datos de clientes.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de comentarios",
+        "title": "La recopilación de comentarios no está activa",
+        "body": "El marcador ayuda a revisar la navegación mientras los flujos de comentarios siguen siendo trabajo futuro."
+      }
+    },
+    "settings": {
+      "eyebrow": "Marcador de configuración",
+      "title": "Shell de la página de ajustes",
+      "description": "Esta ruta reserva una futura área de ajustes sin añadir cuentas, permisos o controles de organización.",
+      "emptyState": {
+        "ariaLabel": "Estado marcador de ajustes",
+        "title": "No hay ajustes configurables",
+        "body": "El shell marca dónde pueden vivir más adelante las preferencias del producto sin cambiar ahora el comportamiento de la aplicación."
       }
     }
   }

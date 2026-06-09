@@ -23,6 +23,7 @@ export const appMessages = {
     languageSwitcher: enMessages.languageSwitcher,
     shell: enMessages.shell,
     landing: enMessages.landing,
+    pages: enMessages.pages,
   },
   cs: {
     appName: csMessages.app.name,
@@ -30,6 +31,7 @@ export const appMessages = {
     languageSwitcher: csMessages.languageSwitcher,
     shell: csMessages.shell,
     landing: csMessages.landing,
+    pages: csMessages.pages,
   },
   sk: {
     appName: skMessages.app.name,
@@ -37,6 +39,7 @@ export const appMessages = {
     languageSwitcher: skMessages.languageSwitcher,
     shell: skMessages.shell,
     landing: skMessages.landing,
+    pages: skMessages.pages,
   },
   pl: {
     appName: plMessages.app.name,
@@ -44,6 +47,7 @@ export const appMessages = {
     languageSwitcher: plMessages.languageSwitcher,
     shell: plMessages.shell,
     landing: plMessages.landing,
+    pages: plMessages.pages,
   },
   de: {
     appName: deMessages.app.name,
@@ -51,6 +55,7 @@ export const appMessages = {
     languageSwitcher: deMessages.languageSwitcher,
     shell: deMessages.shell,
     landing: deMessages.landing,
+    pages: deMessages.pages,
   },
   fr: {
     appName: frMessages.app.name,
@@ -58,6 +63,7 @@ export const appMessages = {
     languageSwitcher: frMessages.languageSwitcher,
     shell: frMessages.shell,
     landing: frMessages.landing,
+    pages: frMessages.pages,
   },
   es: {
     appName: esMessages.app.name,
@@ -65,5 +71,6 @@ export const appMessages = {
     languageSwitcher: esMessages.languageSwitcher,
     shell: esMessages.shell,
     landing: esMessages.landing,
+    pages: esMessages.pages,
   },
 } as const;

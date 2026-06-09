@@ -21,9 +21,14 @@
       "statusLabel": "Phase 1 foundation",
       "navigationLabel": "Primary navigation",
       "navItems": {
-        "overview": "Overview",
-        "evidence": "Evidence readiness",
-        "documentation": "Documentation"
+        "home": "Home",
+        "dashboard": "Dashboard",
+        "machines": "Machines",
+        "documents": "Documents",
+        "tickets": "Tickets",
+        "spareParts": "Spare parts",
+        "feedback": "Feedback",
+        "settings": "Settings"
       }
     },
     "footer": {
@@ -54,7 +59,7 @@
     },
     "trust": {
       "privacy": {
-        "heading": "Privacy-first placeholders",
+        "heading": "Privacy planning placeholders",
         "body": "The Phase 1 shell reserves space for privacy information without adding accounts, storage, or customer data workflows."
       },
       "security": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Data protection planning",
         "body": "Customer-visible files and private engineering docs are described as separate areas before any document handling features are added."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Access placeholder",
+      "title": "Sign-in page shell",
+      "description": "This route reserves the future entry point without adding authentication, accounts, or session handling.",
+      "emptyState": {
+        "ariaLabel": "Login placeholder state",
+        "title": "Authentication is not active yet",
+        "body": "The page shell is present so the translated product structure can be reviewed before real access flows are added."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Workspace placeholder",
+      "title": "Dashboard page shell",
+      "description": "This route reserves space for a future project overview without connecting to data, storage, or live metrics.",
+      "emptyState": {
+        "ariaLabel": "Dashboard placeholder state",
+        "title": "No dashboard data is connected",
+        "body": "The shell can frame future summaries for evidence readiness and documentation organization when implementation reaches that stage."
+      }
+    },
+    "machines": {
+      "eyebrow": "Asset placeholder",
+      "title": "Machines page shell",
+      "description": "This route reserves the future machine list without adding records, QR workflows, or asset CRUD.",
+      "emptyState": {
+        "ariaLabel": "Machines placeholder state",
+        "title": "No machine records are available",
+        "body": "The placeholder keeps the navigation visible while machine project records remain future implementation work."
+      }
+    },
+    "documents": {
+      "eyebrow": "Documentation placeholder",
+      "title": "Documents page shell",
+      "description": "This route reserves space for customer-visible files and private engineering docs without adding upload or storage behavior.",
+      "emptyState": {
+        "ariaLabel": "Documents placeholder state",
+        "title": "No document handling is active",
+        "body": "The shell shows where documentation organization can live later while file workflows remain out of scope."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Support placeholder",
+      "title": "Tickets page shell",
+      "description": "This route reserves a future communication area without adding ticket creation, assignment, or status logic.",
+      "emptyState": {
+        "ariaLabel": "Tickets placeholder state",
+        "title": "No ticket workflow is active",
+        "body": "The placeholder keeps the product map complete without storing requests or creating operational records."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Parts placeholder",
+      "title": "Spare parts page shell",
+      "description": "This route reserves a future spare-parts area without adding inventory, ordering, or database behavior.",
+      "emptyState": {
+        "ariaLabel": "Spare parts placeholder state",
+        "title": "No spare-parts data is connected",
+        "body": "The page shell is only a translated structure for later product planning."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Feedback placeholder",
+      "title": "Feedback page shell",
+      "description": "This route reserves a future feedback area without collecting messages, files, or customer data.",
+      "emptyState": {
+        "ariaLabel": "Feedback placeholder state",
+        "title": "Feedback collection is not active",
+        "body": "The placeholder supports navigation review while feedback workflows remain future implementation work."
+      }
+    },
+    "settings": {
+      "eyebrow": "Configuration placeholder",
+      "title": "Settings page shell",
+      "description": "This route reserves a future settings area without adding accounts, permissions, or organization controls.",
+      "emptyState": {
+        "ariaLabel": "Settings placeholder state",
+        "title": "No settings are configurable",
+        "body": "The shell marks where product preferences can live later without changing application behavior now."
       }
     }
   }

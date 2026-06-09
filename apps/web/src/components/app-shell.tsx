@@ -18,9 +18,14 @@ type AppShellMessages = {
       readonly statusLabel: string;
       readonly navigationLabel: string;
       readonly navItems: {
-        readonly overview: string;
-        readonly evidence: string;
-        readonly documentation: string;
+        readonly home: string;
+        readonly dashboard: string;
+        readonly machines: string;
+        readonly documents: string;
+        readonly tickets: string;
+        readonly spareParts: string;
+        readonly feedback: string;
+        readonly settings: string;
       };
     };
     readonly footer: {
@@ -43,15 +48,23 @@ type AppShellProps = {
 
 export function AppShell({ children, currentLocale, messages }: AppShellProps) {
   const navItems = [
-    { href: '#overview', label: messages.shell.header.navItems.overview },
-    { href: '#evidence-readiness', label: messages.shell.header.navItems.evidence },
-    { href: '#documentation', label: messages.shell.header.navItems.documentation },
+    { href: `/${currentLocale}`, label: messages.shell.header.navItems.home },
+    { href: `/${currentLocale}/dashboard`, label: messages.shell.header.navItems.dashboard },
+    { href: `/${currentLocale}/machines`, label: messages.shell.header.navItems.machines },
+    { href: `/${currentLocale}/documents`, label: messages.shell.header.navItems.documents },
+    { href: `/${currentLocale}/tickets`, label: messages.shell.header.navItems.tickets },
+    { href: `/${currentLocale}/spare-parts`, label: messages.shell.header.navItems.spareParts },
+    { href: `/${currentLocale}/feedback`, label: messages.shell.header.navItems.feedback },
+    { href: `/${currentLocale}/settings`, label: messages.shell.header.navItems.settings },
   ] as const;
 
   const footerLinks = [
-    { href: '#privacy', label: messages.shell.footer.links.privacy },
-    { href: '#security', label: messages.shell.footer.links.security },
-    { href: '#data-protection', label: messages.shell.footer.links.dataProtection },
+    { href: `/${currentLocale}#privacy`, label: messages.shell.footer.links.privacy },
+    { href: `/${currentLocale}#security`, label: messages.shell.footer.links.security },
+    {
+      href: `/${currentLocale}#data-protection`,
+      label: messages.shell.footer.links.dataProtection,
+    },
   ] as const;
 
   return (
@@ -78,12 +91,12 @@ export function AppShell({ children, currentLocale, messages }: AppShellProps) {
               <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
                 {navItems.map((item) => (
                   <li key={item.href}>
-                    <a
+                    <Link
                       href={item.href}
                       className="rounded-full border border-stone-700 px-3 py-1.5 text-sm font-medium text-stone-200 transition hover:border-emerald-400 hover:text-white"
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -106,12 +119,12 @@ export function AppShell({ children, currentLocale, messages }: AppShellProps) {
             <ul className="m-0 flex list-none flex-wrap gap-3 p-0">
               {footerLinks.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     className="text-sm font-medium text-stone-300 transition hover:text-white"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

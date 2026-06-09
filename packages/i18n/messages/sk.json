@@ -21,9 +21,14 @@
       "statusLabel": "Základ fázy 1",
       "navigationLabel": "Hlavná navigácia",
       "navItems": {
-        "overview": "Prehľad",
-        "evidence": "Pripravenosť podkladov",
-        "documentation": "Dokumentácia"
+        "home": "Domov",
+        "dashboard": "Prehľad",
+        "machines": "Stroje",
+        "documents": "Dokumenty",
+        "tickets": "Tikety",
+        "spareParts": "Náhradné diely",
+        "feedback": "Spätná väzba",
+        "settings": "Nastavenia"
       }
     },
     "footer": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Plánovanie ochrany údajov",
         "body": "Zákaznícky viditeľné súbory a súkromné technické dokumenty sú opísané ako oddelené oblasti ešte pred pridaním funkcií na prácu s dokumentmi."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Zástupná stránka prístupu",
+      "title": "Shell prihlasovacej stránky",
+      "description": "Táto trasa vyhradzuje budúce vstupné miesto bez pridania autentifikácie, účtov alebo správy relácií.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav prihlásenia",
+        "title": "Autentifikácia zatiaľ nie je aktívna",
+        "body": "Shell stránky je pripravený, aby bolo možné skontrolovať preloženú štruktúru produktu pred pridaním skutočných prístupových tokov."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Zástupná stránka pracovného priestoru",
+      "title": "Shell dashboardu",
+      "description": "Táto trasa vyhradzuje priestor pre budúci projektový prehľad bez napojenia na dáta, úložisko alebo živé metriky.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav dashboardu",
+        "title": "Nie sú pripojené žiadne dáta dashboardu",
+        "body": "Shell môže neskôr rámovať súhrny pre pripravenosť podkladov a organizáciu dokumentácie, keď implementácia dospeje do tejto fázy."
+      }
+    },
+    "machines": {
+      "eyebrow": "Zástupná stránka prostriedkov",
+      "title": "Shell stránky strojov",
+      "description": "Táto trasa vyhradzuje budúci zoznam strojov bez pridania záznamov, QR tokov alebo CRUD pre prostriedky.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav strojov",
+        "title": "Nie sú dostupné žiadne záznamy strojov",
+        "body": "Zástupná stránka ponecháva navigáciu viditeľnú, zatiaľ čo záznamy strojových projektov zostávajú budúcou implementáciou."
+      }
+    },
+    "documents": {
+      "eyebrow": "Zástupná stránka dokumentácie",
+      "title": "Shell stránky dokumentov",
+      "description": "Táto trasa vyhradzuje priestor pre zákaznícky viditeľné súbory a súkromné technické dokumenty bez pridania nahrávania alebo úložiska.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav dokumentov",
+        "title": "Práca s dokumentmi nie je aktívna",
+        "body": "Shell ukazuje, kde môže neskôr žiť organizácia dokumentácie, zatiaľ čo súborové pracovné postupy zostávajú mimo rozsahu."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Zástupná stránka podpory",
+      "title": "Shell stránky tiketov",
+      "description": "Táto trasa vyhradzuje budúcu komunikačnú oblasť bez pridania tvorby tiketov, priraďovania alebo stavovej logiky.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav tiketov",
+        "title": "Žiadny tiketový tok nie je aktívny",
+        "body": "Zástupná stránka udržiava mapu produktu kompletnú bez ukladania požiadaviek alebo vytvárania prevádzkových záznamov."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Zástupná stránka dielov",
+      "title": "Shell stránky náhradných dielov",
+      "description": "Táto trasa vyhradzuje budúcu oblasť náhradných dielov bez pridania skladu, objednávania alebo databázového správania.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav náhradných dielov",
+        "title": "Nie sú pripojené žiadne dáta náhradných dielov",
+        "body": "Shell stránky je iba preložená štruktúra pre neskoršie produktové plánovanie."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Zástupná stránka spätnej väzby",
+      "title": "Shell stránky spätnej väzby",
+      "description": "Táto trasa vyhradzuje budúcu oblasť spätnej väzby bez zberu správ, súborov alebo zákazníckych údajov.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav spätnej väzby",
+        "title": "Zber spätnej väzby nie je aktívny",
+        "body": "Zástupná stránka podporuje kontrolu navigácie, zatiaľ čo pracovné postupy spätnej väzby zostávajú budúcou implementáciou."
+      }
+    },
+    "settings": {
+      "eyebrow": "Zástupná stránka konfigurácie",
+      "title": "Shell stránky nastavení",
+      "description": "Táto trasa vyhradzuje budúcu oblasť nastavení bez pridania účtov, oprávnení alebo organizačných ovládacích prvkov.",
+      "emptyState": {
+        "ariaLabel": "Zástupný stav nastavení",
+        "title": "Žiadne nastavenia nie sú konfigurovateľné",
+        "body": "Shell označuje miesto, kde môžu neskôr žiť produktové preferencie, bez toho, aby sa teraz menilo správanie aplikácie."
       }
     }
   }

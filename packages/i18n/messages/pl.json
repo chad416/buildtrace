@@ -21,9 +21,14 @@
       "statusLabel": "Podstawa fazy 1",
       "navigationLabel": "Główna nawigacja",
       "navItems": {
-        "overview": "Przegląd",
-        "evidence": "Gotowość dowodowa",
-        "documentation": "Dokumentacja"
+        "home": "Strona główna",
+        "dashboard": "Dashboard",
+        "machines": "Maszyny",
+        "documents": "Dokumenty",
+        "tickets": "Zgłoszenia",
+        "spareParts": "Części zamienne",
+        "feedback": "Opinia",
+        "settings": "Ustawienia"
       }
     },
     "footer": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Planowanie ochrony danych",
         "body": "Pliki widoczne dla klienta i prywatne dokumenty inżynierskie są opisane jako oddzielne obszary przed dodaniem funkcji obsługi dokumentów."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Symbol zastępczy dostępu",
+      "title": "Shell strony logowania",
+      "description": "Ta trasa rezerwuje przyszły punkt wejścia bez dodawania uwierzytelniania, kont lub obsługi sesji.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy logowania",
+        "title": "Uwierzytelnianie nie jest jeszcze aktywne",
+        "body": "Shell strony jest obecny, aby można było sprawdzić przetłumaczoną strukturę produktu przed dodaniem rzeczywistych przepływów dostępu."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Symbol zastępczy obszaru pracy",
+      "title": "Shell dashboardu",
+      "description": "Ta trasa rezerwuje miejsce na przyszły przegląd projektu bez podłączania danych, pamięci masowej lub metryk na żywo.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy dashboardu",
+        "title": "Żadne dane dashboardu nie są podłączone",
+        "body": "Shell może później ramować podsumowania dla gotowości dowodowej i organizacji dokumentacji, gdy implementacja dotrze do tego etapu."
+      }
+    },
+    "machines": {
+      "eyebrow": "Symbol zastępczy zasobów",
+      "title": "Shell strony maszyn",
+      "description": "Ta trasa rezerwuje przyszłą listę maszyn bez dodawania rekordów, przepływów QR lub CRUD zasobów.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy maszyn",
+        "title": "Brak dostępnych rekordów maszyn",
+        "body": "Symbol zastępczy utrzymuje widoczność nawigacji, podczas gdy rekordy projektów maszyn pozostają przyszłą implementacją."
+      }
+    },
+    "documents": {
+      "eyebrow": "Symbol zastępczy dokumentacji",
+      "title": "Shell strony dokumentów",
+      "description": "Ta trasa rezerwuje miejsce na pliki widoczne dla klienta i prywatne dokumenty inżynierskie bez dodawania przesyłania lub pamięci masowej.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy dokumentów",
+        "title": "Obsługa dokumentów nie jest aktywna",
+        "body": "Shell pokazuje, gdzie organizacja dokumentacji może pojawić się później, podczas gdy przepływy plików pozostają poza zakresem."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Symbol zastępczy wsparcia",
+      "title": "Shell strony zgłoszeń",
+      "description": "Ta trasa rezerwuje przyszły obszar komunikacji bez dodawania tworzenia zgłoszeń, przypisywania lub logiki statusów.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy zgłoszeń",
+        "title": "Żaden przepływ zgłoszeń nie jest aktywny",
+        "body": "Symbol zastępczy utrzymuje kompletną mapę produktu bez zapisywania próśb lub tworzenia rekordów operacyjnych."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Symbol zastępczy części",
+      "title": "Shell strony części zamiennych",
+      "description": "Ta trasa rezerwuje przyszły obszar części zamiennych bez dodawania zapasów, zamówień lub zachowania bazy danych.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy części zamiennych",
+        "title": "Żadne dane części zamiennych nie są podłączone",
+        "body": "Shell strony jest tylko przetłumaczoną strukturą do późniejszego planowania produktu."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Symbol zastępczy opinii",
+      "title": "Shell strony opinii",
+      "description": "Ta trasa rezerwuje przyszły obszar opinii bez zbierania wiadomości, plików lub danych klientów.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy opinii",
+        "title": "Zbieranie opinii nie jest aktywne",
+        "body": "Symbol zastępczy wspiera przegląd nawigacji, podczas gdy przepływy opinii pozostają przyszłą implementacją."
+      }
+    },
+    "settings": {
+      "eyebrow": "Symbol zastępczy konfiguracji",
+      "title": "Shell strony ustawień",
+      "description": "Ta trasa rezerwuje przyszły obszar ustawień bez dodawania kont, uprawnień lub kontroli organizacji.",
+      "emptyState": {
+        "ariaLabel": "Stan zastępczy ustawień",
+        "title": "Żadne ustawienia nie są konfigurowalne",
+        "body": "Shell oznacza miejsce, w którym później mogą znaleźć się preferencje produktu, bez zmiany zachowania aplikacji teraz."
       }
     }
   }

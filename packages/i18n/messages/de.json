@@ -21,9 +21,14 @@
       "statusLabel": "Grundlage für Phase 1",
       "navigationLabel": "Hauptnavigation",
       "navItems": {
-        "overview": "Übersicht",
-        "evidence": "Nachweisbereitschaft",
-        "documentation": "Dokumentation"
+        "home": "Startseite",
+        "dashboard": "Dashboard",
+        "machines": "Maschinen",
+        "documents": "Dokumente",
+        "tickets": "Tickets",
+        "spareParts": "Ersatzteile",
+        "feedback": "Feedback",
+        "settings": "Einstellungen"
       }
     },
     "footer": {
@@ -64,6 +69,88 @@
       "dataProtection": {
         "heading": "Planung des Datenschutzes",
         "body": "Kundensichtbare Dateien und private technische Dokumente werden als getrennte Bereiche beschrieben, bevor Funktionen zur Dokumentenverarbeitung hinzugefügt werden."
+      }
+    }
+  },
+  "pages": {
+    "login": {
+      "eyebrow": "Zugangsplatzhalter",
+      "title": "Shell der Anmeldeseite",
+      "description": "Diese Route reserviert den zukünftigen Einstiegspunkt, ohne Authentifizierung, Konten oder Sitzungsverwaltung hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Anmeldung",
+        "title": "Authentifizierung ist noch nicht aktiv",
+        "body": "Die Seitenshell ist vorhanden, damit die übersetzte Produktstruktur geprüft werden kann, bevor echte Zugangsabläufe hinzugefügt werden."
+      }
+    },
+    "dashboard": {
+      "eyebrow": "Arbeitsbereich-Platzhalter",
+      "title": "Shell des Dashboards",
+      "description": "Diese Route reserviert Platz für eine zukünftige Projektübersicht, ohne Daten, Speicher oder Live-Metriken anzubinden.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Dashboard",
+        "title": "Keine Dashboard-Daten verbunden",
+        "body": "Die Shell kann später Zusammenfassungen für Nachweisbereitschaft und Dokumentationsorganisation rahmen, wenn die Implementierung diese Phase erreicht."
+      }
+    },
+    "machines": {
+      "eyebrow": "Asset-Platzhalter",
+      "title": "Shell der Maschinenseite",
+      "description": "Diese Route reserviert die zukünftige Maschinenliste, ohne Datensätze, QR-Abläufe oder Asset-CRUD hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Maschinen",
+        "title": "Keine Maschinendatensätze verfügbar",
+        "body": "Der Platzhalter hält die Navigation sichtbar, während Maschinenprojektunterlagen zukünftige Implementierungsarbeit bleiben."
+      }
+    },
+    "documents": {
+      "eyebrow": "Dokumentationsplatzhalter",
+      "title": "Shell der Dokumentenseite",
+      "description": "Diese Route reserviert Platz für kundensichtbare Dateien und private technische Dokumente, ohne Upload- oder Speicherverhalten hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Dokumente",
+        "title": "Keine Dokumentenverarbeitung aktiv",
+        "body": "Die Shell zeigt, wo Dokumentationsorganisation später leben kann, während Dateiabläufe außerhalb des Umfangs bleiben."
+      }
+    },
+    "tickets": {
+      "eyebrow": "Support-Platzhalter",
+      "title": "Shell der Ticketseite",
+      "description": "Diese Route reserviert einen zukünftigen Kommunikationsbereich, ohne Ticketerstellung, Zuweisung oder Statuslogik hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Tickets",
+        "title": "Kein Ticketablauf aktiv",
+        "body": "Der Platzhalter hält die Produktkarte vollständig, ohne Anfragen zu speichern oder operative Datensätze zu erstellen."
+      }
+    },
+    "spareParts": {
+      "eyebrow": "Teile-Platzhalter",
+      "title": "Shell der Ersatzteilseite",
+      "description": "Diese Route reserviert einen zukünftigen Ersatzteilbereich, ohne Bestand, Bestellung oder Datenbankverhalten hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Ersatzteile",
+        "title": "Keine Ersatzteildaten verbunden",
+        "body": "Die Seitenshell ist nur eine übersetzte Struktur für spätere Produktplanung."
+      }
+    },
+    "feedback": {
+      "eyebrow": "Feedback-Platzhalter",
+      "title": "Shell der Feedbackseite",
+      "description": "Diese Route reserviert einen zukünftigen Feedbackbereich, ohne Nachrichten, Dateien oder Kundendaten zu sammeln.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Feedback",
+        "title": "Feedback-Erfassung ist nicht aktiv",
+        "body": "Der Platzhalter unterstützt die Navigationsprüfung, während Feedback-Abläufe zukünftige Implementierungsarbeit bleiben."
+      }
+    },
+    "settings": {
+      "eyebrow": "Konfigurationsplatzhalter",
+      "title": "Shell der Einstellungsseite",
+      "description": "Diese Route reserviert einen zukünftigen Einstellungsbereich, ohne Konten, Berechtigungen oder Organisationssteuerung hinzuzufügen.",
+      "emptyState": {
+        "ariaLabel": "Platzhalterzustand für Einstellungen",
+        "title": "Keine Einstellungen konfigurierbar",
+        "body": "Die Shell markiert, wo Produktpräferenzen später leben können, ohne jetzt das Anwendungsverhalten zu ändern."
       }
     }
   }
