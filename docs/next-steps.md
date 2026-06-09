@@ -1,132 +1,254 @@
-# BuildTrace Next Steps
+# BuildTrace Phase Log
 
-## Current position
+## 2026-06-08
 
-Phase 0 is complete.
+### Phase
 
-Phase 1 has started, but Phase 1 is not complete.
+Phase 0 - Professional project foundation + security docs.
 
-Current full beta roadmap completion remains 5%.
+### Task completed
+
+Created the professional monorepo foundation and verified web, API, and worker placeholders.
+
+### Files/folders changed
+
+- apps/web
+- apps/api
+- apps/worker
+- packages/db
+- packages/shared
+- packages/i18n
+- packages/ui
+- docs
+- README.md
+- package.json
+- pnpm-workspace.yaml
+- turbo.json
+- tsconfig.base.json
+- eslint.config.mjs
+- .prettierrc.json
+- .env.example
+- .gitignore
+
+### Test result
+
+Passed:
+
+- web typecheck
+- web lint
+- web build
+- locale route generation
+- API typecheck
+- API lint
+- API build
+- API /health runtime test
+- worker typecheck
+- worker lint
+- worker build
+- worker runtime test
+
+### Issues found and resolved
+
+- PowerShell denied write access in `C:\WINDOWS\system32`. Resolved by working in `C:\Users\chand\buildtrace`.
+- pnpm was missing. Resolved by installing pnpm with `npm.cmd`.
+- PowerShell script policy blocked `npm.ps1`. Resolved by using `npm.cmd`.
+- Some files had UTF-8 BOM markers. Resolved by scanning and removing BOM markers.
+- PowerShell treated `[locale]` as a pattern. Resolved by using literal path handling where needed.
+- ESLint initially scanned generated `.next` output. Resolved by updating ESLint ignore rules.
+- Turbo initially warned about missing build outputs for noEmit packages. Resolved by setting Phase 0 build outputs to `[]`.
+- Prettier initially found formatting drift. Resolved with `pnpm.cmd format`.
+- TypeScript generated `apps/web/tsconfig.tsbuildinfo`. Resolved by removing it from Git index and adding `*.tsbuildinfo` to `.gitignore`.
+- Git warned about LF-to-CRLF conversion on Windows. Resolved by adding `.gitattributes` with LF normalization.
+
+### Commit message
+
+`chore: initialize phase 0 project foundation`
+
+---
+
+## 2026-06-08
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added multilingual language switcher foundation.
+
+This did not complete Phase 1. Current full beta roadmap completion remained 5%.
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/page.tsx
+- apps/web/src/components/language-switcher.tsx
+- packages/i18n/src/index.ts
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git diff --cached --check`
+- translation JSON key validation for en, cs, sk, pl, de, fr, es
+- manual runtime test for language switching
+
+### Commit message
+
+`feat(web): add multilingual language switcher`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added translated app shell/header/footer foundation.
+
+This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/layout.tsx
+- apps/web/src/app/[locale]/page.tsx
+- apps/web/src/components/app-shell.tsx
+- packages/i18n/src/index.ts
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git diff --cached --check`
+- shell and landing translation JSON key validation for en, cs, sk, pl, de, fr, es
+- manual runtime test for header rendering
+- manual runtime test for footer rendering
+- manual runtime test for language switcher in header
+- manual runtime test for language switching
+- manual runtime test for privacy/security/data-protection sections
+- VS Code Problems panel clean after stale wrong-path tab was closed
+
+### Manual runtime result
+
+- localized page loaded
+- translated app shell rendered
+- header rendered
+- footer rendered
+- language switcher was visible in header
+- switching language worked
+- overview, evidence-readiness, and documentation anchors existed
+- privacy, security, and data-protection footer anchors matched real section IDs
+
+### Issues found and resolved
+
+- Codex initially proposed footer links pointing to section IDs that did not exist. Resolved by adding translated trust sections with matching IDs: `privacy`, `security`, and `data-protection`.
+- Codex initially proposed an internal route as a raw anchor tag. Resolved by using Next.js `Link` for the locale home link.
+- `AppShell` was accidentally created in a wrong nested folder path under `apps/web/src/components/apps/web/src/components`. Resolved by moving it to `apps/web/src/components/app-shell.tsx` and deleting the wrong nested folder.
+- VS Code showed a stale `./language-switcher` import error from the old wrong nested file tab. Resolved by closing the stale tab; `pnpm.cmd typecheck` and the VS Problems panel confirmed the repo was clean.
+- `apps/web/next-env.d.ts` drifted after `next dev`. Resolved by running `pnpm.cmd build`, which restored the tracked build-safe state.
+
+### Security notes
+
+- No auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No tickets, CRUD, document upload, signed URLs, or backend access logic was added.
+- No private file URLs were exposed.
+- No security claims or compliance guarantees were added.
+- The shell uses safe positioning only: evidence readiness, documentation organization, secure-by-default direction, customer-visible files, and private engineering docs.
+
+### i18n notes
+
+- Header, footer, navigation, landing hero, landing sections, and trust placeholders use translation keys.
+- Supported locales remain: en, cs, sk, pl, de, fr, es.
+- `appMessages` now exposes shell and landing messages.
+- Uploaded document translation is still not included.
+
+### Not included yet
+
+- real authentication
+- login functionality
+- dashboard data
+- machine/customer/document CRUD
+- document upload
+- QR portal
+- tickets
+- spare parts
+- quote flow
+- feedback
+- deployment
+
+### Commit message
+
+`feat(web): add translated app shell foundation`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added translated application page-shell skeletons.
+
+This did not complete Phase 1. Current full beta roadmap completion remains 5%.
 
 Practical Phase 1 progress is approximately 60-65%.
 
-Latest completed Phase 1 implementation chunk:
+### Files/folders changed
 
-- translated application page-shell skeletons
+- apps/web/src/app/[locale]/dashboard/page.tsx
+- apps/web/src/app/[locale]/documents/page.tsx
+- apps/web/src/app/[locale]/feedback/page.tsx
+- apps/web/src/app/[locale]/login/page.tsx
+- apps/web/src/app/[locale]/machines/page.tsx
+- apps/web/src/app/[locale]/settings/page.tsx
+- apps/web/src/app/[locale]/spare-parts/page.tsx
+- apps/web/src/app/[locale]/tickets/page.tsx
+- apps/web/src/components/app-shell.tsx
+- apps/web/src/components/page-shell.tsx
+- packages/i18n/src/index.ts
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
 
-Latest relevant commits:
+### Test result
 
-- `951e43e feat(web): add multilingual language switcher`
-- `3997c99 feat(web): add translated app shell foundation`
-- `91166dd feat(web): add translated page shell skeletons`
-
-## Immediate next documentation step
-
-Finish and commit the documentation update for the completed page-shell skeleton chunk.
-
-Affected docs:
-
-- docs/project-state.md
-- docs/phase-log.md
-- docs/i18n.md
-- docs/next-steps.md
-
-This docs update should record:
-
-- latest feature commit `91166dd`
-- practical Phase 1 progress around 60-65%
-- new translated page-shell skeletons
-- new route-based navigation
-- new `PageShell` component
-- updated i18n `pages` message structure
-- remaining Phase 1 scope
-
-## Immediate next implementation chunk
-
-Continue Phase 1 with a controlled industrial UI polish slice.
-
-Recommended next implementation chunk:
-
-- industrial UI polish for existing shell pages
-
-This should include only:
-
-- stronger dashboard placeholder structure
-- stronger login page visual shell
-- stronger settings placeholder sections
-- active/current navigation indication
-- mobile/layout refinement if needed
-- translated labels and empty states from existing or new translation keys
-
-Do not include:
-
-- real auth
-- Supabase Auth
-- dashboard data
-- database
-- storage
-- QR portal
-- tickets backend
-- CRUD
-- document upload
-- customer data
-- deployment
-
-## Existing Phase 1 shell pages
-
-Already created placeholder routes:
-
-- `/[locale]/login`
-- `/[locale]/dashboard`
-- `/[locale]/machines`
-- `/[locale]/documents`
-- `/[locale]/tickets`
-- `/[locale]/spare-parts`
-- `/[locale]/feedback`
-- `/[locale]/settings`
-
-These are placeholder page shells only.
-
-They do not contain real data flows.
-
-## Required workflow for next implementation chunk
-
-Use manual-review workflow unless explicitly approved otherwise:
-
-1. Generate proposed code only.
-2. Review the code before applying.
-3. Apply approved code manually in VS Code.
-4. Save files with Prettier formatting in VS Code when available.
-5. Run gates in PowerShell.
-6. Inspect changed files.
-7. Commit only after clean verification.
-
-Do not let an agent directly edit the codebase unless that is explicitly approved for that step.
-
-## VS Code and PowerShell split
-
-Use VS Code for:
-
-- file editing
-- file creation
-- file moves
-- saving files
-- Prettier format-on-save where available
-
-Use PowerShell for:
-
-- typecheck
-- lint
-- build
-- format verification
-- Git status/diff/staging/commit/push
-- targeted inspection commands when needed
-
-Avoid using PowerShell to write or replace file contents unless there is a clear reason.
-
-## Required quality gates before implementation commit
-
-Run:
+Passed:
 
 - `pnpm.cmd format:check`
 - `pnpm.cmd typecheck`
@@ -135,141 +257,231 @@ Run:
 - `git diff --check`
 - `git diff --cached --check`
 
-Also run:
+### Build result
 
-- `git status --short`
-- `git diff --stat`
-- `git diff --name-status`
-- `git diff --cached --stat`
-- `git diff --cached --name-status`
+Production build confirmed the localized placeholder routes:
 
-Confirm no generated/cache files are staged.
+- `/[locale]/dashboard`
+- `/[locale]/documents`
+- `/[locale]/feedback`
+- `/[locale]/login`
+- `/[locale]/machines`
+- `/[locale]/settings`
+- `/[locale]/spare-parts`
+- `/[locale]/tickets`
 
-## Required quality gates before documentation commit
+### Manual/runtime result
 
-For documentation-only commits, run:
+- VS Code Problems panel was fixed before final verification.
+- `apps/web/src/components/page-shell.tsx` existed in the correct folder.
+- TypeScript accepted all new placeholder route pages.
+- Staged file review confirmed only the intended web/i18n implementation files were included.
 
-- `pnpm.cmd format:check`
-- `git diff --check`
-- `git diff --cached --check`
+### Issues found and resolved
 
-Also run:
+- New page-shell files temporarily showed VS Code errors while the implementation was partially applied. Resolved by completing `page-shell.tsx`, all route pages, `packages/i18n/src/index.ts`, and all 7 JSON message files.
+- VS Code showed stale or misleading errors before the full implementation was saved. Resolved before final verification.
+- Prettier found formatting drift after the page-shell skeleton files were added. Resolved with `pnpm.cmd exec prettier --write .`, then re-verified with `format:check`, `typecheck`, `lint`, `build`, and Git whitespace checks.
+- `git diff --stat` initially showed only tracked files and excluded new untracked route pages. Resolved by checking `git ls-files --others --exclude-standard` before staging.
+- The staged batch was reviewed with `git diff --cached --stat`, `git diff --cached --name-status`, and `git diff --cached --check` before commit.
 
-- `git status --short`
-- `git diff --stat`
-- `git diff --name-status`
-- `git diff --cached --stat`
-- `git diff --cached --name-status`
+### Security notes
 
-Confirm only intended docs are staged.
+- No auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No tickets backend was added.
+- No CRUD was added.
+- No dashboard data was added.
+- No private file URLs were exposed.
+- No regulatory, legal, safety, CE, Machinery Regulation, or CRA compliance guarantee was added.
+- Placeholder copy stays within evidence readiness, documentation organization, secure-by-default direction, customer-visible files, and private engineering docs.
 
-## Known quality note: next-env.d.ts
+### i18n notes
 
-`apps/web/next-env.d.ts` is tracked by Git.
+- All new route navigation labels use translation keys.
+- All placeholder page titles, descriptions, and empty states use translation keys.
+- Supported locales remain: en, cs, sk, pl, de, fr, es.
+- `appMessages` now exposes `pages` messages.
+- Uploaded document translation is still not included.
 
-Observed behavior:
-
-- `next dev` may change its route-type reference to `.next/dev/types/routes.d.ts`
-- `next build` restores it to `.next/types/routes.d.ts`
-
-Current policy:
-
-- do not commit dev-server drift in `apps/web/next-env.d.ts`
-- before committing implementation work, run `pnpm.cmd build`
-- verify `git status --short` does not show `apps/web/next-env.d.ts`
-
-## Documentation update rule
-
-After every stable meaningful implementation chunk, update only the affected docs.
-
-For documentation updates:
-
-- batch related docs together
-- edit files in VS Code
-- format in VS Code when Prettier is available
-- use PowerShell only for verification and Git operations
-- commit docs together, not one tiny docs commit per file
-
-For verification, run:
-
-- `pnpm.cmd format:check`
-- `git diff --check`
-- `git status --short`
-
-## Prerequisites already completed
-
-- web app builds
-- API builds
-- worker builds
-- web locale routes exist
-- root route redirects to `/en`
-- language switcher foundation exists
-- translated app shell exists
-- translated header exists
-- translated footer exists
-- route-based app shell navigation exists
-- translated landing starter exists
-- privacy/security/data-protection placeholder sections exist
-- reusable `PageShell` component exists
-- translated login page shell exists
-- translated dashboard page shell exists
-- translated machines page shell exists
-- translated documents page shell exists
-- translated tickets page shell exists
-- translated spare-parts page shell exists
-- translated feedback page shell exists
-- translated settings page shell exists
-- language switcher uses translation labels
-- language switcher is placed in the header
-- language route switching works
-- all current shell/page text comes from translation keys
-- API `/health` responds
-- worker placeholder runs
-- security docs exist
-- data-protection docs exist
-- data-classification docs exist
-- i18n docs exist
-- roadmap/project-state/phase-log/decisions/next-steps docs exist
-
-## Risks
-
-- PowerShell treats `[locale]` as a pattern unless `-LiteralPath` is used.
-- Manual Markdown replacement may fail Prettier formatting until Prettier formats the file.
-- `next dev` may temporarily modify `apps/web/next-env.d.ts`.
-- VS Code can show stale problems from deleted, moved, or half-applied file states.
-- Agent-driven edits can bypass review if not restricted.
-- Phase 1 scope can expand too easily; keep each implementation chunk meaningful but controlled.
-- Placeholder pages can create a false sense of product completion; real auth, data, storage, and business workflows are still not started.
-
-## Not next
-
-Do not start these yet:
+### Not included yet
 
 - real authentication
 - Supabase Auth
-- database
-- Prisma schema
+- PostgreSQL
+- Prisma
 - tenant isolation
 - RBAC
-- Supabase Storage
 - document upload
+- private storage
+- signed URLs
 - QR portal
 - ticket backend
-- machine CRUD
-- customer CRUD
-- document CRUD
+- machine/customer/document CRUD
+- dashboard data
+- software timeline
 - spare parts logic
 - quote flow
-- feedback logic
+- feedback collection logic
 - deployment
 
-## Next recommended baby step after docs commit
+### Commit message
 
-Start Phase 1 industrial polish chunk:
+`feat(web): add translated page shell skeletons`
 
-- active/current navigation indication
-- stronger dashboard placeholder layout
-- stronger login shell layout
-- settings placeholder sections for user role, preferred language, future MFA, data export, and security logs
+---
 
-This should still remain frontend-only and translated.
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added industrial polish for translated Phase 1 shell pages.
+
+This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+
+Practical Phase 1 progress is approximately 80-85%.
+
+### Files/folders changed
+
+- apps/web/package.json
+- apps/web/postcss.config.mjs
+- apps/web/src/app/globals.css
+- apps/web/src/app/[locale]/layout.tsx
+- apps/web/src/app/[locale]/dashboard/page.tsx
+- apps/web/src/app/[locale]/login/page.tsx
+- apps/web/src/app/[locale]/settings/page.tsx
+- apps/web/src/components/app-nav.tsx
+- apps/web/src/components/app-shell.tsx
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+- pnpm-lock.yaml
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `git diff --check`
+- final `git status --short` after commit was clean
+
+### Build result
+
+Production build passed after Tailwind/PostCSS CSS pipeline was added.
+
+Production build continued to confirm the localized placeholder routes:
+
+- `/[locale]/dashboard`
+- `/[locale]/documents`
+- `/[locale]/feedback`
+- `/[locale]/login`
+- `/[locale]/machines`
+- `/[locale]/settings`
+- `/[locale]/spare-parts`
+- `/[locale]/tickets`
+
+### Manual/runtime result
+
+Manual browser checks completed:
+
+- `/en`
+- `/en/dashboard`
+- `/en/login`
+- `/en/settings`
+- `/cs/dashboard`
+- `/en#privacy`
+- `/en#security`
+- `/en#data-protection`
+
+Manual browser result:
+
+- header rendered on localized pages
+- language switcher rendered
+- active navigation state worked
+- dashboard placeholder cards rendered
+- login remained placeholder-only
+- settings placeholder sections rendered
+- Czech dashboard route loaded
+- footer anchors navigated to the expected landing sections
+- Next.js dev tools overlay was ignored as development-only UI
+
+CSS verification result:
+
+- Next dev served a real CSS asset under `/_next/static/chunks/`
+- the CSS asset was non-empty
+- the CSS asset contained Tailwind utility output such as `bg-neutral-950` and `text-stone-50`
+- browser pages rendered as styled shell pages, not plain HTML
+
+### Issues found and resolved
+
+- New `app-nav.tsx` was initially untracked and invisible to normal `git diff` review. Resolved by checking untracked files before staging and ensuring the new file was included in the final commit.
+- Browser testing initially showed a hydration mismatch related to browser translation behavior. Resolved as a test-environment issue by testing with translation disabled.
+- Browser testing initially showed plain HTML-looking output. Root cause was missing/incomplete Tailwind/PostCSS CSS pipeline even though the UI used Tailwind utility classes. Resolved by adding `apps/web/src/app/globals.css`, `apps/web/postcss.config.mjs`, required Tailwind/PostCSS development dependencies, and importing `globals.css` from the localized layout.
+- `apps/web/src/app/globals.css` initially failed Prettier format check. Resolved before final verification.
+- A generated `apps/web/next-env.d.ts` drift occurred during dev server testing. Resolved by restoring the generated file before commit.
+
+### Security notes
+
+- No auth was added.
+- No Supabase Auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No tickets backend was added.
+- No CRUD was added.
+- No dashboard data was added.
+- No real settings functionality was added.
+- No account updates were added.
+- No password handling was added.
+- No form submission was added.
+- No private file URLs were exposed.
+- No regulatory, legal, safety, CE, Machinery Regulation, or CRA compliance guarantee was added.
+- Placeholder copy stays within evidence readiness, documentation organization, secure-by-default direction, customer-visible files, private engineering docs, and secure-by-default direction.
+
+### i18n notes
+
+- Active navigation labels use translation keys.
+- Dashboard placeholder cards use translation keys.
+- Login secure-entry placeholder content uses translation keys.
+- Settings placeholder sections use translation keys.
+- Supported locales remain: en, cs, sk, pl, de, fr, es.
+- All 7 locale message files were updated.
+- Uploaded document translation is still not included.
+
+### Not included yet
+
+- real authentication
+- Supabase Auth
+- PostgreSQL
+- Prisma
+- tenant isolation
+- RBAC
+- document upload
+- private storage
+- signed URLs
+- QR portal
+- ticket backend
+- machine/customer/document CRUD
+- dashboard data
+- software timeline
+- spare parts logic
+- quote flow
+- feedback collection logic
+- deployment
+
+### Commit message
+
+`feat(web): polish translated phase 1 shell`
