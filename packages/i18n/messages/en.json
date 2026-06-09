@@ -7,12 +7,64 @@
     "label": "Language",
     "localeLabels": {
       "en": "English",
-      "cs": "\u010Ce\u0161tina",
-      "sk": "Sloven\u010Dina",
+      "cs": "Čeština",
+      "sk": "Slovenčina",
       "pl": "Polski",
       "de": "Deutsch",
-      "fr": "Fran\u00E7ais",
-      "es": "Espa\u00F1ol"
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "shell": {
+    "header": {
+      "ariaLabel": "BuildTrace header",
+      "statusLabel": "Phase 1 foundation",
+      "navigationLabel": "Primary navigation",
+      "navItems": {
+        "overview": "Overview",
+        "evidence": "Evidence readiness",
+        "documentation": "Documentation"
+      }
+    },
+    "footer": {
+      "ariaLabel": "Footer links",
+      "positioning": "Secure-by-default project spaces for evidence readiness, documentation organization, customer-visible files, and private engineering docs.",
+      "links": {
+        "privacy": "Privacy",
+        "security": "Security",
+        "dataProtection": "Data protection"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Phase 1 foundation",
+      "title": "A clear home for machine project records",
+      "description": "BuildTrace starts with translated structure, secure-by-default positioning, and careful separation between customer-visible files and private engineering docs."
+    },
+    "sections": {
+      "evidence": {
+        "heading": "Evidence-readiness structure",
+        "body": "Project records can be organized for review without promising legal, safety, or regulatory outcomes."
+      },
+      "documentation": {
+        "heading": "Documentation boundaries",
+        "body": "Customer-visible files and private engineering docs stay clearly separated so future project work can remain understandable."
+      }
+    },
+    "trust": {
+      "privacy": {
+        "heading": "Privacy-first placeholders",
+        "body": "The Phase 1 shell reserves space for privacy information without adding accounts, storage, or customer data workflows."
+      },
+      "security": {
+        "heading": "Secure-by-default direction",
+        "body": "The interface sets expectations for secure project organization while deeper security controls remain future implementation work."
+      },
+      "dataProtection": {
+        "heading": "Data protection planning",
+        "body": "Customer-visible files and private engineering docs are described as separate areas before any document handling features are added."
+      }
     }
   }
 }

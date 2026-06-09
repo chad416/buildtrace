@@ -1,4 +1,5 @@
-import { isSupportedLocale } from '@buildtrace/i18n';
+import { AppShell } from '@/components/app-shell';
+import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -16,9 +17,15 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     notFound();
   }
 
+  const messages = appMessages[locale];
+
   return (
     <html lang={locale}>
-      <body>{children}</body>
+      <body className="min-h-screen bg-neutral-950 text-stone-50 antialiased">
+        <AppShell currentLocale={locale} messages={messages}>
+          {children}
+        </AppShell>
+      </body>
     </html>
   );
 }

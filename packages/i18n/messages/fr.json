@@ -7,12 +7,64 @@
     "label": "Langue",
     "localeLabels": {
       "en": "English",
-      "cs": "\u010Ce\u0161tina",
-      "sk": "Sloven\u010Dina",
+      "cs": "Čeština",
+      "sk": "Slovenčina",
       "pl": "Polski",
       "de": "Deutsch",
-      "fr": "Fran\u00E7ais",
-      "es": "Espa\u00F1ol"
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "shell": {
+    "header": {
+      "ariaLabel": "En-tête BuildTrace",
+      "statusLabel": "Base de la phase 1",
+      "navigationLabel": "Navigation principale",
+      "navItems": {
+        "overview": "Vue d’ensemble",
+        "evidence": "Préparation des preuves",
+        "documentation": "Documentation"
+      }
+    },
+    "footer": {
+      "ariaLabel": "Liens du pied de page",
+      "positioning": "Espaces projet secure-by-default pour la préparation des preuves, l’organisation documentaire, les fichiers visibles par les clients et les documents techniques privés.",
+      "links": {
+        "privacy": "Confidentialité",
+        "security": "Sécurité",
+        "dataProtection": "Protection des données"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Base de la phase 1",
+      "title": "Un espace clair pour les dossiers de projets machine",
+      "description": "BuildTrace commence avec une structure traduite, un positionnement secure-by-default et une séparation claire entre les fichiers visibles par les clients et les documents techniques privés."
+    },
+    "sections": {
+      "evidence": {
+        "heading": "Structure de préparation des preuves",
+        "body": "Les dossiers projet peuvent être organisés pour la revue sans promettre de résultats juridiques, de sécurité ou réglementaires."
+      },
+      "documentation": {
+        "heading": "Limites documentaires",
+        "body": "Les fichiers visibles par les clients et les documents techniques privés restent clairement séparés afin que le futur travail projet reste compréhensible."
+      }
+    },
+    "trust": {
+      "privacy": {
+        "heading": "Emplacement pour la confidentialité",
+        "body": "Le shell de la phase 1 réserve un espace pour les informations de confidentialité sans ajouter de comptes, de stockage ou de flux de données client."
+      },
+      "security": {
+        "heading": "Orientation secure-by-default",
+        "body": "L’interface établit des attentes pour une organisation sécurisée des projets, tandis que les contrôles de sécurité plus avancés restent un travail futur."
+      },
+      "dataProtection": {
+        "heading": "Planification de la protection des données",
+        "body": "Les fichiers visibles par les clients et les documents techniques privés sont décrits comme des espaces séparés avant l’ajout de fonctions de gestion documentaire."
+      }
     }
   }
 }

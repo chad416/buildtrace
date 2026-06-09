@@ -7,12 +7,64 @@
     "label": "Sprache",
     "localeLabels": {
       "en": "English",
-      "cs": "\u010Ce\u0161tina",
-      "sk": "Sloven\u010Dina",
+      "cs": "Čeština",
+      "sk": "Slovenčina",
       "pl": "Polski",
       "de": "Deutsch",
-      "fr": "Fran\u00E7ais",
-      "es": "Espa\u00F1ol"
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "shell": {
+    "header": {
+      "ariaLabel": "BuildTrace-Kopfbereich",
+      "statusLabel": "Grundlage für Phase 1",
+      "navigationLabel": "Hauptnavigation",
+      "navItems": {
+        "overview": "Übersicht",
+        "evidence": "Nachweisbereitschaft",
+        "documentation": "Dokumentation"
+      }
+    },
+    "footer": {
+      "ariaLabel": "Links im Fußbereich",
+      "positioning": "Secure-by-default-Projekträume für Nachweisbereitschaft, Dokumentationsorganisation, kundensichtbare Dateien und private technische Dokumente.",
+      "links": {
+        "privacy": "Privatsphäre",
+        "security": "Sicherheit",
+        "dataProtection": "Datenschutz"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Grundlage für Phase 1",
+      "title": "Ein klarer Ort für Maschinenprojektunterlagen",
+      "description": "BuildTrace beginnt mit übersetzter Struktur, Secure-by-default-Positionierung und klarer Trennung zwischen kundensichtbaren Dateien und privaten technischen Dokumenten."
+    },
+    "sections": {
+      "evidence": {
+        "heading": "Struktur für Nachweisbereitschaft",
+        "body": "Projektunterlagen können für Prüfungen organisiert werden, ohne rechtliche, sicherheitsbezogene oder regulatorische Ergebnisse zu versprechen."
+      },
+      "documentation": {
+        "heading": "Dokumentationsgrenzen",
+        "body": "Kundensichtbare Dateien und private technische Dokumente bleiben klar getrennt, damit zukünftige Projektarbeit verständlich bleibt."
+      }
+    },
+    "trust": {
+      "privacy": {
+        "heading": "Platzhalter für Datenschutzinformationen",
+        "body": "Die Phase-1-Shell reserviert Raum für Datenschutzinformationen, ohne Konten, Speicher oder Workflows mit Kundendaten hinzuzufügen."
+      },
+      "security": {
+        "heading": "Secure-by-default-Richtung",
+        "body": "Die Oberfläche setzt Erwartungen für sichere Projektorganisation, während tiefere Sicherheitsfunktionen zukünftige Implementierungsarbeit bleiben."
+      },
+      "dataProtection": {
+        "heading": "Planung des Datenschutzes",
+        "body": "Kundensichtbare Dateien und private technische Dokumente werden als getrennte Bereiche beschrieben, bevor Funktionen zur Dokumentenverarbeitung hinzugefügt werden."
+      }
     }
   }
 }

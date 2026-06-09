@@ -7,12 +7,64 @@
     "label": "Jazyk",
     "localeLabels": {
       "en": "English",
-      "cs": "\u010Ce\u0161tina",
-      "sk": "Sloven\u010Dina",
+      "cs": "Čeština",
+      "sk": "Slovenčina",
       "pl": "Polski",
       "de": "Deutsch",
-      "fr": "Fran\u00E7ais",
-      "es": "Espa\u00F1ol"
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "shell": {
+    "header": {
+      "ariaLabel": "Hlavička BuildTrace",
+      "statusLabel": "Základ fázy 1",
+      "navigationLabel": "Hlavná navigácia",
+      "navItems": {
+        "overview": "Prehľad",
+        "evidence": "Pripravenosť podkladov",
+        "documentation": "Dokumentácia"
+      }
+    },
+    "footer": {
+      "ariaLabel": "Odkazy v päte",
+      "positioning": "Projektové priestory navrhnuté bezpečne od základu pre pripravenosť podkladov, organizáciu dokumentácie, zákaznícky viditeľné súbory a súkromné technické dokumenty.",
+      "links": {
+        "privacy": "Súkromie",
+        "security": "Zabezpečenie",
+        "dataProtection": "Ochrana údajov"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Základ fázy 1",
+      "title": "Prehľadné miesto pre záznamy strojových projektov",
+      "description": "BuildTrace začína preloženou štruktúrou, bezpečne navrhnutým základom a jasným oddelením zákaznícky viditeľných súborov od súkromných technických dokumentov."
+    },
+    "sections": {
+      "evidence": {
+        "heading": "Štruktúra pre pripravenosť podkladov",
+        "body": "Projektové záznamy možno organizovať na kontrolu bez sľubovania právnych, bezpečnostných alebo regulačných výsledkov."
+      },
+      "documentation": {
+        "heading": "Hranice dokumentácie",
+        "body": "Zákaznícky viditeľné súbory a súkromné technické dokumenty zostávajú jasne oddelené, aby budúca projektová práca zostala zrozumiteľná."
+      }
+    },
+    "trust": {
+      "privacy": {
+        "heading": "Miesto pre informácie o súkromí",
+        "body": "Shell fázy 1 vyhradzuje priestor pre informácie o súkromí bez pridania účtov, úložiska alebo pracovných postupov so zákazníckymi údajmi."
+      },
+      "security": {
+        "heading": "Smer bezpečne od základu",
+        "body": "Rozhranie nastavuje očakávania pre bezpečnú organizáciu projektov, zatiaľ čo hlbšie bezpečnostné prvky zostávajú budúcou implementáciou."
+      },
+      "dataProtection": {
+        "heading": "Plánovanie ochrany údajov",
+        "body": "Zákaznícky viditeľné súbory a súkromné technické dokumenty sú opísané ako oddelené oblasti ešte pred pridaním funkcií na prácu s dokumentmi."
+      }
     }
   }
 }

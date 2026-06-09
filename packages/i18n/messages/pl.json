@@ -4,15 +4,67 @@
     "phase": "Profesjonalna podstawa projektu"
   },
   "languageSwitcher": {
-    "label": "J\u0119zyk",
+    "label": "Język",
     "localeLabels": {
       "en": "English",
-      "cs": "\u010Ce\u0161tina",
-      "sk": "Sloven\u010Dina",
+      "cs": "Čeština",
+      "sk": "Slovenčina",
       "pl": "Polski",
       "de": "Deutsch",
-      "fr": "Fran\u00E7ais",
-      "es": "Espa\u00F1ol"
+      "fr": "Français",
+      "es": "Español"
+    }
+  },
+  "shell": {
+    "header": {
+      "ariaLabel": "Nagłówek BuildTrace",
+      "statusLabel": "Podstawa fazy 1",
+      "navigationLabel": "Główna nawigacja",
+      "navItems": {
+        "overview": "Przegląd",
+        "evidence": "Gotowość dowodowa",
+        "documentation": "Dokumentacja"
+      }
+    },
+    "footer": {
+      "ariaLabel": "Linki w stopce",
+      "positioning": "Przestrzenie projektowe secure-by-default dla gotowości dowodowej, organizacji dokumentacji, plików widocznych dla klienta i prywatnych dokumentów inżynierskich.",
+      "links": {
+        "privacy": "Prywatność",
+        "security": "Bezpieczeństwo",
+        "dataProtection": "Ochrona danych"
+      }
+    }
+  },
+  "landing": {
+    "hero": {
+      "eyebrow": "Podstawa fazy 1",
+      "title": "Przejrzyste miejsce na zapisy projektów maszyn",
+      "description": "BuildTrace zaczyna od przetłumaczonej struktury, podejścia secure-by-default i wyraźnego oddzielenia plików widocznych dla klienta od prywatnych dokumentów inżynierskich."
+    },
+    "sections": {
+      "evidence": {
+        "heading": "Struktura gotowości dowodowej",
+        "body": "Zapisy projektu można organizować do przeglądu bez obiecywania wyników prawnych, bezpieczeństwa lub regulacyjnych."
+      },
+      "documentation": {
+        "heading": "Granice dokumentacji",
+        "body": "Pliki widoczne dla klienta i prywatne dokumenty inżynierskie pozostają wyraźnie oddzielone, aby przyszła praca projektowa była zrozumiała."
+      }
+    },
+    "trust": {
+      "privacy": {
+        "heading": "Miejsce na informacje o prywatności",
+        "body": "Shell fazy 1 rezerwuje miejsce na informacje o prywatności bez dodawania kont, pamięci masowej lub przepływów pracy z danymi klientów."
+      },
+      "security": {
+        "heading": "Kierunek secure-by-default",
+        "body": "Interfejs ustawia oczekiwania dotyczące bezpiecznej organizacji projektów, a głębsze mechanizmy bezpieczeństwa pozostają przyszłą implementacją."
+      },
+      "dataProtection": {
+        "heading": "Planowanie ochrony danych",
+        "body": "Pliki widoczne dla klienta i prywatne dokumenty inżynierskie są opisane jako oddzielne obszary przed dodaniem funkcji obsługi dokumentów."
+      }
     }
   }
 }
