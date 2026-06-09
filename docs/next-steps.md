@@ -8,47 +8,55 @@ Phase 1 has started, but Phase 1 is not complete.
 
 Current full beta roadmap completion remains 5%.
 
-Latest completed Phase 1 baby step:
+Latest completed Phase 1 implementation chunk:
 
-- multilingual language switcher foundation
+- translated app shell/header/footer foundation
 
 Latest relevant commits:
 
 - `951e43e feat(web): add multilingual language switcher`
-- `8071f60 docs: update project state after language switcher step`
-- `56798b0 docs: format project state`
-- `b3f55d4 docs: update phase log for language switcher step`
-- `6a38f8d docs: update i18n notes for language switcher step`
+- `3997c99 feat(web): add translated app shell foundation`
 
-## Immediate next baby step
+## Immediate next implementation chunk
 
-Continue Phase 1 with the next small UI foundation step.
+Continue Phase 1 with the next meaningful UI shell slice.
 
-Recommended next implementation step:
+Recommended next implementation chunk:
 
-- create a translated app shell/header foundation
+- translated application page-shell skeletons
 
 This should include only:
 
-- basic header structure
-- translated product name area
-- placeholder navigation labels from translation keys
-- language switcher placement in the header
+- route/page placeholders for key beta areas
+- translated page titles and descriptions
+- empty-state placeholders from translation keys
+- shell navigation updated to point to the new placeholder routes if needed
 - no real auth
 - no dashboard data
 - no database
 - no storage
 - no QR portal
-- no tickets
+- no tickets backend
 - no CRUD
 
-## Required workflow for next implementation step
+Possible placeholder pages:
+
+- login
+- dashboard
+- machines
+- documents
+- tickets
+- spare parts
+- feedback
+- settings
+
+## Required workflow for next implementation chunk
 
 Use manual-review workflow unless explicitly approved otherwise:
 
 1. Generate proposed code only.
 2. Review the code before applying.
-3. Paste approved code manually in VS Code.
+3. Apply approved code manually in VS Code.
 4. Run gates in PowerShell.
 5. Inspect changed files.
 6. Commit only after clean verification.
@@ -89,22 +97,21 @@ Current policy:
 
 ## Documentation update rule
 
-After every stable baby step, update only the affected docs.
+After every stable meaningful implementation chunk, update only the affected docs.
 
-Likely docs for the next app-shell step:
+For documentation updates:
 
-- `docs/project-state.md`
-- `docs/phase-log.md`
-- `docs/i18n.md`
-- `docs/next-steps.md`
+- batch related docs together
+- edit files in VS Code
+- format in VS Code when Prettier is available
+- use PowerShell only for verification and Git operations
+- commit docs together, not one tiny docs commit per file
 
-Run Prettier immediately after manual doc edits:
-
-- `pnpm.cmd exec prettier --write <changed-doc-file>`
-
-Then run:
+For verification, run:
 
 - `pnpm.cmd format:check`
+- `git diff --check`
+- `git status --short`
 
 ## Prerequisites already completed
 
@@ -114,7 +121,13 @@ Then run:
 - web locale routes exist
 - root route redirects to `/en`
 - language switcher foundation exists
+- translated app shell exists
+- translated header exists
+- translated footer exists
+- translated landing starter exists
+- privacy/security/data-protection placeholder sections exist
 - language switcher uses translation labels
+- language switcher is placed in the header
 - language route switching works
 - API `/health` responds
 - worker placeholder runs
@@ -127,16 +140,17 @@ Then run:
 ## Risks
 
 - PowerShell treats `[locale]` as a pattern unless `-LiteralPath` is used.
-- Manual Markdown replacement may fail Prettier formatting until `prettier --write` is run.
+- Manual Markdown replacement may fail Prettier formatting until Prettier formats the file.
 - `next dev` may temporarily modify `apps/web/next-env.d.ts`.
+- VS Code can show stale problems from deleted or moved file tabs.
 - Agent-driven edits can bypass review if not restricted.
-- Phase 1 scope can expand too easily; keep each step small.
+- Phase 1 scope can expand too easily; keep each implementation chunk meaningful but controlled.
 
 ## Not next
 
 Do not start these yet:
 
-- authentication
+- real authentication
 - database
 - Supabase
 - storage
@@ -146,5 +160,5 @@ Do not start these yet:
 - document upload
 - spare parts
 - quote flow
-- feedback
+- feedback logic
 - deployment

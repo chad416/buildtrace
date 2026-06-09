@@ -74,9 +74,9 @@ Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
 ### Task completed
 
-Added the first Phase 1 baby step: multilingual language switcher foundation.
+Added multilingual language switcher foundation.
 
-This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+This did not complete Phase 1. Current full beta roadmap completion remained 5%.
 
 ### Files/folders changed
 
@@ -104,22 +104,74 @@ Passed:
 - translation JSON key validation for en, cs, sk, pl, de, fr, es
 - manual runtime test for language switching
 
-Manual runtime result:
+### Commit message
+
+`feat(web): add multilingual language switcher`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Added translated app shell/header/footer foundation.
+
+This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/layout.tsx
+- apps/web/src/app/[locale]/page.tsx
+- apps/web/src/components/app-shell.tsx
+- packages/i18n/src/index.ts
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git diff --cached --check`
+- shell and landing translation JSON key validation for en, cs, sk, pl, de, fr, es
+- manual runtime test for header rendering
+- manual runtime test for footer rendering
+- manual runtime test for language switcher in header
+- manual runtime test for language switching
+- manual runtime test for privacy/security/data-protection sections
+- VS Code Problems panel clean after stale wrong-path tab was closed
+
+### Manual runtime result
 
 - localized page loaded
-- language switcher was visible
-- switching from Spanish to English worked
-- supported locale routes loaded without crash
+- translated app shell rendered
+- header rendered
+- footer rendered
+- language switcher was visible in header
+- switching language worked
+- overview, evidence-readiness, and documentation anchors existed
+- privacy, security, and data-protection footer anchors matched real section IDs
 
 ### Issues found and resolved
 
-- Codex initially ran in the wrong folder under `Documents\Codex`. Resolved by running Codex from `C:\Users\chand\buildtrace`.
-- PowerShell script policy blocked `codex.ps1`. Resolved by using `codex.cmd`.
-- Codex CLI directly edited files, which created workflow confusion. Decision: future edits should use manual review workflow unless explicitly approved.
-- `LanguageSwitcher` initially used inline layout styles. Resolved by replacing inline styles with Tailwind utility classes.
-- `phaseZeroMessages` became misleading after Phase 1 language switcher messages were added. Resolved by renaming it to `appMessages`.
-- `apps/web/next-env.d.ts` changed after `next dev`. Root cause confirmed: `next dev` points it to `.next/dev/types/routes.d.ts`; `next build` restores it to `.next/types/routes.d.ts`. Current policy: do not commit dev-server drift; run `pnpm.cmd build` before committing and verify `apps/web/next-env.d.ts` is clean.
-- `docs/project-state.md` was initially committed after `format:check` failed. Resolved with follow-up formatting commit `56798b0 docs: format project state`.
+- Codex initially proposed footer links pointing to section IDs that did not exist. Resolved by adding translated trust sections with matching IDs: `privacy`, `security`, and `data-protection`.
+- Codex initially proposed an internal route as a raw anchor tag. Resolved by using Next.js `Link` for the locale home link.
+- `AppShell` was accidentally created in a wrong nested folder path under `apps/web/src/components/apps/web/src/components`. Resolved by moving it to `apps/web/src/components/app-shell.tsx` and deleting the wrong nested folder.
+- VS Code showed a stale `./language-switcher` import error from the old wrong nested file tab. Resolved by closing the stale tab; `pnpm.cmd typecheck` and the VS Problems panel confirmed the repo was clean.
+- `apps/web/next-env.d.ts` drifted after `next dev`. Resolved by running `pnpm.cmd build`, which restored the tracked build-safe state.
 
 ### Security notes
 
@@ -130,40 +182,29 @@ Manual runtime result:
 - No tickets, CRUD, document upload, signed URLs, or backend access logic was added.
 - No private file URLs were exposed.
 - No security claims or compliance guarantees were added.
+- The shell uses safe positioning only: evidence readiness, documentation organization, secure-by-default direction, customer-visible files, and private engineering docs.
 
 ### i18n notes
 
-- Language switcher labels are stored in translation JSON files.
+- Header, footer, navigation, landing hero, landing sections, and trust placeholders use translation keys.
 - Supported locales remain: en, cs, sk, pl, de, fr, es.
-- No hardcoded visible language labels are inside `LanguageSwitcher`.
+- `appMessages` now exposes shell and landing messages.
 - Uploaded document translation is still not included.
 
 ### Not included yet
 
-- industrial landing page UI
-- app shell
-- header/navigation
-- footer
-- Security & Data Protection landing section
-- privacy/security footer links
-- login page shell
-- dashboard shell
-- machines page shell
-- machine detail shell
-- documents page shell
-- tickets page shell
-- spare parts page shell
-- feedback page shell
-- settings page shell
+- real authentication
+- login functionality
+- dashboard data
+- machine/customer/document CRUD
+- document upload
+- QR portal
+- tickets
+- spare parts
+- quote flow
+- feedback
+- deployment
 
-### Commit messages
+### Commit message
 
-Feature commit:
-
-`feat(web): add multilingual language switcher`
-
-Docs commits:
-
-`docs: update project state after language switcher step`
-
-`docs: format project state`
+`feat(web): add translated app shell foundation`

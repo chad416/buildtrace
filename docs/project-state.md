@@ -2,7 +2,7 @@
 
 ## Current phase
 
-Phase 1 — Industrial UI shell + multilingual UI skeleton.
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
 Phase 1 has started, but it is not complete.
 
@@ -16,17 +16,17 @@ Current full beta roadmap completion: 5%.
 
 Phase 1 target after full completion: 12%.
 
-Current Phase 1 status: started with first committed baby step only.
+Current Phase 1 status: in progress.
 
-## Latest completed baby step
+## Latest completed implementation chunk
 
-Phase 1 baby step completed:
+Phase 1 implementation chunk completed:
 
-- multilingual language switcher foundation
+- translated app shell/header/footer foundation
 
-Latest commit:
+Latest feature commit:
 
-- `951e43e feat(web): add multilingual language switcher`
+- `3997c99 feat(web): add translated app shell foundation`
 
 Remote status:
 
@@ -55,7 +55,7 @@ Remote status:
 - packages/ui created
 - multilingual base created for en, cs, sk, pl, de, fr, es
 - web locale routes created
-- root web route redirects to /en
+- root web route redirects to `/en`
 - API health endpoint created
 - worker placeholder created
 - security documentation created
@@ -72,19 +72,30 @@ Remote status:
 
 - Added `LanguageSwitcher` component
 - Added language links for:
-  - English — en
-  - Czech — cs
-  - Slovak — sk
-  - Polish — pl
-  - German — de
-  - French — fr
-  - Spanish — es
+  - English - en
+  - Czech - cs
+  - Slovak - sk
+  - Polish - pl
+  - German - de
+  - French - fr
+  - Spanish - es
 
-- Mounted language switcher on the localized landing route
+- Mounted language switcher into the translated app shell header
+- Added `AppShell` component
+- Added translated header foundation
+- Added translated footer foundation
+- Added translated placeholder navigation labels
+- Added translated landing page starter content
+- Added translated evidence-readiness and documentation sections
+- Added translated privacy/security/data-protection placeholder sections
 - Added translated language-switcher labels to all 7 locale message files
+- Added translated shell and landing keys to all 7 locale message files
 - Renamed misleading `phaseZeroMessages` export to `appMessages`
+- Exposed shell and landing messages through `packages/i18n/src/index.ts`
 - Replaced inline switcher layout styling with Tailwind utility classes
 - Verified language route switching manually
+- Verified app shell/header/footer manually
+- Verified footer anchor targets exist and match section IDs
 
 ## Verified locally
 
@@ -95,7 +106,7 @@ Final Phase 0 verification passed before Phase 0 commit:
 - `pnpm.cmd build`
 - `pnpm.cmd format:check`
 
-Phase 1 language switcher baby step verification passed:
+Phase 1 language switcher foundation verification passed:
 
 - `pnpm.cmd typecheck`
 - `pnpm.cmd lint`
@@ -105,6 +116,22 @@ Phase 1 language switcher baby step verification passed:
 - `git diff --cached --check`
 - translation JSON key validation for en, cs, sk, pl, de, fr, es
 - manual runtime check: language route switching works
+
+Phase 1 translated app shell foundation verification passed:
+
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git diff --cached --check`
+- translation JSON key validation for shell and landing keys across en, cs, sk, pl, de, fr, es
+- manual runtime check: header renders
+- manual runtime check: footer renders
+- manual runtime check: language switcher appears in header
+- manual runtime check: language switching works
+- manual runtime check: footer privacy/security/data-protection anchor targets exist
+- VS Code Problems panel verified clean after stale wrong-path tab was closed
 
 Individual runtime verification also passed:
 
@@ -142,6 +169,12 @@ Individual runtime verification also passed:
 - Git warned about LF-to-CRLF conversion on Windows. Resolved by adding `.gitattributes` with LF normalization.
 - `LanguageSwitcher` initially used inline layout styles. Resolved by replacing them with Tailwind utility classes.
 - `phaseZeroMessages` became misleading after Phase 1 language-switcher keys were added. Resolved by renaming it to `appMessages`.
+- Codex initially proposed footer links pointing to section IDs that did not exist. Resolved by adding translated trust sections with matching IDs: `privacy`, `security`, and `data-protection`.
+- Codex initially proposed an internal route as a raw anchor tag. Resolved by using Next.js `Link` for the locale home link.
+- `AppShell` was accidentally created in a wrong nested folder path under `apps/web/src/components/apps/web/src/components`. Resolved by moving it to `apps/web/src/components/app-shell.tsx` and deleting the wrong nested folder.
+- VS Code showed a stale `./language-switcher` import error from the old wrong nested file tab. Resolved by closing the stale tab; `pnpm.cmd typecheck` and the VS Problems panel both confirmed the repo was clean.
+- `apps/web/next-env.d.ts` drifted after `next dev`. Resolved by running `pnpm.cmd build`, which restored the tracked build-safe state.
+- PowerShell file-writing with relative paths attempted to write docs under `C:\WINDOWS\system32`. Resolved by using VS Code for file editing and keeping PowerShell for verification/build/Git tasks.
 
 ## Known quality note: `next-env.d.ts`
 
@@ -182,12 +215,7 @@ Phase 0 does not include:
 
 Phase 1 still needs:
 
-- industrial landing page UI
-- app shell
-- header/navigation
-- footer
-- Security & Data Protection landing page section
-- privacy/security footer links
+- more complete industrial landing page polish
 - login page shell
 - dashboard shell
 - machines page shell
@@ -203,6 +231,8 @@ Phase 1 still needs:
   - future MFA
   - data export
   - security logs
+
+- translated empty/loading/error state placeholders where shell pages need them
 
 ## Current not-in-scope items
 
@@ -228,14 +258,14 @@ Not started yet:
 
 ## Next phase milestone
 
-Continue Phase 1 — Industrial UI shell + multilingual UI skeleton.
+Continue Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
-Next recommended baby step:
+Next recommended implementation chunk:
 
-- update remaining documentation for the committed language-switcher baby step, then continue with the translated app shell/header foundation
+- translated application page-shell skeletons for login, dashboard, machines, documents, tickets, spare parts, feedback, and settings without auth, database, or CRUD
 
 ## Last git commit
 
-Commit hash: `951e43e`
+Commit hash: `3997c99`
 
-Commit message: `feat(web): add multilingual language switcher`
+Commit message: `feat(web): add translated app shell foundation`
