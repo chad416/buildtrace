@@ -45,19 +45,45 @@
   "landing": {
     "hero": {
       "eyebrow": "Phase 1 foundation",
-      "title": "A clear home for machine project records",
-      "description": "BuildTrace starts with translated structure, secure-by-default positioning, and careful separation between customer-visible files and private engineering docs."
+      "title": "A structured shell for machine project records",
+      "description": "BuildTrace organizes the first product surface around evidence readiness, documentation organization, and a secure-by-default direction without connecting real customer or machine data.",
+      "asideAriaLabel": "Phase 1 positioning",
+      "asideEyebrow": "Scope boundary",
+      "asideTitle": "Prepared for future machine work",
+      "asideBody": "The shell separates customer-visible files from private engineering docs while keeping real uploads, storage, QR flows, and machine records out of scope."
     },
+    "boundariesAriaLabel": "Landing page project boundaries",
+    "boundaries": {
+      "customerVisibleFiles": {
+        "eyebrow": "Customer-visible files",
+        "title": "Clear future review area",
+        "body": "The interface leaves room for files that customers may later review without adding document upload or download behavior."
+      },
+      "privateEngineeringDocs": {
+        "eyebrow": "Private engineering docs",
+        "title": "Separate internal space",
+        "body": "Private engineering material is positioned as a separate future area so internal work is not mixed with customer-facing records."
+      },
+      "handoverReadiness": {
+        "eyebrow": "Handover readiness",
+        "title": "Organized preparation",
+        "body": "The shell supports the idea of organized handover preparation without implying completion, approval, or regulatory outcomes."
+      }
+    },
+    "sectionsAriaLabel": "Landing page evidence and documentation sections",
     "sections": {
       "evidence": {
+        "eyebrow": "Evidence readiness",
         "heading": "Evidence-readiness structure",
         "body": "Project records can be organized for review without promising legal, safety, or regulatory outcomes."
       },
       "documentation": {
+        "eyebrow": "Documentation organization",
         "heading": "Documentation boundaries",
         "body": "Customer-visible files and private engineering docs stay clearly separated so future project work can remain understandable."
       }
     },
+    "trustAriaLabel": "Landing page trust planning sections",
     "trust": {
       "privacy": {
         "heading": "Privacy planning placeholders",
@@ -117,7 +143,7 @@
         "handoverReadiness": {
           "eyebrow": "Handover readiness",
           "title": "Future handover view",
-          "body": "A later dashboard can organize project handover preparation without implying completion, approval, or compliance outcomes."
+          "body": "A later dashboard can organize project handover preparation without implying completion, approval, or review outcomes."
         },
         "machineRecords": {
           "eyebrow": "Machine records",
@@ -144,6 +170,50 @@
         "ariaLabel": "Machines placeholder state",
         "title": "No machine records are available",
         "body": "The placeholder keeps the navigation visible while machine project records remain future implementation work."
+      }
+    },
+    "machineDetail": {
+      "eyebrow": "Machine detail placeholder",
+      "title": "Machine project shell",
+      "description": "This route shows the future machine detail structure without connecting real machine data, customer records, QR flows, documents, tickets, or spare-parts logic.",
+      "placeholder": {
+        "ariaLabel": "Machine detail placeholder state",
+        "eyebrow": "No real machine data",
+        "title": "Placeholder-only machine view",
+        "body": "The route is available for shell review, but no database, API, storage, document download, QR portal, or machine CRUD is connected."
+      },
+      "sectionsAriaLabel": "Machine detail placeholder sections",
+      "sections": {
+        "overview": {
+          "eyebrow": "Machine overview",
+          "title": "Overview placeholder",
+          "body": "A future view can summarize machine context while this shell does not load real identifiers, customer details, or technical records."
+        },
+        "handoverReadiness": {
+          "eyebrow": "Handover readiness",
+          "title": "Readiness placeholder",
+          "body": "This area can later organize handover preparation without claiming completion, approval, or review outcomes."
+        },
+        "documents": {
+          "eyebrow": "Documents",
+          "title": "Document placeholder",
+          "body": "Customer-visible files and private engineering docs can be separated later while no upload, storage, or download behavior exists here."
+        },
+        "tickets": {
+          "eyebrow": "Tickets",
+          "title": "Ticket placeholder",
+          "body": "Future communication can be framed here while no ticket backend, status logic, assignment, or operational workflow is active."
+        },
+        "softwareTimeline": {
+          "eyebrow": "Software timeline",
+          "title": "Timeline placeholder",
+          "body": "A later product stage can organize software notes or release context while no real timeline data is stored or displayed."
+        },
+        "spareParts": {
+          "eyebrow": "Spare parts",
+          "title": "Parts placeholder",
+          "body": "Future spare-parts context can live here without inventory, ordering, database records, or asset CRUD."
+        }
       }
     },
     "documents": {

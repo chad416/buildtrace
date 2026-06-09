@@ -45,19 +45,45 @@
   "landing": {
     "hero": {
       "eyebrow": "Podstawa fazy 1",
-      "title": "Przejrzyste miejsce na zapisy projektów maszyn",
-      "description": "BuildTrace zaczyna od przetłumaczonej struktury, podejścia secure-by-default i wyraźnego oddzielenia plików widocznych dla klienta od prywatnych dokumentów inżynierskich."
+      "title": "Uporządkowany shell dla zapisów projektów maszyn",
+      "description": "BuildTrace organizuje pierwszą powierzchnię produktu wokół gotowości dowodowej, organizacji dokumentacji i kierunku secure-by-default bez podłączania rzeczywistych danych klientów lub maszyn.",
+      "asideAriaLabel": "Pozycjonowanie fazy 1",
+      "asideEyebrow": "Granica zakresu",
+      "asideTitle": "Przygotowane pod przyszłą pracę z maszynami",
+      "asideBody": "Shell oddziela pliki widoczne dla klienta od prywatnych dokumentów inżynierskich, pozostawiając rzeczywiste przesyłanie, storage, przepływy QR i zapisy maszyn poza zakresem."
     },
+    "boundariesAriaLabel": "Granice projektu na stronie startowej",
+    "boundaries": {
+      "customerVisibleFiles": {
+        "eyebrow": "Pliki widoczne dla klienta",
+        "title": "Jasny przyszły obszar przeglądu",
+        "body": "Interfejs zostawia miejsce na pliki, które klienci mogą później przeglądać, bez dodawania przesyłania lub pobierania dokumentów."
+      },
+      "privateEngineeringDocs": {
+        "eyebrow": "Prywatne dokumenty inżynierskie",
+        "title": "Oddzielna przestrzeń wewnętrzna",
+        "body": "Prywatny materiał inżynierski jest pozycjonowany jako oddzielny przyszły obszar, aby praca wewnętrzna nie mieszała się z zapisami widocznymi dla klienta."
+      },
+      "handoverReadiness": {
+        "eyebrow": "Gotowość przekazania",
+        "title": "Uporządkowane przygotowanie",
+        "body": "Shell wspiera ideę uporządkowanego przygotowania przekazania bez sugerowania ukończenia, zatwierdzenia lub wyników regulacyjnych."
+      }
+    },
+    "sectionsAriaLabel": "Sekcje dowodowe i dokumentacyjne strony startowej",
     "sections": {
       "evidence": {
+        "eyebrow": "Gotowość dowodowa",
         "heading": "Struktura gotowości dowodowej",
         "body": "Zapisy projektu można organizować do przeglądu bez obiecywania wyników prawnych, bezpieczeństwa lub regulacyjnych."
       },
       "documentation": {
+        "eyebrow": "Organizacja dokumentacji",
         "heading": "Granice dokumentacji",
         "body": "Pliki widoczne dla klienta i prywatne dokumenty inżynierskie pozostają wyraźnie oddzielone, aby przyszła praca projektowa była zrozumiała."
       }
     },
+    "trustAriaLabel": "Sekcje planowania zaufania na stronie startowej",
     "trust": {
       "privacy": {
         "heading": "Miejsce na informacje o prywatności",
@@ -117,7 +143,7 @@
         "handoverReadiness": {
           "eyebrow": "Gotowość przekazania",
           "title": "Przyszły widok przekazania",
-          "body": "Późniejszy dashboard może organizować przygotowanie przekazania projektu bez sugerowania ukończenia, zatwierdzenia lub wyników zgodności."
+          "body": "Późniejszy dashboard może organizować przygotowanie przekazania projektu bez sugerowania ukończenia, zatwierdzenia lub wyników przeglądu."
         },
         "machineRecords": {
           "eyebrow": "Rekordy maszyn",
@@ -144,6 +170,50 @@
         "ariaLabel": "Stan zastępczy maszyn",
         "title": "Brak dostępnych rekordów maszyn",
         "body": "Symbol zastępczy utrzymuje widoczność nawigacji, podczas gdy rekordy projektów maszyn pozostają przyszłą implementacją."
+      }
+    },
+    "machineDetail": {
+      "eyebrow": "Symbol zastępczy szczegółów maszyny",
+      "title": "Shell projektu maszyny",
+      "description": "Ta trasa pokazuje przyszłą strukturę szczegółów maszyny bez podłączania rzeczywistych danych maszyny, rekordów klienta, przepływów QR, dokumentów, zgłoszeń lub logiki części zamiennych.",
+      "placeholder": {
+        "ariaLabel": "Stan zastępczy szczegółów maszyny",
+        "eyebrow": "Brak rzeczywistych danych maszyny",
+        "title": "Wyłącznie zastępczy widok maszyny",
+        "body": "Trasa jest dostępna do przeglądu shellu, ale nie jest podłączona baza danych, API, storage, pobieranie dokumentów, portal QR ani CRUD maszyn."
+      },
+      "sectionsAriaLabel": "Sekcje zastępcze szczegółów maszyny",
+      "sections": {
+        "overview": {
+          "eyebrow": "Przegląd maszyny",
+          "title": "Miejsce na przegląd",
+          "body": "Przyszły widok może podsumować kontekst maszyny, podczas gdy ten shell nie ładuje rzeczywistych identyfikatorów, danych klienta ani rekordów technicznych."
+        },
+        "handoverReadiness": {
+          "eyebrow": "Gotowość przekazania",
+          "title": "Miejsce na gotowość",
+          "body": "Ten obszar może później organizować przygotowanie przekazania bez twierdzeń o ukończeniu, zatwierdzeniu lub wynikach przeglądu."
+        },
+        "documents": {
+          "eyebrow": "Dokumenty",
+          "title": "Miejsce na dokumenty",
+          "body": "Pliki widoczne dla klienta i prywatne dokumenty inżynierskie mogą zostać później oddzielone, podczas gdy tutaj nie ma przesyłania, storage ani pobierania."
+        },
+        "tickets": {
+          "eyebrow": "Zgłoszenia",
+          "title": "Miejsce na zgłoszenia",
+          "body": "Przyszła komunikacja może być tutaj ramowana, podczas gdy żaden backend zgłoszeń, logika statusu, przypisanie ani przepływ operacyjny nie jest aktywny."
+        },
+        "softwareTimeline": {
+          "eyebrow": "Oś czasu oprogramowania",
+          "title": "Miejsce na oś czasu",
+          "body": "Późniejszy etap produktu może organizować notatki oprogramowania lub kontekst wydań, podczas gdy żadne rzeczywiste dane osi czasu nie są przechowywane ani wyświetlane."
+        },
+        "spareParts": {
+          "eyebrow": "Części zamienne",
+          "title": "Miejsce na części",
+          "body": "Przyszły kontekst części zamiennych może żyć tutaj bez zapasów, zamówień, rekordów bazy danych lub CRUD zasobów."
+        }
       }
     },
     "documents": {

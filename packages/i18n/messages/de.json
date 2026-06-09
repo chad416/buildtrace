@@ -45,19 +45,45 @@
   "landing": {
     "hero": {
       "eyebrow": "Grundlage für Phase 1",
-      "title": "Ein klarer Ort für Maschinenprojektunterlagen",
-      "description": "BuildTrace beginnt mit übersetzter Struktur, Secure-by-default-Positionierung und klarer Trennung zwischen kundensichtbaren Dateien und privaten technischen Dokumenten."
+      "title": "Eine strukturierte Shell für Maschinenprojektunterlagen",
+      "description": "BuildTrace organisiert die erste Produktoberfläche rund um Nachweisbereitschaft, Dokumentationsorganisation und eine Secure-by-default-Richtung, ohne echte Kunden- oder Maschinendaten anzubinden.",
+      "asideAriaLabel": "Positionierung für Phase 1",
+      "asideEyebrow": "Umfangsgrenze",
+      "asideTitle": "Vorbereitet für zukünftige Maschinenarbeit",
+      "asideBody": "Die Shell trennt kundensichtbare Dateien von privaten technischen Dokumenten und hält echte Uploads, Speicher, QR-Abläufe und Maschinendatensätze außerhalb des Umfangs."
     },
+    "boundariesAriaLabel": "Projektgrenzen der Startseite",
+    "boundaries": {
+      "customerVisibleFiles": {
+        "eyebrow": "Kundensichtbare Dateien",
+        "title": "Klarer zukünftiger Prüfbereich",
+        "body": "Die Oberfläche lässt Raum für Dateien, die Kunden später prüfen können, ohne Upload- oder Download-Verhalten für Dokumente hinzuzufügen."
+      },
+      "privateEngineeringDocs": {
+        "eyebrow": "Private technische Dokumente",
+        "title": "Getrennter interner Bereich",
+        "body": "Privates technisches Material wird als getrennter zukünftiger Bereich positioniert, damit interne Arbeit nicht mit kundensichtbaren Unterlagen vermischt wird."
+      },
+      "handoverReadiness": {
+        "eyebrow": "Übergabebereitschaft",
+        "title": "Organisierte Vorbereitung",
+        "body": "Die Shell unterstützt die Idee organisierter Übergabevorbereitung, ohne Fertigstellung, Freigabe oder regulatorische Ergebnisse anzudeuten."
+      }
+    },
+    "sectionsAriaLabel": "Nachweis- und Dokumentationsbereiche der Startseite",
     "sections": {
       "evidence": {
+        "eyebrow": "Nachweisbereitschaft",
         "heading": "Struktur für Nachweisbereitschaft",
         "body": "Projektunterlagen können für Prüfungen organisiert werden, ohne rechtliche, sicherheitsbezogene oder regulatorische Ergebnisse zu versprechen."
       },
       "documentation": {
+        "eyebrow": "Dokumentationsorganisation",
         "heading": "Dokumentationsgrenzen",
         "body": "Kundensichtbare Dateien und private technische Dokumente bleiben klar getrennt, damit zukünftige Projektarbeit verständlich bleibt."
       }
     },
+    "trustAriaLabel": "Planungsbereiche für Vertrauen auf der Startseite",
     "trust": {
       "privacy": {
         "heading": "Platzhalter für Datenschutzinformationen",
@@ -117,7 +143,7 @@
         "handoverReadiness": {
           "eyebrow": "Übergabebereitschaft",
           "title": "Zukünftige Übergabeansicht",
-          "body": "Ein späteres Dashboard kann die Vorbereitung der Projektübergabe organisieren, ohne Fertigstellung, Freigabe oder Konformitätsergebnisse anzudeuten."
+          "body": "Ein späteres Dashboard kann die Vorbereitung der Projektübergabe organisieren, ohne Fertigstellung, Freigabe oder Prüfergebnisse anzudeuten."
         },
         "machineRecords": {
           "eyebrow": "Maschinendatensätze",
@@ -144,6 +170,50 @@
         "ariaLabel": "Platzhalterzustand für Maschinen",
         "title": "Keine Maschinendatensätze verfügbar",
         "body": "Der Platzhalter hält die Navigation sichtbar, während Maschinenprojektunterlagen zukünftige Implementierungsarbeit bleiben."
+      }
+    },
+    "machineDetail": {
+      "eyebrow": "Maschinendetail-Platzhalter",
+      "title": "Shell des Maschinenprojekts",
+      "description": "Diese Route zeigt die zukünftige Struktur eines Maschinendetails, ohne echte Maschinendaten, Kundendatensätze, QR-Abläufe, Dokumente, Tickets oder Ersatzteillogik anzubinden.",
+      "placeholder": {
+        "ariaLabel": "Platzhalterzustand für Maschinendetail",
+        "eyebrow": "Keine echten Maschinendaten",
+        "title": "Nur Platzhalteransicht der Maschine",
+        "body": "Die Route ist für die Shell-Prüfung verfügbar, aber keine Datenbank, API, kein Speicher, Dokumentendownload, QR-Portal oder Maschinen-CRUD ist verbunden."
+      },
+      "sectionsAriaLabel": "Platzhalterbereiche des Maschinendetails",
+      "sections": {
+        "overview": {
+          "eyebrow": "Maschinenübersicht",
+          "title": "Platzhalter für Übersicht",
+          "body": "Eine zukünftige Ansicht kann Maschinenkontext zusammenfassen, während diese Shell keine echten Kennungen, Kundendetails oder technischen Datensätze lädt."
+        },
+        "handoverReadiness": {
+          "eyebrow": "Übergabebereitschaft",
+          "title": "Platzhalter für Bereitschaft",
+          "body": "Dieser Bereich kann später Übergabevorbereitung organisieren, ohne Aussagen zu Fertigstellung, Freigabe oder Prüfergebnissen zu treffen."
+        },
+        "documents": {
+          "eyebrow": "Dokumente",
+          "title": "Dokumentenplatzhalter",
+          "body": "Kundensichtbare Dateien und private technische Dokumente können später getrennt werden, während hier kein Upload, Speicher oder Download existiert."
+        },
+        "tickets": {
+          "eyebrow": "Tickets",
+          "title": "Ticketplatzhalter",
+          "body": "Zukünftige Kommunikation kann hier gerahmt werden, während kein Ticket-Backend, keine Statuslogik, Zuweisung oder operativer Ablauf aktiv ist."
+        },
+        "softwareTimeline": {
+          "eyebrow": "Software-Zeitachse",
+          "title": "Zeitachsenplatzhalter",
+          "body": "Eine spätere Produktphase kann Software-Notizen oder Release-Kontext organisieren, während keine echten Zeitachsendaten gespeichert oder angezeigt werden."
+        },
+        "spareParts": {
+          "eyebrow": "Ersatzteile",
+          "title": "Teileplatzhalter",
+          "body": "Zukünftiger Ersatzteilkontext kann hier leben, ohne Bestand, Bestellung, Datenbankdatensätze oder Asset-CRUD."
+        }
       }
     },
     "documents": {

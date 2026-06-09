@@ -45,19 +45,45 @@
   "landing": {
     "hero": {
       "eyebrow": "Základ fázy 1",
-      "title": "Prehľadné miesto pre záznamy strojových projektov",
-      "description": "BuildTrace začína preloženou štruktúrou, bezpečne navrhnutým základom a jasným oddelením zákaznícky viditeľných súborov od súkromných technických dokumentov."
+      "title": "Štruktúrovaný shell pre záznamy strojových projektov",
+      "description": "BuildTrace organizuje prvú produktovú plochu okolo pripravenosti podkladov, organizácie dokumentácie a smeru bezpečne od základu bez pripojenia skutočných zákazníckych alebo strojových dát.",
+      "asideAriaLabel": "Pozicionovanie fázy 1",
+      "asideEyebrow": "Hranica rozsahu",
+      "asideTitle": "Pripravené pre budúcu prácu so strojmi",
+      "asideBody": "Shell oddeľuje zákaznícky viditeľné súbory od súkromných technických dokumentov a ponecháva skutočné nahrávanie, úložisko, QR toky a záznamy strojov mimo rozsahu."
     },
+    "boundariesAriaLabel": "Hranice projektovej úvodnej stránky",
+    "boundaries": {
+      "customerVisibleFiles": {
+        "eyebrow": "Zákaznícky viditeľné súbory",
+        "title": "Jasná budúca oblasť na kontrolu",
+        "body": "Rozhranie ponecháva priestor pre súbory, ktoré môžu zákazníci neskôr kontrolovať, bez pridania nahrávania alebo sťahovania dokumentov."
+      },
+      "privateEngineeringDocs": {
+        "eyebrow": "Súkromné technické dokumenty",
+        "title": "Oddelený interný priestor",
+        "body": "Súkromný technický materiál je umiestnený ako oddelená budúca oblasť, aby sa interná práca nemiešala so zákazníckymi záznamami."
+      },
+      "handoverReadiness": {
+        "eyebrow": "Pripravenosť odovzdania",
+        "title": "Organizovaná príprava",
+        "body": "Shell podporuje myšlienku organizovanej prípravy odovzdania bez naznačovania dokončenia, schválenia alebo regulačných výsledkov."
+      }
+    },
+    "sectionsAriaLabel": "Sekcie podkladov a dokumentácie na úvodnej stránke",
     "sections": {
       "evidence": {
+        "eyebrow": "Pripravenosť podkladov",
         "heading": "Štruktúra pre pripravenosť podkladov",
         "body": "Projektové záznamy možno organizovať na kontrolu bez sľubovania právnych, bezpečnostných alebo regulačných výsledkov."
       },
       "documentation": {
+        "eyebrow": "Organizácia dokumentácie",
         "heading": "Hranice dokumentácie",
         "body": "Zákaznícky viditeľné súbory a súkromné technické dokumenty zostávajú jasne oddelené, aby budúca projektová práca zostala zrozumiteľná."
       }
     },
+    "trustAriaLabel": "Sekcie plánovania dôvery na úvodnej stránke",
     "trust": {
       "privacy": {
         "heading": "Miesto pre informácie o súkromí",
@@ -117,7 +143,7 @@
         "handoverReadiness": {
           "eyebrow": "Pripravenosť odovzdania",
           "title": "Budúci pohľad na odovzdanie",
-          "body": "Neskorší dashboard môže organizovať prípravu odovzdania projektu bez naznačovania dokončenia, schválenia alebo výsledkov súladu."
+          "body": "Neskorší dashboard môže organizovať prípravu odovzdania projektu bez naznačovania dokončenia, schválenia alebo výsledkov kontroly."
         },
         "machineRecords": {
           "eyebrow": "Záznamy strojov",
@@ -144,6 +170,50 @@
         "ariaLabel": "Zástupný stav strojov",
         "title": "Nie sú dostupné žiadne záznamy strojov",
         "body": "Zástupná stránka ponecháva navigáciu viditeľnú, zatiaľ čo záznamy strojových projektov zostávajú budúcou implementáciou."
+      }
+    },
+    "machineDetail": {
+      "eyebrow": "Zástupný detail stroja",
+      "title": "Shell strojového projektu",
+      "description": "Táto trasa ukazuje budúcu štruktúru detailu stroja bez pripojenia skutočných dát stroja, zákazníckych záznamov, QR tokov, dokumentov, tiketov alebo logiky náhradných dielov.",
+      "placeholder": {
+        "ariaLabel": "Zástupný stav detailu stroja",
+        "eyebrow": "Žiadne skutočné dáta stroja",
+        "title": "Iba zástupný pohľad na stroj",
+        "body": "Trasa je dostupná na kontrolu shellu, ale nie je pripojená databáza, API, úložisko, sťahovanie dokumentov, QR portál ani CRUD strojov."
+      },
+      "sectionsAriaLabel": "Zástupné sekcie detailu stroja",
+      "sections": {
+        "overview": {
+          "eyebrow": "Prehľad stroja",
+          "title": "Miesto pre prehľad",
+          "body": "Budúci pohľad môže zhrnúť kontext stroja, zatiaľ čo tento shell nenačítava skutočné identifikátory, zákaznícke údaje ani technické záznamy."
+        },
+        "handoverReadiness": {
+          "eyebrow": "Pripravenosť odovzdania",
+          "title": "Miesto pre pripravenosť",
+          "body": "Táto oblasť môže neskôr organizovať prípravu odovzdania bez tvrdení o dokončení, schválení alebo výsledkoch kontroly."
+        },
+        "documents": {
+          "eyebrow": "Dokumenty",
+          "title": "Miesto pre dokumenty",
+          "body": "Zákaznícky viditeľné súbory a súkromné technické dokumenty možno neskôr oddeliť, zatiaľ čo tu neexistuje nahrávanie, úložisko ani sťahovanie."
+        },
+        "tickets": {
+          "eyebrow": "Tikety",
+          "title": "Miesto pre tikety",
+          "body": "Budúca komunikácia môže byť rámovaná tu, zatiaľ čo nie je aktívny žiadny tiketový backend, stavová logika, priraďovanie ani prevádzkový tok."
+        },
+        "softwareTimeline": {
+          "eyebrow": "Softvérová časová os",
+          "title": "Miesto pre časovú os",
+          "body": "Neskoršia fáza produktu môže organizovať softvérové poznámky alebo kontext vydaní, zatiaľ čo sa neukladajú ani nezobrazujú žiadne skutočné dáta časovej osi."
+        },
+        "spareParts": {
+          "eyebrow": "Náhradné diely",
+          "title": "Miesto pre diely",
+          "body": "Budúci kontext náhradných dielov môže byť tu bez skladu, objednávania, databázových záznamov alebo CRUD prostriedkov."
+        }
       }
     },
     "documents": {

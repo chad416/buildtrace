@@ -45,19 +45,45 @@
   "landing": {
     "hero": {
       "eyebrow": "Base de la fase 1",
-      "title": "Un lugar claro para los registros de proyectos de máquinas",
-      "description": "BuildTrace empieza con estructura traducida, posicionamiento secure-by-default y separación cuidadosa entre archivos visibles para clientes y documentos técnicos privados."
+      "title": "Un shell estructurado para registros de proyectos de máquinas",
+      "description": "BuildTrace organiza la primera superficie del producto alrededor de preparación de evidencias, organización documental y una dirección secure-by-default sin conectar datos reales de clientes o máquinas.",
+      "asideAriaLabel": "Posicionamiento de fase 1",
+      "asideEyebrow": "Límite de alcance",
+      "asideTitle": "Preparado para futuro trabajo con máquinas",
+      "asideBody": "El shell separa archivos visibles para clientes de documentos técnicos privados y mantiene cargas reales, almacenamiento, flujos QR y registros de máquinas fuera de alcance."
     },
+    "boundariesAriaLabel": "Límites de proyecto de la página inicial",
+    "boundaries": {
+      "customerVisibleFiles": {
+        "eyebrow": "Archivos visibles para clientes",
+        "title": "Área clara para revisión futura",
+        "body": "La interfaz deja espacio para archivos que los clientes podrán revisar más adelante sin añadir comportamiento de carga o descarga documental."
+      },
+      "privateEngineeringDocs": {
+        "eyebrow": "Documentos técnicos privados",
+        "title": "Espacio interno separado",
+        "body": "El material técnico privado se posiciona como un área futura separada para que el trabajo interno no se mezcle con registros visibles para clientes."
+      },
+      "handoverReadiness": {
+        "eyebrow": "Preparación de entrega",
+        "title": "Preparación organizada",
+        "body": "El shell apoya la idea de preparación organizada de entrega sin sugerir finalización, aprobación o resultados regulatorios."
+      }
+    },
+    "sectionsAriaLabel": "Secciones de evidencias y documentación de la página inicial",
     "sections": {
       "evidence": {
+        "eyebrow": "Preparación de evidencias",
         "heading": "Estructura para preparación de evidencias",
         "body": "Los registros del proyecto pueden organizarse para revisión sin prometer resultados legales, de seguridad o regulatorios."
       },
       "documentation": {
+        "eyebrow": "Organización documental",
         "heading": "Límites de documentación",
         "body": "Los archivos visibles para clientes y los documentos técnicos privados permanecen claramente separados para que el trabajo futuro del proyecto sea comprensible."
       }
     },
+    "trustAriaLabel": "Secciones de planificación de confianza de la página inicial",
     "trust": {
       "privacy": {
         "heading": "Espacio para privacidad",
@@ -117,7 +143,7 @@
         "handoverReadiness": {
           "eyebrow": "Preparación de entrega",
           "title": "Vista futura de entrega",
-          "body": "Un panel posterior puede organizar la preparación de entrega del proyecto sin sugerir finalización, aprobación o resultados de conformidad."
+          "body": "Un panel posterior puede organizar la preparación de entrega del proyecto sin sugerir finalización, aprobación o resultados de revisión."
         },
         "machineRecords": {
           "eyebrow": "Registros de máquinas",
@@ -144,6 +170,50 @@
         "ariaLabel": "Estado marcador de máquinas",
         "title": "No hay registros de máquinas disponibles",
         "body": "El marcador mantiene visible la navegación mientras los registros de proyectos de máquinas siguen siendo trabajo futuro."
+      }
+    },
+    "machineDetail": {
+      "eyebrow": "Marcador de detalle de máquina",
+      "title": "Shell de proyecto de máquina",
+      "description": "Esta ruta muestra la futura estructura de detalle de máquina sin conectar datos reales de máquina, registros de cliente, flujos QR, documentos, tickets o lógica de repuestos.",
+      "placeholder": {
+        "ariaLabel": "Estado marcador de detalle de máquina",
+        "eyebrow": "Sin datos reales de máquina",
+        "title": "Vista de máquina solo como marcador",
+        "body": "La ruta está disponible para revisar el shell, pero no hay base de datos, API, almacenamiento, descarga de documentos, portal QR o CRUD de máquinas conectado."
+      },
+      "sectionsAriaLabel": "Secciones marcadoras del detalle de máquina",
+      "sections": {
+        "overview": {
+          "eyebrow": "Vista general de máquina",
+          "title": "Espacio para vista general",
+          "body": "Una vista futura puede resumir el contexto de máquina, mientras este shell no carga identificadores reales, detalles de cliente o registros técnicos."
+        },
+        "handoverReadiness": {
+          "eyebrow": "Preparación de entrega",
+          "title": "Espacio para preparación",
+          "body": "Esta área puede organizar más adelante la preparación de entrega sin afirmar finalización, aprobación o resultados de revisión."
+        },
+        "documents": {
+          "eyebrow": "Documentos",
+          "title": "Marcador documental",
+          "body": "Los archivos visibles para clientes y documentos técnicos privados podrán separarse más adelante, mientras aquí no existe carga, almacenamiento o descarga."
+        },
+        "tickets": {
+          "eyebrow": "Tickets",
+          "title": "Marcador de tickets",
+          "body": "La comunicación futura puede enmarcarse aquí mientras no hay backend de tickets, lógica de estado, asignación o flujo operativo activo."
+        },
+        "softwareTimeline": {
+          "eyebrow": "Línea de tiempo de software",
+          "title": "Marcador de línea de tiempo",
+          "body": "Una etapa posterior del producto puede organizar notas de software o contexto de versiones, mientras no se almacenan ni muestran datos reales de línea de tiempo."
+        },
+        "spareParts": {
+          "eyebrow": "Repuestos",
+          "title": "Marcador de partes",
+          "body": "El futuro contexto de repuestos puede vivir aquí sin inventario, pedidos, registros de base de datos o CRUD de activos."
+        }
       }
     },
     "documents": {
