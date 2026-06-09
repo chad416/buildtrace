@@ -9,5 +9,8 @@
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@buildtrace/shared": "workspace:*"
   }
 }

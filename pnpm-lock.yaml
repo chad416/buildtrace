@@ -121,7 +121,11 @@ importers:
 
   packages/db: {}
 
-  packages/i18n: {}
+  packages/i18n:
+    dependencies:
+      '@buildtrace/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared: {}
 

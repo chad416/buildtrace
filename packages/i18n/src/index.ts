@@ -1,3 +1,5 @@
+import { supportedLocales } from '@buildtrace/shared';
+
 import csMessages from '../messages/cs.json';
 import deMessages from '../messages/de.json';
 import enMessages from '../messages/en.json';
@@ -6,7 +8,7 @@ import frMessages from '../messages/fr.json';
 import plMessages from '../messages/pl.json';
 import skMessages from '../messages/sk.json';
 
-export const locales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
+export const locales = supportedLocales;
 
 export type Locale = (typeof locales)[number];
 
