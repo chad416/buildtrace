@@ -482,3 +482,71 @@ Reason:
 
 - the plain HTML browser result was caused by missing/incomplete Tailwind/PostCSS wiring
 - the correct fix was to wire the CSS pipeline, not ignore the visual failure
+
+### Single main landmark ownership
+
+Keep `AppShell` as the single owner of the rendered page `<main>` landmark.
+
+Child page components and shared page-shell components should use non-landmark wrappers such as `<div>`.
+
+Reason:
+
+- prevents invalid nested `<main>` landmarks
+- improves accessibility semantics
+- gives screen readers a single main page landmark
+- keeps layout ownership clear
+
+### Next.js App Router lint boundary
+
+Disable `@next/next/no-html-link-for-pages`.
+
+Reason:
+
+- BuildTrace uses the Next.js App Router, not the legacy Pages Router
+- the rule expects a `pages` directory and can emit irrelevant warnings for App Router projects
+- route links still use Next.js `Link` where appropriate
+- the rest of the Next.js lint rules remain enabled
+
+### Native dependency build approvals
+
+Record trusted native dependency build approvals in `pnpm-workspace.yaml`.
+
+Approved native build dependencies:
+
+- `esbuild`
+- `sharp`
+
+Reason:
+
+- pnpm blocks dependency build scripts unless approved
+- `esbuild` is part of the JavaScript tooling chain
+- `sharp` is a normal native dependency used by Next.js image tooling
+- approvals should be explicit and source-controlled instead of relying on local machine state
+
+### Canonical locale source
+
+Use `packages/shared` as the canonical owner of supported locale constants.
+
+`packages/i18n` should import and re-export the shared locale source instead of duplicating its own locale array.
+
+Reason:
+
+- prevents locale-list drift
+- gives shared constants a real cross-package role
+- keeps locale support consistent across app, i18n, and future backend code
+
+### next-intl dependency
+
+Remove `next-intl` until BuildTrace intentionally adopts it.
+
+Reason:
+
+- Phase 1 currently uses a simple internal `appMessages` i18n foundation
+- `next-intl` was installed but unused
+- unused dependencies are inventory waste
+- keeping an unused i18n dependency implies an architecture the app has not implemented
+
+Decision:
+
+- remove `next-intl` for now
+- re-add it later only if a future i18n implementation step intentionally adopts it

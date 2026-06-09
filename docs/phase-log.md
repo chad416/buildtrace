@@ -645,3 +645,103 @@ Phase 1 is formally complete.
 ### Commit message
 
 `feat(web): complete phase 1 shell foundation`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Completed post-review Phase 1 hardening before starting Phase 2.
+
+This did not add Phase 2 scope.
+
+Full beta roadmap completion remains 12%.
+
+### Review source
+
+A second external review checked the completed Phase 1 shell against the roadmap, i18n requirements, accessibility structure, lint/build tooling, and scope boundaries.
+
+The review verdict was:
+
+- Pass - ready for Phase 2
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/page.tsx
+- apps/web/src/app/[locale]/dashboard/page.tsx
+- apps/web/src/app/[locale]/login/page.tsx
+- apps/web/src/app/[locale]/settings/page.tsx
+- apps/web/src/app/[locale]/machines/[machineId]/page.tsx
+- apps/web/src/components/page-shell.tsx
+- eslint.config.mjs
+- package.json
+- apps/web/package.json
+- packages/i18n/package.json
+- packages/i18n/src/index.ts
+- pnpm-lock.yaml
+- pnpm-workspace.yaml
+- docs/phase-log.md
+- docs/decisions.md
+
+### Hardening completed
+
+- Removed nested `<main>` landmarks from page-level wrappers and kept `AppShell` as the single owner of the page `<main>` landmark.
+- Strengthened ESLint quality gates with Next.js, JSX accessibility, and React hooks lint rules.
+- Moved ESLint to a plugin-compatible supported major version.
+- Disabled the Pages Router-only `@next/next/no-html-link-for-pages` rule because BuildTrace uses the Next.js App Router.
+- Explicitly approved trusted native build dependencies through `pnpm-workspace.yaml`.
+- Unified locale source of truth by making `packages/shared` the canonical owner of supported locales.
+- Updated `packages/i18n` to reuse the shared locale source and declare `@buildtrace/shared` as a workspace dependency.
+- Removed unused `next-intl` dependency from the web app because Phase 1 uses the internal `appMessages` i18n foundation.
+
+### Related commits
+
+- `a90ed1d fix(web): remove nested main landmarks`
+- `60e340c chore: strengthen lint quality gates`
+- `7dedbbd chore(i18n): use shared locale source`
+- `24ebf0f chore(web): remove unused next-intl dependency`
+
+### Test result
+
+Passed across the hardening steps:
+
+- `pnpm.cmd install --frozen-lockfile`
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd turbo lint --force`
+- `pnpm.cmd build`
+- `git diff --check`
+- staged diff checks before commit
+
+### Issues found and resolved
+
+- External review found nested `<main>` landmarks. Resolved by keeping only the `AppShell` `<main>` and changing child page wrappers to `<div>`.
+- External review found the lint gate was too weak for Next.js, accessibility, and React hooks. Resolved by adding the appropriate lint plugins and forcing lint verification.
+- ESLint 10 caused peer compatibility risk with the accessibility lint plugin. Resolved by aligning ESLint to supported 9.x.
+- The Next.js Pages Router link rule emitted a warning in an App Router project. Resolved by disabling that specific Pages Router-only rule while keeping the rest of the Next.js lint rules.
+- `pnpm install` required explicit native build dependency approval. Resolved by recording trusted build dependencies in `pnpm-workspace.yaml`.
+- External review found duplicate locale sources. Resolved by using `packages/shared` as the canonical locale source.
+- External review found `next-intl` was installed but unused. Resolved by removing it until the project intentionally adopts it.
+
+### Security notes
+
+- No auth was added.
+- No Supabase Auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No ticket backend was added.
+- No CRUD was added.
+- No real dashboard data was added.
+- No real machine data was added.
+- No document upload was added.
+- No private file URLs were exposed.
+
+### Commit message
+
+`docs: record phase 1 hardening decisions`
