@@ -343,9 +343,9 @@ Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
 Added industrial polish for translated Phase 1 shell pages.
 
-This did not complete Phase 1. Current full beta roadmap completion remains 5%.
+This did not complete Phase 1. Current full beta roadmap completion remained 5%.
 
-Practical Phase 1 progress is approximately 80-85%.
+Practical Phase 1 progress was approximately 80-85%.
 
 ### Files/folders changed
 
@@ -485,3 +485,163 @@ CSS verification result:
 ### Commit message
 
 `feat(web): polish translated phase 1 shell`
+
+---
+
+## 2026-06-09
+
+### Phase
+
+Phase 1 - Industrial UI shell + multilingual UI skeleton.
+
+### Task completed
+
+Completed the final Phase 1 shell foundation slice.
+
+This formally completed Phase 1 according to the roadmap criteria.
+
+Full beta roadmap completion moved from 5% to 12%.
+
+### Files/folders changed
+
+- apps/web/src/app/[locale]/page.tsx
+- apps/web/src/app/[locale]/machines/[machineId]/page.tsx
+- packages/i18n/messages/en.json
+- packages/i18n/messages/cs.json
+- packages/i18n/messages/sk.json
+- packages/i18n/messages/pl.json
+- packages/i18n/messages/de.json
+- packages/i18n/messages/fr.json
+- packages/i18n/messages/es.json
+
+### Test result
+
+Passed:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `git diff --check`
+- `git diff --stat`
+- `git diff --name-status`
+- `git ls-files --others --exclude-standard`
+- final `git status --short` after commit was clean
+
+### Build result
+
+Production build passed.
+
+Production build confirmed the translated machine detail shell route existed through the localized App Router structure:
+
+- `/[locale]/machines/[machineId]`
+
+### Manual/runtime result
+
+Manual browser checks completed:
+
+- `/en`
+- `/en/machines/example-machine`
+- `/cs/machines/example-machine`
+- localized navigation routes
+- `/en#privacy`
+- `/en#security`
+- `/en#data-protection`
+
+Manual browser result:
+
+- styled landing page rendered
+- narrow/mobile layout was reviewed manually
+- translated app shell rendered
+- header rendered
+- footer rendered
+- language switcher rendered
+- active navigation state still worked
+- machine detail shell rendered as placeholder-only
+- Czech machine detail route loaded
+- footer anchors navigated to the expected landing sections
+- no real machine data appeared
+- no fake operational metrics appeared
+- no backend data was requested
+
+### Phase 1 exit-condition result
+
+Roadmap Phase 1 exit condition:
+
+- user can click through serious industrial UI
+- language switching works
+- product already communicates secure-by-default positioning
+
+Result:
+
+- passed
+
+Phase 1 is formally complete.
+
+### Issues found and resolved
+
+- During final review, the roadmap criteria were checked against the completed implementation before declaring Phase 1 complete. The documented criteria matched the delivered shell scope.
+- The dev server could not start a second time on port 3000 because an existing server was already running. Resolved by using the existing `localhost:3000` server for browser verification instead of starting a duplicate server.
+- Final wording initially risked using wording equivalent to compliance outcomes. Resolved by using safer wording around regulatory outcomes, review outcomes, and approval outcomes.
+- A generated `apps/web/next-env.d.ts` drift occurred during dev server testing. Resolved by restoring the generated file before commit.
+- Final staging review confirmed only the intended localized web/i18n files were included.
+
+### Security notes
+
+- No auth was added.
+- No Supabase Auth was added.
+- No database was added.
+- No storage was added.
+- No QR portal was added.
+- No ticket backend was added.
+- No CRUD was added.
+- No dashboard data was added.
+- No machine CRUD was added.
+- No customer data was added.
+- No document upload was added.
+- No document download was added.
+- No real machine data was connected.
+- No private file URLs were exposed.
+- No regulatory, legal, safety, CE, Machinery Regulation, CRA, or compliance guarantee was added.
+- Final landing and machine-detail wording stayed within evidence readiness, documentation organization, secure-by-default direction, customer-visible files, private engineering docs, regulatory outcomes, review outcomes, and approval outcomes.
+
+### i18n notes
+
+- Final landing polish uses translation keys.
+- Machine detail shell text uses translation keys.
+- Machine detail placeholder sections use translation keys.
+- All 7 locale message files were updated:
+  - en
+  - cs
+  - sk
+  - pl
+  - de
+  - fr
+  - es
+- Supported locales remain: en, cs, sk, pl, de, fr, es.
+- Uploaded document translation is still not included.
+
+### Not included
+
+- real authentication
+- Supabase Auth
+- PostgreSQL
+- Prisma
+- tenant isolation
+- RBAC
+- document upload
+- private storage
+- signed URLs
+- QR portal
+- ticket backend
+- machine/customer/document CRUD
+- real dashboard data
+- software timeline logic
+- spare parts logic
+- quote flow
+- feedback collection logic
+- deployment
+
+### Commit message
+
+`feat(web): complete phase 1 shell foundation`

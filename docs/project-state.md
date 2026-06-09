@@ -4,7 +4,11 @@
 
 Phase 1 - Industrial UI shell + multilingual UI skeleton.
 
-Phase 1 is in progress.
+Phase 1 is formally complete.
+
+Next phase:
+
+- Phase 2 - Database + auth + tenancy
 
 ## Current beta completion
 
@@ -12,25 +16,23 @@ Phase 0 target: 5% of full beta roadmap.
 
 Phase 0 status: complete.
 
-Current full beta roadmap completion: 5%.
+Phase 1 target: 12% of full beta roadmap.
 
-Phase 1 target after full completion: 12%.
+Phase 1 status: complete.
 
-Current Phase 1 status: in progress.
-
-Practical Phase 1 progress: approximately 80-85% of Phase 1.
-
-Phase 1 is not complete yet.
+Current full beta roadmap completion: 12%.
 
 ## Latest completed implementation chunk
 
-Phase 1 implementation chunk completed:
+Phase 1 final shell completion slice completed:
 
-- industrial polish for translated Phase 1 shell pages
+- final industrial landing polish
+- translated machine detail shell route
+- final localized shell browser verification
 
 Latest feature commit:
 
-- `020255c feat(web): polish translated phase 1 shell`
+- `92a1585 feat(web): complete phase 1 shell foundation`
 
 Remote status:
 
@@ -72,7 +74,7 @@ Remote status:
 - decisions log created
 - next steps created
 
-## Completed in Phase 1 so far
+## Completed in Phase 1
 
 - Added `LanguageSwitcher` component
 
@@ -115,6 +117,8 @@ Remote status:
 - Updated footer privacy/security/data-protection links to work from localized subpages
 
 - Added translated landing page starter content
+
+- Added final industrial landing page polish
 
 - Added translated evidence-readiness and documentation sections
 
@@ -163,9 +167,20 @@ Remote status:
   - data export
   - security logs
 
+- Added translated machine detail shell route:
+  - `/[locale]/machines/[machineId]`
+
+- Added placeholder-only translated machine detail sections for:
+  - machine overview
+  - handover readiness
+  - documents
+  - tickets
+  - software timeline
+  - spare parts
+
 - Added translated language-switcher labels to all 7 locale message files
 
-- Added translated shell, landing, page-shell, dashboard, login, and settings polish keys to all 7 locale message files
+- Added translated shell, landing, page-shell, dashboard, login, settings, and machine detail keys to all 7 locale message files
 
 - Renamed misleading `phaseZeroMessages` export to `appMessages`
 
@@ -196,6 +211,8 @@ Remote status:
 - Verified settings placeholder sections manually
 
 - Verified Czech dashboard route manually
+
+- Verified machine detail placeholder routes manually
 
 - Verified footer anchor targets exist and match section IDs
 
@@ -278,15 +295,43 @@ Manual browser checks completed for the industrial polish chunk:
 - `/en#security`
 - `/en#data-protection`
 
+Phase 1 final shell completion verification passed:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd typecheck`
+- `pnpm.cmd lint`
+- `pnpm.cmd build`
+- `git diff --check`
+- `git diff --stat`
+- `git diff --name-status`
+- `git ls-files --others --exclude-standard`
+- `git status --short`
+- staged file review confirmed only intended localized web/i18n files were included
+- `apps/web/next-env.d.ts` generated dev drift was restored before commit
+
+Manual browser checks completed for the final Phase 1 shell completion slice:
+
+- `/en`
+- `/en/machines/example-machine`
+- `/cs/machines/example-machine`
+- localized navigation routes
+- footer anchor links:
+  - `/en#privacy`
+  - `/en#security`
+  - `/en#data-protection`
+
 Manual browser result:
 
+- styled landing page renders
+- narrow/mobile layout was reviewed manually
 - header renders on localized pages
 - language switcher renders
 - active navigation state works
 - dashboard placeholder cards render
 - login remains placeholder-only
 - settings placeholder sections render
-- Czech dashboard route loads
+- machine detail shell renders as placeholder-only
+- Czech machine detail route loads
 - footer anchors navigate to the expected landing sections
 - Next.js dev tools overlay was treated as development-only UI
 
@@ -339,6 +384,7 @@ Individual runtime verification also passed:
 - Browser testing initially showed a hydration mismatch related to browser translation behavior. Resolved as a test-environment issue by testing with translation disabled.
 - Browser testing initially showed plain HTML-looking output. Resolved by adding the Tailwind/PostCSS CSS pipeline and importing global CSS from the localized layout.
 - A generated `apps/web/next-env.d.ts` drift occurred during dev server testing. Resolved by restoring the generated file before commit.
+- Final Phase 1 wording was checked to avoid claims of legal, CE, Machinery Regulation, CRA, safety, or compliance guarantees. Resolved by using conservative language around evidence readiness, documentation organization, secure-by-default direction, regulatory outcomes, review outcomes, and approval outcomes.
 
 ## Known quality note: `next-env.d.ts`
 
@@ -358,7 +404,7 @@ Current policy:
 
 ## Known Phase 0 limits
 
-Phase 0 does not include:
+Phase 0 did not include:
 
 - authentication
 - database
@@ -375,15 +421,34 @@ Phase 0 does not include:
 - feedback
 - deployment
 
-## Known Phase 1 remaining scope
+These are intentional roadmap boundaries, not defects.
 
-Phase 1 still needs:
+## Known Phase 1 limits
 
-- final industrial landing page polish
-- translated machine detail shell
-- final mobile/layout review
-- final manual browser pass across key routes/locales
-- final Phase 1 documentation update before formally closing Phase 1
+Phase 1 is complete, but it is intentionally shell-only.
+
+Phase 1 did not include:
+
+- real authentication
+- Supabase Auth
+- PostgreSQL
+- Prisma schema
+- tenant isolation
+- RBAC
+- document upload
+- Supabase Storage
+- QR portal implementation
+- ticket backend
+- machine CRUD
+- customer CRUD
+- document CRUD
+- software timeline logic
+- spare parts logic
+- quote flow
+- feedback collection logic
+- deployment
+
+These are intentional Phase 2+ roadmap boundaries, not defects.
 
 ## Current not-in-scope items
 
@@ -410,14 +475,37 @@ Not started yet:
 
 ## Next phase milestone
 
-Continue Phase 1 - Industrial UI shell + multilingual UI skeleton.
+Start Phase 2 - Database + auth + tenancy.
+
+Phase 2 target completion:
+
+- 22% of full beta roadmap after full Phase 2 completion
 
 Next recommended implementation chunk:
 
-- final Phase 1 shell completion slice, including final industrial landing polish, translated machine detail shell, mobile/layout review, and final manual browser pass, without auth, database, storage, QR portal, tickets backend, or CRUD
+- plan the Phase 2 foundation carefully before coding
+- inspect current repo state and docs
+- define the smallest safe first baby step for database/auth/tenancy
+- avoid adding broad backend scope before the first Phase 2 boundary is clear
+
+Phase 2 must introduce real backend/security foundations carefully:
+
+- Supabase Auth
+- PostgreSQL
+- Prisma schema
+- organization workspace logic
+- user preferred language
+- organization default language
+- customer preferred language
+- organization-level tenant isolation
+- API-level tenant checks
+- RBAC foundation
+- activity log table
+- login event logging
+- secure environment variable setup
 
 ## Last git commit
 
-Commit hash: `020255c`
+Commit hash: `92a1585`
 
-Commit message: `feat(web): polish translated phase 1 shell`
+Commit message: `feat(web): complete phase 1 shell foundation`
