@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "auth:smoke": "tsx src/auth-smoke-check.ts",
+    "tenant:smoke": "tsx src/tenant-access-smoke-check.ts",
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
