@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@buildtrace/db": "workspace:*",
     "@buildtrace/shared": "workspace:*",
     "@nestjs/common": "^11.1.25",
     "@nestjs/core": "^11.1.25",

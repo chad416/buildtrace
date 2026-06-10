@@ -37,6 +37,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@buildtrace/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@buildtrace/shared':
         specifier: workspace:*
         version: link:../../packages/shared
