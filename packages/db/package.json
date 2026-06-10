@@ -8,6 +8,7 @@
   "scripts": {
     "generate": "prisma generate",
     "prisma:validate": "prisma validate",
+    "activity:smoke": "tsx src/activity-log-smoke-check.ts",
     "build": "pnpm run generate && tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "pnpm run generate && tsc --noEmit"
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/node": "^25.9.2",
     "dotenv": "^17.4.2",
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "tsx": "^4.22.4"
   }
 }
