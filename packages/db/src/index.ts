@@ -1,1 +1,3 @@
-export const dbPackageStatus = 'phase-0-placeholder';
+export { PrismaClient } from './generated/prisma/client';
+
+export const dbPackageStatus = 'phase-2-prisma-tooling-ready';

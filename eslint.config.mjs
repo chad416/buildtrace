@@ -9,7 +9,14 @@ const webFiles = ['apps/web/**/*.{js,jsx,ts,tsx}'];
 
 export default tseslint.config(
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.turbo/**', '**/coverage/**'],
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.next/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+      'packages/db/src/generated/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
