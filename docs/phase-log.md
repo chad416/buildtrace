@@ -745,3 +745,71 @@ Passed across the hardening steps:
 ### Commit message
 
 `docs: record phase 1 hardening decisions`
+
+---
+
+## 2026-06-10
+
+### Phase
+
+Phase 2 - Database + auth + tenancy.
+
+### Task completed
+
+Started Phase 2 with a docs-only trust-foundation decision preflight.
+
+This is not a database implementation step yet.
+
+### Files/folders changed
+
+- docs/decisions.md
+- docs/security.md
+- docs/data-protection.md
+- docs/next-steps.md
+- docs/phase-log.md
+
+### Decisions recorded
+
+- Phase 2 starts with organizations, users, and activity log only
+- product tables remain owned by their roadmap phases
+- application-layer tenant guards are the first implemented isolation layer
+- RLS must not be claimed until configured and tested
+- internal BuildTrace user ID maps to external Supabase `auth_user_id`
+- web/API auth boundary is explicit
+- service-role secrets stay server-side only
+- Prisma generation must be wired into Turbo before dependent gates
+- Prisma enum mirrors require immediate drift checks
+- migrations must be validated from zero against disposable PostgreSQL
+- activity logs are append-only
+- IP address and user agent handling requires documented purpose and retention expectation
+
+### Scope notes
+
+No implementation was added.
+
+This step did not add:
+
+- Prisma schema
+- database migrations
+- Supabase Auth integration
+- tenant guards
+- RBAC logic
+- storage
+- QR portal
+- tickets backend
+- CRUD
+- product tables
+- dashboard data
+
+### Verification required before commit
+
+Run:
+
+- `pnpm.cmd format:check`
+- `pnpm.cmd turbo typecheck --force`
+- `pnpm.cmd turbo lint --force`
+- `pnpm.cmd turbo build --force`
+- `git diff --check`
+- `git diff --stat`
+- `git diff --name-status`
+- `git status --short`

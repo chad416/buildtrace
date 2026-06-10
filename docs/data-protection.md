@@ -122,6 +122,36 @@ Phase 2 should begin the real data-protection foundation through:
 
 Phase 2 should not start document storage, QR portal access, ticket workflows, or machine CRUD unless explicitly scoped.
 
+## Phase 2 activity-log data handling
+
+Phase 2 may introduce activity logging for security and auditability.
+
+Activity logs should collect only what is needed to understand important security and product actions.
+
+Activity logs must not store:
+
+- passwords
+- secrets
+- tokens
+- signed URLs
+- uploaded file contents
+- sensitive engineering file contents
+- unnecessary personal data
+
+Security-relevant request metadata may include IP address and user agent only when justified for security review and abuse investigation.
+
+Beta retention expectation:
+
+- retain security audit metadata only for the beta period unless a shorter retention period is defined before production deployment
+- review and formalize production retention before deployment
+- do not use activity logs as a general analytics dump
+
+Reason:
+
+- IP address and user agent can be personal data
+- BuildTrace's EU/data-protection positioning requires a written reason for storing security metadata
+- logs should support auditability without becoming a sensitive data store
+
 ## Known current gaps
 
 Current implementation does not yet include:

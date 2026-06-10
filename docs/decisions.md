@@ -248,6 +248,154 @@ Reason:
 
 - future machine, document, QR, ticket, and export workflows depend on correct tenant/security foundations
 
+### Phase 2 trust-foundation slice
+
+Phase 2 must start with the smallest load-bearing database, auth, and tenancy foundation.
+
+The first implementation slice should focus on:
+
+- organizations
+- users
+- activity log
+
+Reason:
+
+- tenant isolation must exist before machine, document, ticket, QR, export, or customer workflows
+- authentication must map to an internal app user before product data is connected
+- activity logging must exist before sensitive workflows are introduced
+- building every future product table in Phase 2 would violate phase ownership and create inventory waste
+
+Deferred to owning roadmap phases:
+
+- machine records belong to Phase 3
+- customer records belong to Phase 3
+- document upload and storage belong to Phase 4
+- document classification belongs to Phase 5
+- handover completeness and export belong to Phase 6
+- QR customer portal belongs to Phase 7
+- tickets belong to Phase 8
+- software timeline belongs to Phase 9
+- spare parts and quotes belong to Phase 10
+- feedback belongs to Phase 11
+
+### Phase 2 tenant isolation model
+
+Use application-layer tenant guards as the first implemented enforcement layer.
+
+Target defense-in-depth may include database row-level security later, but BuildTrace must not claim RLS is implemented until it is actually configured and tested with the chosen Prisma/Supabase setup.
+
+Reason:
+
+- the API must reliably resolve the current authenticated user
+- every organization-scoped query must be constrained by organization ID
+- future data workflows depend on this boundary being correct
+- claiming untested RLS would weaken product trust
+
+### Phase 2 auth-to-user mapping
+
+Use an internal BuildTrace user ID and store the external Supabase identity as a unique `auth_user_id`.
+
+Reason:
+
+- internal app records should not be tightly coupled to Supabase internal auth table structure
+- migrations can run against disposable PostgreSQL without depending on Supabase auth schema
+- provider-independent migrations are easier to test from zero
+- `auth_user_id` still allows reliable mapping from authenticated JWT identity to app user
+
+### Phase 2 auth boundary
+
+The approved auth boundary is:
+
+- web app uses the Supabase anon key for login
+- web app receives a user JWT
+- web app sends the JWT to the API
+- API verifies the JWT
+- API maps `auth_user_id` to the internal user record
+- API resolves the user organization
+- API applies tenant guards before returning organization-scoped data
+
+Service-role secrets must live only in the server/API boundary.
+
+Service-role secrets must never be exposed in `apps/web`.
+
+Reason:
+
+- frontend code must not contain privileged backend credentials
+- the API must own trusted tenant resolution
+- secrets-boundary checks need a clear expected architecture
+
+### Phase 2 Prisma and Turbo pipeline
+
+When Prisma is added, Prisma client generation must be wired into the workspace task pipeline.
+
+The generated Prisma client must exist before any package that imports database types or client code runs typecheck or build.
+
+Reason:
+
+- cold clones must pass gates
+- CI must not depend on a warm local generated client
+- Turbo caching must not hide missing generation steps
+
+Decision:
+
+- configure Prisma generation as part of the database package workflow
+- ensure dependent typecheck/build tasks run after the required database generation step
+- do not commit generated Prisma client output unless a separate documented decision approves it
+
+### Phase 2 enum drift prevention
+
+If Prisma schema enums mirror constants from `packages/shared`, add an immediate drift check when the mirror is introduced.
+
+Reason:
+
+- duplicated enum declarations can drift
+- locale drift was already removed by making `packages/shared` the canonical locale source
+- database enum mirrors should not recreate the same two-source-of-truth problem
+
+Decision:
+
+- shared TypeScript constants remain the app-facing source where possible
+- Prisma may mirror database-required enums
+- mirrored enum values must be checked by an automated test or script in the same implementation slice that creates the mirror
+
+### Phase 2 migration-from-zero rule
+
+Database migrations must be tested from zero against a disposable PostgreSQL database before being treated as valid.
+
+Do not use the live Supabase project as the only migration validation target.
+
+Reason:
+
+- migration correctness should be reproducible
+- CI and local validation should not require production-like Supabase credentials
+- Supabase is PostgreSQL, so provider-independent migrations should apply cleanly to disposable PostgreSQL first
+
+### Phase 2 activity log model
+
+Activity logs should be append-only.
+
+Activity log records should not be silently edited after creation.
+
+Activity logs must not store:
+
+- secrets
+- passwords
+- tokens
+- signed URLs
+- uploaded file contents
+- sensitive engineering file contents
+- unnecessary personal data
+
+Initial activity logging may include security-relevant request metadata only when justified.
+
+If IP address or user agent is stored, data-protection docs must define the reason and retention expectation.
+
+Reason:
+
+- audit history must be trustworthy
+- logs must support security review without becoming a sensitive data dump
+- BuildTrace's EU/data-protection positioning requires discipline around personal data
+
 ## I18N decisions
 
 Supported locales from day one:

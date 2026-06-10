@@ -1,7 +1,45 @@
-But based on the confirmed current state, this is the clean paste-ready `docs/next-steps.md`.
-
-````markdown
 # BuildTrace Next Steps
+
+## Phase 2 Step 0 - Decision preflight
+
+Before adding Prisma, Supabase Auth, database schema, or tenant logic, complete the Phase 2 decision preflight.
+
+Step 0 locks:
+
+- minimal Phase 2 trust-foundation slice
+- schema ownership by roadmap phase
+- tenant isolation model
+- auth-to-user mapping
+- web/API auth boundary
+- Prisma generate and Turbo pipeline rule
+- enum drift prevention rule
+- migration-from-zero rule
+- append-only activity log rule
+- IP address and user agent data-handling expectation
+
+Implementation must not start until these decisions are reviewed.
+
+Next implementation slice after Step 0:
+
+- add Prisma tooling in `packages/db`
+- add Prisma generation workflow
+- wire generation into Turbo task dependencies
+- validate cold-clone behavior
+- do not add product tables beyond the approved Phase 2 trust foundation
+
+Do not start:
+
+- machine CRUD
+- customer CRUD
+- document upload
+- storage
+- QR portal
+- tickets backend
+- software timeline
+- spare parts logic
+- quote flow
+- feedback collection
+- dashboard data
 
 ## Current status
 
@@ -292,7 +330,6 @@ Run from:
 ```powershell
 C:\Users\chand\buildtrace
 ```
-````
 
 Use:
 

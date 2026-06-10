@@ -151,6 +151,34 @@ Phase 2 exit condition:
 - core activity logging works
 - unauthorized access is blocked
 
+## Phase 2 trust-foundation security decisions
+
+Phase 2 must implement security in the correct order.
+
+Approved order:
+
+1. establish authenticated identity
+2. map authenticated identity to an internal BuildTrace user
+3. resolve the user's organization
+4. enforce organization-scoped tenant guards
+5. add role foundation
+6. add append-only activity logging
+
+Phase 2 must not connect machine, document, ticket, QR, export, or storage workflows before the tenant boundary exists.
+
+The service-role secret must remain server-side only.
+
+The web app may use public/anon auth configuration only when needed for login.
+
+BuildTrace must not claim row-level security is implemented until RLS is configured and tested with the chosen Prisma/Supabase setup.
+
+Reason:
+
+- secure-by-default positioning must become real backend behavior
+- tenant isolation is the load-bearing wall for later phases
+- secrets must not cross into frontend code
+- untested security claims would weaken product trust
+
 ## Known current gaps
 
 Current implementation does not yet include:
