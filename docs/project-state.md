@@ -2,13 +2,36 @@
 
 ## Current phase
 
-Phase 1 - Industrial UI shell + multilingual UI skeleton.
+Phase 2 - Database + auth + tenancy.
+
+Phase 0 is formally complete.
 
 Phase 1 is formally complete.
 
-Next phase:
+Phase 2 trust-foundation implementation is complete.
 
-- Phase 2 - Database + auth + tenancy
+Phase 2 documentation closeout and final review gate are underway.
+
+Completed Phase 2 foundation:
+
+- Prisma tooling and generation workflow
+- PostgreSQL trust schema for organizations, app users, organization memberships, and activity logs
+- initial trust schema migration validated against PostgreSQL from zero
+- Prisma client factory
+- Supabase auth configuration boundary
+- Supabase bearer token verifier
+- bearer authorization header parser
+- auth boundary smoke check
+- current user resolution foundation
+- application-layer tenant access guard foundation
+- tenant access smoke check
+- authenticated tenant context composition helper
+- append-only activity log helper
+- activity log smoke check
+
+Next phase after Phase 2:
+
+- Phase 3 - Machine/customer records foundation
 
 ## Current beta completion
 
@@ -20,19 +43,26 @@ Phase 1 target: 12% of full beta roadmap.
 
 Phase 1 status: complete.
 
-Current full beta roadmap completion: 12%.
+Phase 2 target: 22% of full beta roadmap.
+
+Phase 2 status: trust-foundation implementation complete.
+
+Current full beta roadmap completion: 22%.
 
 ## Latest completed implementation chunk
 
-Phase 1 final shell completion slice completed:
+Phase 2 trust-foundation backend slice completed:
 
-- final industrial landing polish
-- translated machine detail shell route
-- final localized shell browser verification
+- database tooling and schema foundation
+- migration-from-zero validation
+- API auth boundary helpers
+- current-user and tenant access helpers
+- authenticated tenant context helper
+- activity log helper and smoke check
 
-Latest feature commit:
+Latest implementation commit:
 
-- `92a1585 feat(web): complete phase 1 shell foundation`
+- `ec2b2f1 test(db): add activity log smoke check`
 
 Remote status:
 
@@ -216,6 +246,40 @@ Remote status:
 
 - Verified footer anchor targets exist and match section IDs
 
+## Completed in Phase 2
+
+- Locked Phase 2 trust-foundation decisions in docs
+- Added Prisma tooling foundation to `@buildtrace/db`
+- Added Prisma schema for:
+  - organizations
+  - app users
+  - organization memberships
+  - activity logs
+- Added `OrganizationRole` enum with:
+  - `OWNER`
+  - `ADMIN`
+  - `MEMBER`
+- Added PostgreSQL migration lock and initial trust schema migration
+- Validated migration from zero against local PostgreSQL
+- Added Prisma client factory using `@prisma/adapter-pg`
+- Added generated Prisma client output policy
+- Ignored generated Prisma client output from Git, ESLint, and Prettier
+- Updated Turbo generation behavior so generated Prisma output is not cached as a source artifact
+- Added Supabase auth configuration boundary
+- Added Supabase bearer token verifier
+- Added bearer authorization header parser
+- Added auth boundary smoke check
+- Added API dependency on `@supabase/supabase-js`
+- Added API dependency on `@buildtrace/db`
+- Added current user resolution foundation
+- Added organization membership context resolution
+- Added tenant access guard foundation
+- Added tenant access smoke check
+- Added authenticated tenant context composition helper
+- Added append-only activity log helper
+- Added activity log smoke check
+- Added `tsx` dev dependency to `@buildtrace/db` for DB smoke checks
+
 ## Verified locally
 
 Final Phase 0 verification passed before Phase 0 commit:
@@ -342,6 +406,43 @@ Individual runtime verification also passed:
 - API starts successfully
 - worker placeholder starts successfully
 
+Phase 2 database and trust-foundation verification passed:
+
+- `pnpm.cmd --filter @buildtrace/db run prisma:validate`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db lint`
+- `pnpm.cmd --filter @buildtrace/db build`
+- `pnpm.cmd --filter @buildtrace/db run activity:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api build`
+- `pnpm.cmd --filter @buildtrace/api run auth:smoke`
+- `pnpm.cmd --filter @buildtrace/api run tenant:smoke`
+- `pnpm.cmd format:check`
+- `pnpm.cmd turbo typecheck --force`
+- `pnpm.cmd turbo lint --force`
+- `pnpm.cmd turbo build --force`
+- `git diff --check`
+- `git diff --cached --check`
+- staged file review was performed before each Phase 2 commit
+- generated Prisma client output was not committed
+- migration was applied and verified against local PostgreSQL
+- Prisma migrate status confirmed the database schema was up to date
+
+Phase 2 local PostgreSQL verification passed:
+
+- PostgreSQL 17 installed locally
+- PostgreSQL service verified running
+- test database `buildtrace_migration_test` created
+- `DATABASE_URL` set only in the local PowerShell session
+- Prisma migration applied successfully
+- database tables verified:
+  - `_prisma_migrations`
+  - `activity_logs`
+  - `app_users`
+  - `organization_memberships`
+  - `organizations`
+
 ## Current tech stack foundation
 
 - pnpm
@@ -355,7 +456,14 @@ Individual runtime verification also passed:
 - worker placeholder with tsx
 - shared package
 - i18n package
-- db placeholder package
+- db package with Prisma
+- Prisma Client 7
+- PostgreSQL provider
+- local PostgreSQL migration verification
+- Supabase auth boundary in API
+- Supabase token verifier foundation
+- tenant access guard foundation
+- activity log helper foundation
 - ui placeholder package
 
 ## Issues found and resolved
@@ -385,6 +493,14 @@ Individual runtime verification also passed:
 - Browser testing initially showed plain HTML-looking output. Resolved by adding the Tailwind/PostCSS CSS pipeline and importing global CSS from the localized layout.
 - A generated `apps/web/next-env.d.ts` drift occurred during dev server testing. Resolved by restoring the generated file before commit.
 - Final Phase 1 wording was checked to avoid claims of legal, CE, Machinery Regulation, CRA, safety, or compliance guarantees. Resolved by using conservative language around evidence readiness, documentation organization, secure-by-default direction, regulatory outcomes, review outcomes, and approval outcomes.
+- Prisma generated client output initially appeared as untracked source. Resolved by keeping generated output reproducible and ignored instead of committing generated files.
+- VS Code initially could not load the remote Turbo schema. Resolved by pointing `turbo.json` to the local installed schema.
+- PostgreSQL command-line tools were initially unavailable. Resolved by installing PostgreSQL locally and using the installed binary path.
+- The local PostgreSQL password was unknown after installation. Resolved by temporarily switching local auth to trust, setting a real password, then restoring the original PostgreSQL authentication config.
+- `DATABASE_URL` was kept out of Git and set only in the local PowerShell session for migration verification.
+- `pnpm add @buildtrace/db` initially looked for the package in npm. Resolved by using the workspace protocol: `@buildtrace/db@workspace:*`.
+- `@buildtrace/db` initially lacked `tsx` for its smoke script. Resolved by adding `tsx` as a dev dependency in `packages/db`.
+- An intermediate activity-log test-only helper design was rejected because it widened the public API for a smoke test. Resolved by testing the real `createActivityLog` behavior through a fake Prisma client instead.
 
 ## Known quality note: `next-env.d.ts`
 
@@ -401,6 +517,18 @@ Current policy:
 - before committing, run `pnpm.cmd build`
 - verify `git status --short` does not show `apps/web/next-env.d.ts`
 - do not remove this file from Git tracking unless the project makes a documented decision later
+
+## Known quality note: generated Prisma client
+
+`packages/db/src/generated/` is generated output.
+
+Current policy:
+
+- do not commit generated Prisma client files
+- generate them through `pnpm.cmd --filter @buildtrace/db run generate`
+- keep generated output ignored by Git, ESLint, and Prettier
+- verify generated output is not shown by `git ls-files --others --exclude-standard`
+- keep Prisma schema, migrations, and source helpers committed
 
 ## Known Phase 0 limits
 
@@ -450,62 +578,79 @@ Phase 1 did not include:
 
 These are intentional Phase 2+ roadmap boundaries, not defects.
 
+## Known Phase 2 limits
+
+Phase 2 is complete as a trust-foundation backend slice.
+
+Phase 2 did not include:
+
+- production deployment
+- live hosted Supabase project wiring
+- frontend login screen connected to Supabase Auth
+- browser session management
+- API route guards mounted on real feature endpoints
+- machine CRUD
+- customer CRUD
+- document CRUD
+- ticket backend
+- QR portal implementation
+- Supabase Storage buckets
+- signed URL document access
+- software timeline implementation
+- spare parts implementation
+- quote flow implementation
+- feedback collection implementation
+
+These are intentional Phase 3+ roadmap boundaries, not defects.
+
 ## Current not-in-scope items
 
 Not started yet:
 
-- real authentication
-- Supabase Auth
-- PostgreSQL
-- Prisma
-- tenant isolation
-- RBAC
-- document upload
-- Supabase Storage
-- QR portal
-- tickets backend
+- production deployment
+- live hosted Supabase project wiring
+- frontend login flow wiring
+- API feature endpoints using the new tenant context
 - machine CRUD
 - customer CRUD
 - document CRUD
+- tickets backend
+- document upload
+- Supabase Storage
+- private storage buckets
+- signed URLs
+- QR portal
 - software timeline
 - spare parts logic
 - quote flow
 - feedback collection logic
-- deployment
 
 ## Next phase milestone
 
-Start Phase 2 - Database + auth + tenancy.
+Start Phase 3 - Machine/customer records foundation.
 
-Phase 2 target completion:
-
-- 22% of full beta roadmap after full Phase 2 completion
+Phase 3 should build on the completed Phase 2 trust foundation.
 
 Next recommended implementation chunk:
 
-- plan the Phase 2 foundation carefully before coding
 - inspect current repo state and docs
-- define the smallest safe first baby step for database/auth/tenancy
-- avoid adding broad backend scope before the first Phase 2 boundary is clear
+- define the smallest safe Phase 3 baby step
+- add machine/customer data models only after checking tenant ownership rules
+- keep every data model organization-scoped unless there is a documented reason not to
+- avoid broad feature scope before the first Phase 3 boundary is clear
 
-Phase 2 must introduce real backend/security foundations carefully:
+Phase 3 must preserve the Phase 2 trust rules:
 
-- Supabase Auth
-- PostgreSQL
-- Prisma schema
-- organization workspace logic
-- user preferred language
-- organization default language
-- customer preferred language
-- organization-level tenant isolation
-- API-level tenant checks
-- RBAC foundation
-- activity log table
-- login event logging
-- secure environment variable setup
+- no cross-tenant reads
+- no unauthenticated business data access
+- no committed secrets
+- no generated Prisma client committed
+- no fake compliance claims
+- every new backend path must have a clear organization boundary
+- every meaningful write path should be ready for activity logging
 
 ## Last git commit
 
-Commit hash: `92a1585`
+Commit hash: `ec2b2f1`
 
-Commit message: `feat(web): complete phase 1 shell foundation`
+Commit message: `test(db): add activity log smoke check`
