@@ -758,7 +758,7 @@ Phase 2 - Database + auth + tenancy.
 
 Started Phase 2 with a docs-only trust-foundation decision preflight.
 
-This is not a database implementation step yet.
+This was not a database implementation step yet.
 
 ### Files/folders changed
 
@@ -801,15 +801,356 @@ This step did not add:
 - product tables
 - dashboard data
 
-### Verification required before commit
+### Test result
 
-Run:
+Passed:
 
 - `pnpm.cmd format:check`
 - `pnpm.cmd turbo typecheck --force`
 - `pnpm.cmd turbo lint --force`
 - `pnpm.cmd turbo build --force`
 - `git diff --check`
+- staged diff checks before commit
+
+### Commit message
+
+`docs: lock phase 2 trust foundation decisions`
+
+---
+
+## 2026-06-10
+
+### Phase
+
+Phase 2 - Database + auth + tenancy.
+
+### Task completed
+
+Implemented the Phase 2 database, auth, tenancy, and activity-log trust foundation.
+
+This completed the core Phase 2 implementation scope without adding later-phase product workflows.
+
+Full beta roadmap completion moved from 12% to 22% after Phase 2 documentation closeout.
+
+### Implementation commits
+
+- `7324175 chore(db): add prisma tooling foundation`
+- `a81137d feat(db): add phase 2 trust schema`
+- `c64aa5a chore(db): add initial trust schema migration`
+- `484a227 chore(db): add prisma client factory`
+- `222cab4 chore(api): add supabase auth config boundary`
+- `75561b3 chore(api): add supabase token verifier`
+- `c0c30a4 chore(api): add bearer authorization parser`
+- `e96cacf test(api): add auth boundary smoke check`
+- `c4ba492 chore: stop caching generated prisma output`
+- `b989f4e feat(api): add current user resolution foundation`
+- `c4f6bac feat(api): add tenant access guard foundation`
+- `c574790 test(api): add tenant access smoke check`
+- `fce41c3 feat(api): compose authenticated tenant context`
+- `b27d90d feat(db): add activity log helper`
+- `ec2b2f1 test(db): add activity log smoke check`
+
+### Files/folders changed
+
+- .gitignore
+- .prettierignore
+- eslint.config.mjs
+- turbo.json
+- pnpm-workspace.yaml
+- pnpm-lock.yaml
+- packages/db/package.json
+- packages/db/prisma.config.ts
+- packages/db/prisma/schema.prisma
+- packages/db/prisma/migrations/20260610143537_init_trust_schema/migration.sql
+- packages/db/prisma/migrations/migration_lock.toml
+- packages/db/src/index.ts
+- packages/db/src/client.ts
+- packages/db/src/activity-log.ts
+- packages/db/src/activity-log-smoke-check.ts
+- packages/db/tsconfig.json
+- apps/api/package.json
+- apps/api/src/auth-config.ts
+- apps/api/src/auth-verifier.ts
+- apps/api/src/authorization-header.ts
+- apps/api/src/auth-smoke-check.ts
+- apps/api/src/current-user.ts
+- apps/api/src/tenant-access.ts
+- apps/api/src/tenant-access-smoke-check.ts
+- apps/api/src/authenticated-tenant-context.ts
+
+### Completed foundation
+
+- Added Prisma tooling foundation in `packages/db`.
+- Added PostgreSQL datasource configuration.
+- Added Prisma schema for organizations, app users, organization memberships, and activity logs.
+- Added `OrganizationRole` enum with `OWNER`, `ADMIN`, and `MEMBER`.
+- Generated and committed the initial migration.
+- Validated the migration from zero against a disposable PostgreSQL database.
+- Kept generated Prisma client output ignored and regenerated through package scripts.
+- Added Prisma client factory.
+- Added API-side Supabase auth config boundary.
+- Added API-side bearer-token verifier.
+- Added bearer authorization-header parser.
+- Added auth boundary smoke check.
+- Added API dependency on `@buildtrace/db`.
+- Added current-user resolution foundation.
+- Added tenant access guard foundation.
+- Added tenant access smoke check.
+- Added authenticated tenant-context composition helper.
+- Added activity-log helper.
+- Added activity-log smoke check.
+- Updated Turbo generation behavior so generated Prisma output is not treated as a cache artifact.
+
+### Security and tenancy notes
+
+- API helpers verify bearer tokens server-side.
+- Supabase service-role secrets are kept in the API/server boundary only.
+- The web app does not depend on Supabase or `@buildtrace/db`.
+- Authenticated Supabase user IDs map to internal app users through `auth_user_id`.
+- Tenant access is checked through organization memberships.
+- Product-specific RBAC is not claimed yet.
+- Database row-level security is not claimed yet.
+- The implemented tenant foundation is API-layer only.
+
+### Activity-log notes
+
+- Activity logs are append-only through the exposed helper.
+- The helper validates required organization ID and action.
+- Optional text fields are normalized before insert.
+- Activity logs must not store secrets, passwords, tokens, signed URLs, uploaded file contents, or sensitive engineering file contents.
+- Phase 2 stores nullable `actor_user_id` for authenticated internal app users.
+- `actor_type` is deferred until the first non-`AppUser` activity-log producer exists.
+
+### Migration validation
+
+Passed:
+
+- PostgreSQL 17 local tooling installed through `winget`.
+- PostgreSQL server verified as accepting connections on `localhost:5432`.
+- Disposable `buildtrace_migration_test` database created.
+- `DATABASE_URL` set only in the local PowerShell session.
+- `pnpm.cmd --filter @buildtrace/db exec prisma migrate dev --name init_trust_schema`
+- `pnpm.cmd --filter @buildtrace/db exec prisma migrate status`
+- `psql` table listing confirmed:
+  - `_prisma_migrations`
+  - `organizations`
+  - `app_users`
+  - `organization_memberships`
+  - `activity_logs`
+- migration table confirmed `20260610143537_init_trust_schema`
+
+### Smoke checks
+
+Passed:
+
+- `pnpm.cmd --filter @buildtrace/api run auth:smoke`
+- `pnpm.cmd --filter @buildtrace/api run tenant:smoke`
+- `pnpm.cmd --filter @buildtrace/db run activity:smoke`
+
+### Test result
+
+Passed across the Phase 2 implementation slices:
+
+- `pnpm.cmd --filter @buildtrace/db run prisma:validate`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db lint`
+- `pnpm.cmd --filter @buildtrace/db build`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api build`
+- `pnpm.cmd format:check`
+- `pnpm.cmd turbo typecheck --force`
+- `pnpm.cmd turbo lint --force`
+- `pnpm.cmd turbo build --force`
+- `git diff --check`
+- staged diff checks before each commit
+- final `git status --short` checks before pushing each slice
+
+### Issues found and resolved
+
+- Docker was not installed. Resolved by using local PostgreSQL instead of Docker for migration-from-zero validation.
+- PostgreSQL command-line tools were installed but not on PATH. Resolved by using full executable paths under `C:\Program Files\PostgreSQL\17\bin`.
+- PostgreSQL password was not known after install. Resolved by temporarily using a backed-up `pg_hba.conf`, resetting the password through `psql`, restoring the original `pg_hba.conf`, and restarting the service.
+- `DATABASE_URL` initially contained a placeholder password. Resolved by clearing it and setting a session-only value from a secure prompt.
+- `createdb` initially failed authentication. Resolved after password reset and service restart.
+- Prisma migration files were initially untracked. Resolved by checking untracked files and staging `packages/db/prisma/migrations`.
+- Generated Prisma client output was intentionally not staged because it is generated and ignored.
+- `tsx` was missing from `@buildtrace/db` when adding the activity-log smoke check. Resolved by adding `tsx` as a `@buildtrace/db` dev dependency.
+- Early smoke-check files triggered Prettier warnings. Resolved by formatting changed human-authored files and rerunning gates.
+- Turbo generated-output caching risk was found during Phase 2. Resolved by stopping generated Prisma output from being treated as a cached artifact.
+
+### Scope notes
+
+Phase 2 intentionally did not add:
+
+- real frontend login flow
+- mounted protected API endpoints
+- machine records
+- customer records
+- document upload
+- private storage buckets
+- signed download URLs
+- QR portal access control
+- tickets backend
+- spare parts or quote workflows
+- feedback workflows
+- product-specific RBAC
+- database row-level security claims
+- production rate limiting
+- deployment
+
+---
+
+## 2026-06-11
+
+### Phase
+
+Phase 2 - Database + auth + tenancy review hardening.
+
+### Task completed
+
+Updated Phase 2 documentation after external review so the project state, decision trail, roadmap, security docs, data-protection docs, next steps, and phase log match the implemented Phase 2 foundation.
+
+This did not add product code.
+
+This did not start Phase 3.
+
+### Review source
+
+An external senior-engineering review gave Phase 2 this verdict:
+
+- Pass with concerns
+
+The review found no critical code issue.
+
+The review concerns were:
+
+- state-bearing docs still described Phase 2 as future work
+- `docs/phase-log.md` did not record Phase 2 implementation commits
+- the `actor_type` Step 0 sketch was not implemented or documented
+- the membership model changed from the Step 0 sketch without a decision record
+- activity-log organization deletion behavior needed to be documented
+- `packages/db/prisma.config.ts` and `apps/api/src/main.ts` still need small consistency follow-up fixes
+
+### Documentation hardening commits
+
+- `85533c8 docs: update phase 2 project state`
+- `d011307 docs: record phase 2 decision reconciliation`
+- `9d53700 docs: update phase 2 security and data protection state`
+- `c58db3f docs: update phase 2 roadmap state`
+- `4d779b9 docs: update phase 2 next steps`
+
+### Files/folders changed
+
+- docs/project-state.md
+- docs/decisions.md
+- docs/security.md
+- docs/data-protection.md
+- docs/roadmap.md
+- docs/next-steps.md
+- docs/phase-log.md
+
+### Hardening completed
+
+- Updated project state to show Phase 2 complete at 22%.
+- Updated roadmap to show Phase 2 complete and Phase 3 next.
+- Updated next steps to remove stale Phase 2 Step 0 instructions and point to Phase 3 decision preflight.
+- Updated security docs from future-tense Phase 2 plan to implemented Phase 2 state.
+- Updated data-protection docs with Phase 2 activity-log and data-handling state.
+- Recorded the membership-scoped organization role decision.
+- Recorded the `actor_type` deferral decision.
+- Recorded the audit-log deletion posture.
+- Documented that API-layer tenant isolation exists, while RLS is not claimed.
+- Documented that auth and tenant helpers exist but are not mounted on real product endpoints yet.
+- Documented that Phase 3 must not start before review hardening and final gates are clean.
+- Updated this phase log with Phase 2 implementation commits, gates, scope notes, and hardening notes.
+
+### Decisions reconciled
+
+Membership model:
+
+- Phase 2 uses `OrganizationMembership`.
+- Roles are `OWNER`, `ADMIN`, and `MEMBER`.
+- Product-specific roles are deferred to the phases that introduce the workflows they protect.
+
+Actor typing:
+
+- Phase 2 activity logs use nullable `actor_user_id` for authenticated internal app users.
+- `actor_type` is deferred until the first non-`AppUser` activity-log producer is implemented.
+- Non-user actors must not be faked as `AppUser` records.
+
+Audit-log deletion posture:
+
+- Activity logs are tenant-owned records.
+- In Phase 2, deleting an organization cascades to its activity logs.
+- Audit-log retention must be revisited before production organization deletion workflows.
+
+RLS wording:
+
+- BuildTrace must not claim database row-level security is implemented.
+- Current tenant isolation is API-layer only.
+- RLS may be considered later only after it is configured and tested with the chosen Prisma/Supabase setup.
+
+### Issues found and resolved
+
+- An early `docs/project-state.md` closeout attempt was too broad and was reverted with `9de6c26 Revert "docs: update phase 2 project state"`.
+- The project-state doc was then redone cleanly with `85533c8 docs: update phase 2 project state`.
+- The decision log still described Phase 2 as next and did not record the membership, actor typing, or audit-log deletion decisions. Resolved in `d011307`.
+- Security and data-protection docs still described Phase 2 in future tense. Resolved in `9d53700`.
+- Roadmap still showed Phase 2 as next and completion at 12%. Resolved in `c58db3f`.
+- Next steps still instructed the project not to start Phase 2 implementation. Resolved in `4d779b9`.
+- During manual paste of `docs/next-steps.md`, the file was briefly truncated near the command section. Resolved by replacing the file with the full intended ready-to-paste version before staging.
+- Corrupted dash characters in `docs/roadmap.md` headings were replaced with plain ASCII hyphens.
+
+### Test result
+
+Passed across the Phase 2 documentation hardening slices so far:
+
+- `pnpm.cmd exec prettier --write <changed-docs>`
+- `pnpm.cmd format:check`
+- `pnpm.cmd turbo typecheck --force`
+- `pnpm.cmd turbo lint --force`
+- `pnpm.cmd turbo build --force`
+- `pnpm.cmd --filter @buildtrace/db run prisma:validate`
+- `pnpm.cmd --filter @buildtrace/api run tenant:smoke`
+- `pnpm.cmd --filter @buildtrace/db run activity:smoke`
+- `git diff --check`
 - `git diff --stat`
 - `git diff --name-status`
+- `git ls-files --others --exclude-standard`
 - `git status --short`
+- staged diff checks before each commit
+
+### Remaining review-hardening items
+
+Before starting Phase 3, finish the remaining Claude review follow-ups:
+
+- make `packages/db/prisma.config.ts` fail clearly when `DATABASE_URL` is missing
+- update stale `phase-0-foundation` health label in `apps/api/src/main.ts`
+- rerun final full verification gates
+- confirm working tree is clean
+- optionally request a final Claude review after all hardening commits are pushed
+
+### Scope notes
+
+This documentation hardening did not add:
+
+- real frontend login flow
+- mounted protected API endpoints
+- machine records
+- customer records
+- document upload
+- private storage buckets
+- signed download URLs
+- QR portal access control
+- tickets backend
+- spare parts or quote workflows
+- feedback workflows
+- product-specific RBAC
+- database row-level security claims
+- production rate limiting
+- deployment
+
+### Commit message
+
+`docs: update phase 2 phase log`
