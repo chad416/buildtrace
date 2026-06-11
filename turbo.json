@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/turbo/schema.json",
+  "globalPassThroughEnv": ["DATABASE_URL"],
   "tasks": {
     "generate": {
       "dependsOn": ["^generate"],
