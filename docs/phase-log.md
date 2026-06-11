@@ -1005,23 +1005,25 @@ Phase 2 intentionally did not add:
 
 ### Phase
 
-Phase 2 - Database + auth + tenancy review hardening.
+Phase 2 - Database + auth + tenancy review hardening and closeout.
 
 ### Task completed
 
-Updated Phase 2 documentation after external review so the project state, decision trail, roadmap, security docs, data-protection docs, next steps, and phase log match the implemented Phase 2 foundation.
+Closed the Phase 2 review-hardening loop after external senior-engineering review.
 
-This did not add product code.
+This completed the trailing Phase 2 docs, decision, security, data-protection, tooling, and health-label consistency fixes before Phase 3 begins.
 
-This did not start Phase 3.
+This did not add product features.
+
+This did not start Phase 3 product implementation.
 
 ### Review source
 
-An external senior-engineering review gave Phase 2 this verdict:
+An external senior-engineering review first gave Phase 2 this verdict:
 
 - Pass with concerns
 
-The review found no critical code issue.
+The first review found no critical code issue.
 
 The review concerns were:
 
@@ -1030,7 +1032,15 @@ The review concerns were:
 - the `actor_type` Step 0 sketch was not implemented or documented
 - the membership model changed from the Step 0 sketch without a decision record
 - activity-log organization deletion behavior needed to be documented
-- `packages/db/prisma.config.ts` and `apps/api/src/main.ts` still need small consistency follow-up fixes
+- `packages/db/prisma.config.ts` and `apps/api/src/main.ts` needed small consistency follow-up fixes
+
+A final re-review after hardening gave Phase 2 this verdict:
+
+- Pass - Phase 2 is closed
+- cleared for Phase 3
+- no critical issues
+- no blockers
+- one trailing docs nit only
 
 ### Documentation hardening commits
 
@@ -1039,6 +1049,13 @@ The review concerns were:
 - `9d53700 docs: update phase 2 security and data protection state`
 - `c58db3f docs: update phase 2 roadmap state`
 - `4d779b9 docs: update phase 2 next steps`
+- `18b4ccf docs: update phase 2 phase log`
+
+### Code and tooling hardening commits
+
+- `e50ad23 fix(db): require database url in prisma config`
+- `21ed8f0 fix(api): update health phase label`
+- `7960188 fix: pass database url through turbo tasks`
 
 ### Files/folders changed
 
@@ -1049,12 +1066,15 @@ The review concerns were:
 - docs/roadmap.md
 - docs/next-steps.md
 - docs/phase-log.md
+- packages/db/prisma.config.ts
+- apps/api/src/main.ts
+- turbo.json
 
 ### Hardening completed
 
 - Updated project state to show Phase 2 complete at 22%.
 - Updated roadmap to show Phase 2 complete and Phase 3 next.
-- Updated next steps to remove stale Phase 2 Step 0 instructions and point to Phase 3 decision preflight.
+- Updated next steps to remove stale Phase 2 review-hardening instructions and point to Phase 3 decision preflight.
 - Updated security docs from future-tense Phase 2 plan to implemented Phase 2 state.
 - Updated data-protection docs with Phase 2 activity-log and data-handling state.
 - Recorded the membership-scoped organization role decision.
@@ -1062,8 +1082,16 @@ The review concerns were:
 - Recorded the audit-log deletion posture.
 - Documented that API-layer tenant isolation exists, while RLS is not claimed.
 - Documented that auth and tenant helpers exist but are not mounted on real product endpoints yet.
-- Documented that Phase 3 must not start before review hardening and final gates are clean.
-- Updated this phase log with Phase 2 implementation commits, gates, scope notes, and hardening notes.
+- Updated this phase log with Phase 2 implementation commits, gates, scope notes, hardening notes, and final closeout.
+- Removed the placeholder Prisma `DATABASE_URL` fallback.
+- Made Prisma config fail clearly when `DATABASE_URL` is missing.
+- Updated the API `/health` phase label from `phase-0-foundation` to `phase-2-trust-foundation`.
+- Fixed the Turbo root cause where strict environment mode stripped `DATABASE_URL` from Prisma generate/build/typecheck tasks.
+- Added `DATABASE_URL` to `globalPassThroughEnv` in `turbo.json`.
+- Reran final full Phase 2 gates after the Turbo fix.
+- Confirmed working tree clean.
+- Completed final external re-review.
+- Updated Phase 3 Step 0 planning notes to include web data-access path, bearer-token travel, authenticated-builder provisioning, enum ownership/drift checks, and activity-log action constants.
 
 ### Decisions reconciled
 
@@ -1091,6 +1119,22 @@ RLS wording:
 - Current tenant isolation is API-layer only.
 - RLS may be considered later only after it is configured and tested with the chosen Prisma/Supabase setup.
 
+Turbo environment handling:
+
+- Prisma config intentionally requires `DATABASE_URL`.
+- Turbo strict environment mode must pass `DATABASE_URL` into Prisma generate/build/typecheck tasks.
+- `DATABASE_URL` is passed through via `globalPassThroughEnv`.
+- The variable value is not committed to source.
+- The variable value is not added to cache hashing as a machine-specific cache invalidator.
+
+Phase 3 Step 0 planning:
+
+- Web data-access path must be decided before connecting the machine shell to real data.
+- Bearer-token travel from browser session to API calls must be decided before machine pages load real data.
+- Authenticated-builder and development provisioning must be decided before claiming secure machine creation.
+- Machine status enum ownership and drift checks must be decided before adding localized status labels.
+- Activity-log action naming must be represented by typed constants before first real call sites.
+
 ### Issues found and resolved
 
 - An early `docs/project-state.md` closeout attempt was too broad and was reverted with `9de6c26 Revert "docs: update phase 2 project state"`.
@@ -1099,41 +1143,73 @@ RLS wording:
 - Security and data-protection docs still described Phase 2 in future tense. Resolved in `9d53700`.
 - Roadmap still showed Phase 2 as next and completion at 12%. Resolved in `c58db3f`.
 - Next steps still instructed the project not to start Phase 2 implementation. Resolved in `4d779b9`.
+- Phase log did not yet record Phase 2 implementation and hardening history. Resolved in `18b4ccf`.
+- Prisma config used a placeholder fallback `DATABASE_URL`. Resolved in `e50ad23`.
+- API health still reported `phase-0-foundation`. Resolved in `21ed8f0`.
+- Final gates exposed that Turbo stripped `DATABASE_URL` from Prisma tasks. Resolved at the root in `7960188`.
+- Final external re-review found a trailing-docs nit: `docs/phase-log.md` was missing `e50ad23`, `21ed8f0`, and `7960188`; `docs/next-steps.md` had a stale latest pushed commit list. Resolved in this docs freshness slice.
+- Final Phase 3 planning review found that Step 0 needed explicit decisions for web data-access path, bearer-token travel, authenticated-builder provisioning, enum ownership/drift checks, and activity-log action constants. Resolved in `docs/next-steps.md`.
 - During manual paste of `docs/next-steps.md`, the file was briefly truncated near the command section. Resolved by replacing the file with the full intended ready-to-paste version before staging.
 - Corrupted dash characters in `docs/roadmap.md` headings were replaced with plain ASCII hyphens.
 
 ### Test result
 
-Passed across the Phase 2 documentation hardening slices so far:
+Final Phase 2 hardening gates passed after `7960188`:
 
-- `pnpm.cmd exec prettier --write <changed-docs>`
 - `pnpm.cmd format:check`
+- `pnpm.cmd --filter @buildtrace/db run prisma:validate`
+- `pnpm.cmd --filter @buildtrace/api run auth:smoke`
+- `pnpm.cmd --filter @buildtrace/api run tenant:smoke`
+- `pnpm.cmd --filter @buildtrace/db run activity:smoke`
 - `pnpm.cmd turbo typecheck --force`
 - `pnpm.cmd turbo lint --force`
 - `pnpm.cmd turbo build --force`
-- `pnpm.cmd --filter @buildtrace/db run prisma:validate`
-- `pnpm.cmd --filter @buildtrace/api run tenant:smoke`
-- `pnpm.cmd --filter @buildtrace/db run activity:smoke`
 - `git diff --check`
 - `git diff --stat`
 - `git diff --name-status`
 - `git ls-files --others --exclude-standard`
 - `git status --short`
-- staged diff checks before each commit
+- `git log --oneline -8`
+
+Final gate summary:
+
+- format: passed
+- Prisma validate: passed
+- auth smoke: passed
+- tenant smoke: passed
+- activity smoke: passed
+- typecheck: 8 successful, 8 total
+- lint: 7 successful, 7 total
+- build: 8 successful, 8 total
+- Git diff checks: clean
+- no untracked files
+- working tree clean
+- `origin/main` current at `7960188`
 
 ### Remaining review-hardening items
 
-Before starting Phase 3, finish the remaining Claude review follow-ups:
+None before Phase 3.
 
-- make `packages/db/prisma.config.ts` fail clearly when `DATABASE_URL` is missing
-- update stale `phase-0-foundation` health label in `apps/api/src/main.ts`
-- rerun final full verification gates
-- confirm working tree is clean
-- optionally request a final Claude review after all hardening commits are pushed
+The final external re-review found one small trailing-docs nit:
+
+- `docs/phase-log.md` needed to record `e50ad23`, `21ed8f0`, and `7960188`
+- `docs/next-steps.md` needed the latest pushed commit list updated from stale `c58db3f`
+
+This entry resolves the `docs/phase-log.md` side of that nit.
+
+A follow-up planning review found Phase 3 Step 0 needed explicit decision coverage for:
+
+- web data-access path
+- bearer-token travel from browser session to API calls
+- authenticated-builder and development provisioning path
+- enum ownership and drift checks
+- activity-log action constants
+
+`docs/next-steps.md` now tracks these as required Step 0 decisions.
 
 ### Scope notes
 
-This documentation hardening did not add:
+This Phase 2 hardening did not add:
 
 - real frontend login flow
 - mounted protected API endpoints
@@ -1153,4 +1229,4 @@ This documentation hardening did not add:
 
 ### Commit message
 
-`docs: update phase 2 phase log`
+`docs: close phase 2 hardening notes`
