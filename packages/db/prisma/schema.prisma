@@ -86,20 +86,21 @@ model ActivityLog {
 }
 
 model Customer {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  name           String
-  externalRef    String?  @map("external_ref")
-  email          String?
-  phone          String?
-  notes          String?
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  companyName     String   @map("company_name")
+  contactName     String?  @map("contact_name")
+  email           String?
+  phone           String?
+  country         String?
+  preferredLocale String   @default("en") @map("preferred_locale")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   machines     Machine[]
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, name])
+  @@unique([organizationId, companyName])
   @@index([organizationId])
   @@map("customers")
 }
@@ -107,9 +108,7 @@ model Customer {
 model MachineModel {
   id             String   @id @default(uuid()) @db.Uuid
   organizationId String   @map("organization_id") @db.Uuid
-  manufacturer   String
-  name           String
-  modelCode      String?  @map("model_code")
+  modelName      String   @map("model_name")
   description    String?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -117,7 +116,7 @@ model MachineModel {
   machines     Machine[]
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([organizationId, manufacturer, name])
+  @@unique([organizationId, modelName])
   @@index([organizationId])
   @@map("machine_models")
 }
@@ -127,12 +126,12 @@ model Machine {
   organizationId String        @map("organization_id") @db.Uuid
   customerId     String        @map("customer_id") @db.Uuid
   machineModelId String        @map("machine_model_id") @db.Uuid
+  machineName    String        @map("machine_name")
   serialNumber   String        @map("serial_number")
-  name           String?
+  deliveryDate   DateTime?     @map("delivery_date")
+  plcType        String?       @map("plc_type")
+  hmiType        String?       @map("hmi_type")
   status         MachineStatus @default(ACTIVE)
-  installedAt    DateTime?     @map("installed_at")
-  location       String?
-  notes          String?
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
