@@ -32,6 +32,10 @@ export const documentCategories = [
 
 export type DocumentCategory = (typeof documentCategories)[number];
 
+export const machineStatuses = ['ACTIVE', 'MAINTENANCE', 'OUT_OF_SERVICE', 'ARCHIVED'] as const;
+
+export type MachineStatus = (typeof machineStatuses)[number];
+
 export const defaultDocumentVisibility = {
   visibleToCustomer: false,
   visibilityLevel: 'internal',
