@@ -11,7 +11,7 @@ async function bootstrap() {
   app.getHttpAdapter().get('/health', () => ({
     service: 'buildtrace-api',
     status: 'ok',
-    phase: 'phase-0-foundation',
+    phase: 'phase-2-trust-foundation',
   }));
 
   await app.listen(port, '0.0.0.0');
