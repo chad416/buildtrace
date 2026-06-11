@@ -2,15 +2,15 @@
 
 ## Current phase
 
-Phase 1 - Industrial UI shell + multilingual UI skeleton is complete.
+Phase 2 - Database + auth + tenancy is complete.
 
 Current full beta roadmap completion:
 
-- 12%
+- 22%
 
 Next phase:
 
-- Phase 2 - Database + auth + tenancy
+- Phase 3 - Machine/customer records foundation
 
 ## EU hosting intent
 
@@ -30,7 +30,14 @@ Customer data belongs to the builder organization using BuildTrace.
 
 BuildTrace should store and organize machine records, uploaded documents, tickets, quotes, software-version metadata, spare-part metadata, feedback, exports, and activity logs.
 
-Current implementation does not yet store real customer, machine, document, ticket, quote, feedback, or activity-log data.
+Current Phase 2 implementation stores only the trust-foundation schema:
+
+- organizations
+- app users
+- organization memberships
+- activity logs
+
+Current implementation does not yet store real customer records, machine records, uploaded documents, tickets, quotes, spare parts, feedback, handover exports, or software-version records.
 
 ## Current implementation status
 
@@ -45,20 +52,33 @@ Phase 1 added:
 - translated settings placeholders for future role, language, MFA, data export, and security logs
 - translated wording around evidence readiness, documentation organization, customer-visible files, and private engineering docs
 
-Phase 1 did not add:
+Phase 2 added:
 
-- database
-- auth
-- real data storage
-- customer accounts
-- customer records
-- machine records
+- PostgreSQL and Prisma database foundation
+- organization records
+- internal app-user records
+- organization membership records
+- generic organization roles: `OWNER`, `ADMIN`, and `MEMBER`
+- activity-log records
+- migration tested from zero against disposable PostgreSQL
+- API-side auth config boundary
+- API-side bearer-token verification helper
+- current-user resolution foundation
+- tenant access guard foundation
+- activity-log helper
+- smoke checks for auth, tenant access, and activity logging
+
+Phase 2 did not add:
+
+- real frontend login flow
+- mounted protected API endpoints
+- real customer records
+- real machine records
 - document upload
-- private storage
+- private file storage
 - QR portal
 - tickets backend
 - export/delete workflows
-- audit log table
 - analytics
 - production privacy policy
 
@@ -104,27 +124,55 @@ Error logs must not expose file contents, secrets, signed URLs, or sensitive eng
 
 Activity logs should track major actions without storing unnecessary personal data.
 
-Activity logging is not implemented yet.
+Activity logging is implemented as a Phase 2 foundation.
 
-## Phase 2 data-protection focus
+The current activity-log schema can store:
 
-Phase 2 should begin the real data-protection foundation through:
+- organization ID
+- optional internal actor user ID
+- action name
+- optional target type
+- optional target ID
+- optional IP address
+- optional user agent
+- creation timestamp
 
-- Supabase Auth
+Activity logs must not store:
+
+- passwords
+- secrets
+- tokens
+- signed URLs
+- uploaded file contents
+- sensitive engineering file contents
+- unnecessary personal data
+
+## Phase 2 data-protection foundation
+
+Phase 2 began the real data-protection foundation through:
+
 - PostgreSQL
 - Prisma schema
-- organization workspace logic
-- tenant isolation
-- RBAC foundation
+- organization workspace foundation
+- internal app-user mapping
+- organization membership model
+- membership-scoped organization roles
+- tenant access guard foundation
 - activity log table
-- login event logging
-- secure environment variable setup
+- activity log helper
+- secure environment variable boundary
 
-Phase 2 should not start document storage, QR portal access, ticket workflows, or machine CRUD unless explicitly scoped.
+Phase 2 did not start document storage, QR portal access, ticket workflows, or machine/customer CRUD.
+
+Reason:
+
+- tenant isolation must exist before real machine, customer, document, QR, ticket, and export workflows
+- activity logging must exist before sensitive workflows are introduced
+- product-specific workflows should not be created before their owning phase
 
 ## Phase 2 activity-log data handling
 
-Phase 2 may introduce activity logging for security and auditability.
+Phase 2 introduced activity logging for security and auditability.
 
 Activity logs should collect only what is needed to understand important security and product actions.
 
@@ -152,20 +200,38 @@ Reason:
 - BuildTrace's EU/data-protection positioning requires a written reason for storing security metadata
 - logs should support auditability without becoming a sensitive data store
 
+## Phase 2 activity-log deletion posture
+
+Activity logs are tenant-owned records.
+
+In Phase 2, deleting an organization cascades to its activity logs.
+
+Reason:
+
+- the beta foundation does not yet include legal hold, retention overrides, or anonymized audit retention workflows
+- organization deletion should remove tenant-owned personal and operational metadata unless a later retention policy says otherwise
+- keeping orphaned audit logs without a designed retention policy would weaken data-minimization discipline
+
+Before adding production organization deletion workflows, revisit whether audit logs should be retained, anonymized, exported, or deleted.
+
+If retention requirements are introduced, update the schema, deletion workflow, and data-protection documentation in the same implementation slice.
+
 ## Known current gaps
 
 Current implementation does not yet include:
 
-- database
-- real data storage
-- auth
-- tenant isolation
-- RBAC
-- customer data export
-- deletion workflow
-- audit log table
+- real frontend login flow
+- mounted protected API routes
+- real customer records
+- real machine records
+- document upload
 - private storage
 - signed URLs
+- QR portal
+- ticket workflows
+- customer data export
+- deletion workflow
+- production audit-retention policy
 - production privacy policy
 - monitoring/analytics privacy configuration
 
