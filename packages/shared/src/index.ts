@@ -36,6 +36,18 @@ export const machineStatuses = ['ACTIVE', 'MAINTENANCE', 'OUT_OF_SERVICE', 'ARCH
 
 export type MachineStatus = (typeof machineStatuses)[number];
 
+export const activityLogActions = {
+  userLogin: 'user.login',
+  customerCreated: 'customer.created',
+  customerUpdated: 'customer.updated',
+  machineModelCreated: 'machine_model.created',
+  machineModelUpdated: 'machine_model.updated',
+  machineCreated: 'machine.created',
+  machineUpdated: 'machine.updated',
+} as const;
+
+export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];
+
 export const defaultDocumentVisibility = {
   visibleToCustomer: false,
   visibilityLevel: 'internal',

@@ -1,9 +1,11 @@
+import type { ActivityLogAction } from '@buildtrace/shared';
+
 import type { PrismaClient } from './generated/prisma/client';
 
 type CreateActivityLogInput = {
   readonly db: PrismaClient;
   readonly organizationId: string;
-  readonly action: string;
+  readonly action: ActivityLogAction;
   readonly actorUserId?: string;
   readonly targetType?: string;
   readonly targetId?: string;

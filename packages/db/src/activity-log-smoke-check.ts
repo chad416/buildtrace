@@ -1,3 +1,5 @@
+import { activityLogActions } from '@buildtrace/shared';
+
 import { createActivityLog } from './activity-log.js';
 import type { ActivityLogRecord } from './activity-log.js';
 import type { PrismaClient } from './generated/prisma/client';
@@ -62,15 +64,7 @@ async function runActivityLogSmokeCheck(): Promise<void> {
     createActivityLog({
       db: createFakePrismaClient([]),
       organizationId: '   ',
-      action: 'user.login',
-    }),
-  );
-
-  await expectThrows('blank action', () =>
-    createActivityLog({
-      db: createFakePrismaClient([]),
-      organizationId: 'organization-1',
-      action: '   ',
+      action: activityLogActions.userLogin,
     }),
   );
 
@@ -80,7 +74,7 @@ async function runActivityLogSmokeCheck(): Promise<void> {
     db: createFakePrismaClient(capturedCreateArgs),
     organizationId: ' organization-1 ',
     actorUserId: ' app-user-1 ',
-    action: ' user.login ',
+    action: activityLogActions.userLogin,
     targetType: ' session ',
     targetId: ' session-1 ',
     ipAddress: ' 127.0.0.1 ',
@@ -96,7 +90,7 @@ async function runActivityLogSmokeCheck(): Promise<void> {
   if (
     createData.organizationId !== 'organization-1' ||
     createData.actorUserId !== 'app-user-1' ||
-    createData.action !== 'user.login' ||
+    createData.action !== activityLogActions.userLogin ||
     createData.targetType !== 'session' ||
     createData.targetId !== 'session-1' ||
     createData.ipAddress !== '127.0.0.1' ||
@@ -110,7 +104,7 @@ async function runActivityLogSmokeCheck(): Promise<void> {
   await createActivityLog({
     db: createFakePrismaClient(minimalCreateArgs),
     organizationId: 'organization-1',
-    action: 'user.login',
+    action: activityLogActions.userLogin,
     actorUserId: '   ',
     targetType: '   ',
     targetId: '   ',
