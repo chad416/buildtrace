@@ -201,6 +201,261 @@ Result:
 - full beta roadmap completion moved from 12% to 22%
 - next phase is Phase 3 - Machine/customer records foundation
 
+### Phase 3 Step 0 decision lock
+
+Phase 3 targets 32% of the full beta roadmap.
+
+Phase 3 is not allowed to silently shrink into only one thin vertical slice.
+
+The roadmap scope for Phase 3 remains:
+
+- customers CRUD
+- machine models CRUD
+- machines CRUD
+- machine detail backed by real organization-scoped data
+- localized machine status labels
+- locale-aware date and number formatting
+- real tenant isolation proof for product records
+
+Thin vertical slices are the execution method, not the final Phase 3 scope.
+
+Phase 3 implementation must proceed in loops:
+
+1. Machine create path.
+2. Machine read/list/detail path.
+3. Customer CRUD path.
+4. Machine model CRUD path.
+5. UI connection after backend tenant proof.
+6. Localization and formatting for machine/customer record surfaces.
+
+Phase 3 is only complete when the roadmap scope above is covered, or when a deliberate roadmap update explicitly moves remaining scope to a named later phase.
+
+### Phase 3 web data-access path
+
+Use Option B as the default Phase 3 data-access path.
+
+Decision:
+
+- the web app calls the NestJS API
+- the API owns database access
+- the API owns tenant enforcement
+- the API owns authenticated current-user resolution
+- the API owns organization access checks
+- the API owns activity logging for mutations
+
+The web app must not import `@buildtrace/db` for Phase 3 product-record access.
+
+Reason:
+
+Phase 2 built and tested the API auth and tenant boundary. Reusing that boundary keeps one enforcement point and avoids duplicating tenant checks across web and API runtimes.
+
+Consequence:
+
+Machine, customer, and machine-model data reaches the web app through API calls, not direct Prisma queries from the web package.
+
+### Phase 3 bearer-token travel
+
+Phase 3 must explicitly decide how the Supabase bearer token travels from browser session to API calls before machine pages load real data.
+
+Accepted starting approach for the first Phase 3 UI connection:
+
+- authenticated browser session owns the Supabase access token
+- client-side API calls send `Authorization: Bearer <access_token>` to the NestJS API
+- the API verifies the bearer token using the Phase 2 auth verifier
+- the API resolves the current app user
+- the API checks organization access before returning or mutating product records
+
+Reason:
+
+This is the leanest honest path for the first real product-record UI connection because it avoids inventing server-side session forwarding before the product-record boundary exists.
+
+Constraint:
+
+If Phase 3 later needs server-rendered protected machine data, a separate decision must define cookie/session handling and server-side token forwarding. That must not be improvised inside a feature slice.
+
+### Phase 3 authenticated-builder provisioning
+
+Phase 3 needs a real authenticated builder for secure create flows.
+
+Development provisioning is allowed only as clearly labeled dev tooling.
+
+Accepted approach:
+
+- create a dev bootstrap/seed utility for local development
+- the utility may create a development organization, app user, membership, and starter records required to exercise the secure create path
+- the utility must be clearly named as development tooling
+- the utility must never be imported by product runtime code
+- the utility must not be described as demo production data
+
+Preferred home:
+
+- `packages/db/src/dev-seed.ts` or an equivalent clearly labeled db-package dev script
+
+Reason:
+
+Phase 3 needs a repeatable way to test real authenticated create flows without pretending that fake demo data is product behavior.
+
+### Phase 3 product-record ownership
+
+All Phase 3 product records must be organization-scoped.
+
+Required records:
+
+- customer records belong to an organization
+- machine model records belong to an organization unless a later decision explicitly introduces global/shared catalog behavior
+- machine records belong to an organization
+- machine records link to customer and machine model records according to the schema chosen in Phase 3
+
+No product-record query may rely only on record ID.
+
+Every read or mutation path must include tenant scope through `organizationId` or an equivalent enforced organization relation.
+
+### Phase 3 machine create path
+
+The first meaningful Phase 3 backend endpoint must include the secure machine create path.
+
+A GET-only endpoint cannot close Phase 3.
+
+Reason:
+
+The Phase 3 exit condition requires that a builder can create a machine record securely.
+
+Therefore, the machine create path must prove:
+
+- bearer auth works
+- current-user resolution works
+- organization access check works
+- organization-scoped insert works
+- activity logging works for the create mutation
+- unauthorized cross-tenant access fails
+
+A read endpoint may ship before create as a small proving step, but POST machine create remains mandatory for Phase 3 completion.
+
+### Phase 3 real two-organization isolation proof
+
+Phase 3 must introduce a real tenant isolation test for product records.
+
+Fake Prisma smoke checks are not sufficient once real customer, machine, and machine-model records exist.
+
+Required proof:
+
+- use disposable PostgreSQL or an equivalent real database test path
+- seed organization A and organization B
+- seed product records for both organizations
+- authenticate or simulate an authorized user for organization A through the real helper/API path
+- assert organization B records are not visible or mutable from organization A
+
+Reason:
+
+A fake smoke test can prove a guard rejects an obvious wrong organization. It cannot prove that real queries include `organizationId` scoping. The Phase 3 product-record boundary must prove this at the query/API level.
+
+### Phase 3 machine status enum ownership
+
+Phase 3 may introduce a machine status enum.
+
+If a Prisma enum is mirrored into application constants or i18n labels, the same slice must include a drift check.
+
+Required rule:
+
+- no Prisma enum mirror without a test/check proving the app-facing constants and Prisma enum remain aligned
+- localized status labels must be derived from the accepted status source
+- status labels must not be hardcoded independently in scattered UI code
+
+Reason:
+
+Phase 2 avoided enum drift because roles lived only in Prisma. Phase 3 localized machine statuses create the first real enum mirror risk.
+
+### Phase 3 activity-log action constants
+
+Before the first real product-record mutation, activity-log action names must move from loose strings to typed constants.
+
+Required rule:
+
+- machine, customer, and machine-model create/update activity actions must be defined as constants
+- product code must call the helper with constants, not ad hoc string literals
+- action naming must be consistent and reviewable
+
+Reason:
+
+Audit-log strings become product evidence. Typos must be type-level failures where practical, not silent inconsistencies in the activity log.
+
+### Phase 3 CRUD loop alignment
+
+Phase 3 helpers, endpoints, and activity logs must stay aligned.
+
+If a slice only implements create/read, it must only claim create/read.
+
+If update is implemented, update activity logging must be included.
+
+If delete is considered, Phase 3 must decide whether delete means hard delete, soft delete, archive, or out of scope.
+
+No docs or code may claim full CRUD until create, read/list/detail, update, and the delete/archive decision are all handled for that record type.
+
+### Phase 3 UI connection order
+
+The web UI must not connect to real product-record data before backend tenant boundaries are proven.
+
+Required order:
+
+1. decisions
+2. schema
+3. backend helpers
+4. authenticated API endpoint
+5. real tenant isolation proof
+6. UI connection
+
+The UI may keep placeholder and empty-state screens during backend foundation work.
+
+When connected, the UI must show real API data or honest empty states only.
+
+Fake production records, fake metrics, and fake dashboards remain out of scope.
+
+### Phase 3 non-goals
+
+Phase 3 must not add:
+
+- document upload
+- file storage
+- signed URLs
+- QR codes
+- ticket workflows
+- spare-parts workflows
+- quote workflows
+- customer public portals
+- analytics dashboards
+- fake demo production data
+- regulatory compliance claims
+- CE, CRA, MDR, or machine-safety certification claims
+
+### Phase 3 closeout gates
+
+Phase 3 closeout requires:
+
+- formatting check
+- Prisma validation
+- package typechecks
+- package lint
+- package builds
+- Turbo typecheck
+- Turbo lint
+- Turbo build
+- smoke checks
+- real two-organization product-record isolation test
+- docs updated honestly
+- clean git status before push
+
+### Phase 3 Lean/no-compromise rule
+
+Phase 3 follows the same rule that closed Phase 2:
+
+- decide before implementing
+- schema before endpoint
+- endpoint before UI
+- root-cause fixes before workaround patches
+- no silent roadmap drift
+- no fake production behavior
+- no tenant boundary assumptions without proof
+
 ### Placeholder-only pages
 
 Phase 1 pages are intentionally placeholder-only.
