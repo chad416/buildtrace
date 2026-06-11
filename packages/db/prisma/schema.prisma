@@ -13,6 +13,13 @@ enum OrganizationRole {
   MEMBER
 }
 
+enum MachineStatus {
+  ACTIVE
+  MAINTENANCE
+  OUT_OF_SERVICE
+  ARCHIVED
+}
+
 model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -20,8 +27,11 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  activityLogs ActivityLog[]
-  memberships  OrganizationMembership[]
+  activityLogs  ActivityLog[]
+  customers     Customer[]
+  machineModels MachineModel[]
+  machines      Machine[]
+  memberships   OrganizationMembership[]
 
   @@map("organizations")
 }
@@ -73,4 +83,66 @@ model ActivityLog {
   @@index([organizationId, createdAt])
   @@index([actorUserId])
   @@map("activity_logs")
+}
+
+model Customer {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  externalRef    String?  @map("external_ref")
+  email          String?
+  phone          String?
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  machines     Machine[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("customers")
+}
+
+model MachineModel {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  manufacturer   String
+  name           String
+  modelCode      String?  @map("model_code")
+  description    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  machines     Machine[]
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, manufacturer, name])
+  @@index([organizationId])
+  @@map("machine_models")
+}
+
+model Machine {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  customerId     String        @map("customer_id") @db.Uuid
+  machineModelId String        @map("machine_model_id") @db.Uuid
+  serialNumber   String        @map("serial_number")
+  name           String?
+  status         MachineStatus @default(ACTIVE)
+  installedAt    DateTime?     @map("installed_at")
+  location       String?
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, serialNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, customerId])
+  @@index([organizationId, machineModelId])
+  @@map("machines")
 }
