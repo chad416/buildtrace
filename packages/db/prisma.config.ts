@@ -2,11 +2,19 @@ import 'dotenv/config';
 
 import { defineConfig } from 'prisma/config';
 
-const databaseUrl = process.env.DATABASE_URL ?? 'postgresql://USER:PASSWORD@HOST:5432/buildtrace';
+function readRequiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
+
+  if (!value) {
+    throw new Error(`${name} is required to load Prisma config.`);
+  }
+
+  return value;
+}
 
 export default defineConfig({
   schema: './prisma/schema.prisma',
   datasource: {
-    url: databaseUrl,
+    url: readRequiredEnv('DATABASE_URL'),
   },
 });
