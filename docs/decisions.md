@@ -6,17 +6,23 @@ Phase 0 - Professional project foundation + security docs is complete.
 
 Phase 1 - Industrial UI shell + multilingual UI skeleton is complete.
 
+Phase 2 - Database + auth + tenancy is complete.
+
 Current full beta roadmap completion:
 
-- 12%
+- 22%
 
 Next phase:
 
-- Phase 2 - Database + auth + tenancy
+- Phase 3 - Machine/customer records foundation
 
-Latest feature commit:
+Phase 2 project-state closeout commit:
 
-- `92a1585 feat(web): complete phase 1 shell foundation`
+- `85533c8 docs: update phase 2 project state`
+
+Latest completed Phase 2 implementation commit:
+
+- `ec2b2f1 test(db): add activity log smoke check`
 
 ## Architectural decisions
 
@@ -140,9 +146,13 @@ Phase 0 only created the professional foundation.
 
 Phase 1 created the industrial UI shell and multilingual UI skeleton.
 
-Phase 2 will begin database, auth, and tenancy.
+Phase 2 created the database, auth, and tenancy trust foundation.
+
+Phase 3 begins machine and customer records.
 
 No database, auth, storage, QR portal, tickets backend, CRUD, or real dashboard data were part of Phase 1.
+
+No machine records, customer records, document storage, QR portal, tickets, spare parts, quotes, feedback, or real operational workflows were part of Phase 2.
 
 ### Phase 1 closure
 
@@ -161,7 +171,35 @@ The completed Phase 1 shell satisfies those conditions.
 Result:
 
 - full beta roadmap completion moved from 5% to 12%
-- next phase is Phase 2 - Database + auth + tenancy
+- next phase became Phase 2 - Database + auth + tenancy
+
+### Phase 2 closure
+
+Phase 2 is formally complete.
+
+Reason:
+
+The roadmap defined Phase 2 as the database, auth, and tenancy trust foundation.
+
+The completed Phase 2 foundation includes:
+
+- Prisma tooling foundation
+- PostgreSQL schema for organizations, app users, organization memberships, and activity logs
+- migration tested from zero against disposable PostgreSQL
+- Prisma client factory
+- Supabase auth config boundary
+- Supabase bearer-token verifier
+- bearer authorization-header parser
+- current-user resolution foundation
+- tenant access guard foundation
+- authenticated tenant-context composition
+- activity-log helper
+- smoke checks for auth, tenant access, and activity logging
+
+Result:
+
+- full beta roadmap completion moved from 12% to 22%
+- next phase is Phase 3 - Machine/customer records foundation
 
 ### Placeholder-only pages
 
@@ -395,6 +433,64 @@ Reason:
 - audit history must be trustworthy
 - logs must support security review without becoming a sensitive data dump
 - BuildTrace's EU/data-protection positioning requires discipline around personal data
+
+### Phase 2 membership-scoped organization roles
+
+Use an `OrganizationMembership` join table with membership-scoped `OWNER`, `ADMIN`, and `MEMBER` roles for the Phase 2 trust foundation.
+
+This replaces the earlier sketch of a single `users.organization_id` relationship and global user role.
+
+Reason:
+
+- organization access is scoped to the user's membership in a specific organization
+- the model avoids a future schema redesign if an operator belongs to more than one organization
+- Phase 2 needs a small, durable authorization foundation, not product-workflow-specific RBAC
+- product-specific roles such as engineer, service manager, sales, and customer viewer should be introduced or mapped when their owning workflows exist
+- adding detailed product roles before the workflows exist would create fake precision and inventory waste
+
+Decision:
+
+- Phase 2 uses generic organization roles: `OWNER`, `ADMIN`, and `MEMBER`
+- detailed product permissions are deferred to the phases that introduce the workflows they protect
+- future RBAC work must document how product permissions map to organization membership roles
+
+### Phase 2 activity-log actor typing
+
+Phase 2 activity logs use nullable `actor_user_id` for authenticated internal app users.
+
+The earlier Step 0 sketch included `actor_type`, but Phase 2 does not add an `actor_type` column yet.
+
+Reason:
+
+- the only implemented actor in Phase 2 is an authenticated internal app user
+- QR portal actors, customer-viewer actors, and system/worker actors do not have real logging call sites yet
+- adding actor typing before those actors exist would create unused schema surface
+- unused schema surface is inventory waste under the Lean quality rule
+
+Decision:
+
+- do not fake non-user actors as `AppUser` records
+- do not claim system, QR, or customer-portal actor attribution until the schema supports it
+- add a documented `ActorType` enum and migration when the first non-`AppUser` activity-log producer is implemented
+- likely trigger phases include QR customer portal, worker/system events, and customer-visible access workflows
+
+### Phase 2 audit-log deletion posture
+
+Activity logs are tenant-owned records.
+
+In Phase 2, deleting an organization cascades to its activity logs.
+
+Reason:
+
+- the beta foundation does not yet include legal hold, retention overrides, or anonymized audit retention workflows
+- organization deletion should remove tenant-owned personal and operational metadata unless a later retention policy says otherwise
+- keeping orphaned audit logs without a designed retention policy would weaken data-minimization discipline
+
+Decision:
+
+- organization deletion cascades to activity logs for the current beta foundation
+- before adding production organization deletion workflows, revisit whether audit logs should be retained, anonymized, exported, or deleted
+- if retention requirements are introduced, update the schema, deletion workflow, and data-protection documentation in the same implementation slice
 
 ## I18N decisions
 
