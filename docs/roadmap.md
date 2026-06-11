@@ -10,17 +10,19 @@ Phase 0 is complete.
 
 Phase 1 is complete.
 
+Phase 2 is complete.
+
 Current full beta roadmap completion:
 
-- 12%
+- 22%
 
 Current next phase:
 
-- Phase 2 - Database + auth + tenancy
+- Phase 3 - Machine/customer records foundation
 
-Latest feature commit:
+Latest completed Phase 2 implementation commit:
 
-- `92a1585 feat(web): complete phase 1 shell foundation`
+- `ec2b2f1 test(db): add activity log smoke check`
 
 ## Beta scope
 
@@ -45,7 +47,7 @@ The beta must cover:
 
 ## Phase roadmap
 
-### Phase 0 — Professional project foundation + security docs
+### Phase 0 - Professional project foundation + security docs
 
 Completion: 5% of beta.
 
@@ -84,7 +86,7 @@ Result:
 
 - passed
 
-### Phase 1 — Industrial UI shell + multilingual UI skeleton
+### Phase 1 - Industrial UI shell + multilingual UI skeleton
 
 Completion: 12% of beta.
 
@@ -150,38 +152,104 @@ Phase 1 intentionally did not add:
 - document upload
 - deployment
 
-### Phase 2 — Database + auth + tenancy
+### Phase 2 - Database + auth + tenancy
 
 Completion: 22% of beta.
 
-Status: next.
+Status: complete.
 
 Scope:
 
-- Supabase Auth
-- PostgreSQL
-- Prisma schema
-- organization workspace logic
-- tenant isolation
-- RBAC foundation
+- Prisma tooling foundation
+- PostgreSQL schema foundation
+- organization workspace foundation
+- internal app-user mapping
+- membership-scoped organization roles
+- API-layer tenant isolation foundation
+- Supabase auth config boundary
+- bearer-token verification helper
+- authorization-header parser
+- current-user context resolution
+- authenticated tenant-context composition
 - activity log foundation
-- user preferred language
-- organization default language
-- customer preferred language
-- login event logging
 - secure environment variable setup
+- migration-from-zero validation
+- smoke checks for auth, tenant access, and activity logging
 
 Exit condition:
 
-- logged-in builder sees only their own organization data
-- core activity logging works
-- unauthorized access is blocked
+- database trust schema exists for organizations, app users, organization memberships, and activity logs
+- migration applies cleanly from zero against disposable PostgreSQL
+- Prisma client can be generated from a cold clone workflow
+- API-side auth boundary can verify bearer tokens
+- authenticated Supabase user IDs can map to internal app users
+- organization-scoped tenant guards can allow/deny access by membership and role
+- activity logging helper creates append-only activity records without storing secrets or file contents
+- frontend service-role secret exposure is avoided
+- Phase 2 does not claim RLS, protected product endpoints, or real frontend login until those are implemented
 
-### Phase 3 — Machine records
+Result:
+
+- passed
+
+Phase 2 completed:
+
+- Prisma tooling foundation
+- Prisma schema for organizations, app users, organization memberships, and activity logs
+- `OrganizationRole` enum with `OWNER`, `ADMIN`, and `MEMBER`
+- initial Prisma migration committed
+- migration tested from zero against disposable PostgreSQL
+- generated Prisma client output ignored and regenerated through scripts
+- Prisma client factory
+- Supabase auth config boundary
+- Supabase bearer-token verifier
+- bearer authorization-header parser
+- auth boundary smoke check
+- API dependency on `@buildtrace/db`
+- current-user resolution foundation
+- tenant access guard foundation
+- tenant access smoke check
+- authenticated tenant-context composition helper
+- activity-log helper
+- activity-log smoke check
+- Phase 2 project-state docs closeout
+- Phase 2 decision reconciliation for membership roles, actor typing, and audit-log deletion posture
+- Phase 2 security and data-protection docs update
+
+Phase 2 intentionally did not add:
+
+- real frontend login flow
+- mounted protected API endpoints
+- machine records
+- customer records
+- document upload
+- private storage buckets
+- signed download URLs
+- QR portal access control
+- tickets backend
+- spare parts or quote workflows
+- feedback workflows
+- product-specific RBAC
+- database row-level security claims
+- production rate limiting
+- deployment
+
+Important Phase 2 decisions:
+
+- organization access uses `OrganizationMembership`
+- Phase 2 roles are `OWNER`, `ADMIN`, and `MEMBER`
+- product-specific roles are deferred to the phases that introduce the workflows they protect
+- activity logs use nullable `actor_user_id` for internal app users
+- `actor_type` is deferred until the first non-`AppUser` actor is implemented
+- organization deletion cascades to activity logs for the beta foundation
+- audit-log retention must be revisited before production organization deletion workflows
+- BuildTrace does not claim RLS until RLS is configured and tested
+
+### Phase 3 - Machine/customer records foundation
 
 Completion: 32% of beta.
 
-Status: not started.
+Status: next.
 
 Scope:
 
@@ -197,9 +265,11 @@ Scope:
 Exit condition:
 
 - builder can create machine record securely
+- machine/customer records are organization-scoped
 - activity log records machine creation/edit
+- user cannot access another organization's machine/customer records
 
-### Phase 4 — Document dump upload
+### Phase 4 - Document dump upload
 
 Completion: 45% of beta.
 
@@ -223,7 +293,7 @@ Exit condition:
 - files remain private unless explicitly customer-visible
 - downloads use signed URLs
 
-### Phase 5 — Document classification
+### Phase 5 - Document classification
 
 Completion: 55% of beta.
 
@@ -246,7 +316,7 @@ Exit condition:
 - sensitive files remain protected
 - AI suggestions never override security defaults
 
-### Phase 6 — Handover completeness + export
+### Phase 6 - Handover completeness + export
 
 Completion: 65% of beta.
 
@@ -270,7 +340,7 @@ Exit condition:
 - builder can generate secure handover package
 - sensitive exports are controlled and logged
 
-### Phase 7 — QR customer portal
+### Phase 7 - QR customer portal
 
 Completion: 73% of beta.
 
@@ -295,7 +365,7 @@ Exit condition:
 - QR exposes only allowed files
 - builder can control and audit portal access
 
-### Phase 8 — Service tickets + support session
+### Phase 8 - Service tickets + support session
 
 Completion: 81% of beta.
 
@@ -318,7 +388,7 @@ Exit condition:
 - buyer can raise ticket securely
 - builder can manage ticket without exposing internal notes/files
 
-### Phase 9 — Software version timeline
+### Phase 9 - Software version timeline
 
 Completion: 88% of beta.
 
@@ -341,7 +411,7 @@ Exit condition:
 - builder can track delivered vs current known version securely
 - sensitive software files remain protected
 
-### Phase 10 — Spare parts intelligence + quote tracking
+### Phase 10 - Spare parts intelligence + quote tracking
 
 Completion: 95% of beta.
 
@@ -365,7 +435,7 @@ Exit condition:
 - customer can request spare/service quote securely
 - builder can track approval without exposing internal pricing data
 
-### Phase 11 — Feedback, audit log, polish, deployment
+### Phase 11 - Feedback, audit log, polish, deployment
 
 Completion: 100% of beta.
 
