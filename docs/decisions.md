@@ -8,6 +8,8 @@ Phase 1 - Industrial UI shell + multilingual UI skeleton is complete.
 
 Phase 2 - Database + auth + tenancy is complete.
 
+Phase 3 - Machine/customer records foundation is in progress.
+
 Current full beta roadmap completion:
 
 - 22%
@@ -229,6 +231,42 @@ Phase 3 implementation must proceed in loops:
 6. Localization and formatting for machine/customer record surfaces.
 
 Phase 3 is only complete when the roadmap scope above is covered, or when a deliberate roadmap update explicitly moves remaining scope to a named later phase.
+
+### Phase 3 scope reconciliation after machine-create slice
+
+The secure machine-create vertical slice is accepted as the load-bearing Phase 3 proof path, not as the entire Phase 3 closeout by itself.
+
+Current accepted interpretation:
+
+- the machine-create path proves the core product boundary from web to API to database
+- the web app uses session-derived bearer access through the API boundary
+- the API owns authentication, tenant checks, product-record mutation, and activity logging
+- the database owns organization-scoped customer, machine-model, and machine records
+- the UI shows real API data or honest prerequisite/auth/error states only
+
+This does not silently satisfy broad roadmap CRUD for every Phase 3 record type.
+
+Still-open Phase 3 scope:
+
+- customer update path
+- customer delete/archive decision
+- machine-model update path
+- machine-model delete/archive decision
+- machine update path
+- machine delete/archive decision
+- final decision whether full customer and machine-model CRUD UI ships in Phase 3 or moves to a named later slice
+- final docs alignment before Phase 3 closeout
+
+Decision:
+
+- do not mark Phase 3 complete only because machine creation works
+- do not claim full CRUD until create, read/list/detail, update, and delete/archive posture are handled or explicitly moved
+- continue Phase 3 in small loops unless a roadmap update deliberately moves remaining breadth to a named later phase
+- keep the machine-create slice as the quality benchmark for the remaining loops
+
+Reason:
+
+The roadmap promises broad customer, machine-model, and machine record capability. The Lean implementation path is allowed to be vertical and incremental, but the closeout must stay honest against the roadmap.
 
 ### Phase 3 web data-access path
 
