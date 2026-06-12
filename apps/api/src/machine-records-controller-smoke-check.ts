@@ -1,11 +1,27 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { MachineRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 import { MachineStatus } from '@buildtrace/db';
 
 import {
   createMachineFromRequest,
-  type CreateMachineEndpointDependencies,
+  getMachineFromRequest,
+  listMachinesFromRequest,
+  type MachineRecordsEndpointDependencies,
 } from './machine-records.controller.js';
+
+type ResolveInput = Parameters<
+  MachineRecordsEndpointDependencies['resolveAuthenticatedTenantContext']
+>[0];
+
+type CreateMachineInput = Parameters<MachineRecordsEndpointDependencies['createMachine']>[0];
+
+type ListMachinesInput = Parameters<
+  MachineRecordsEndpointDependencies['listMachinesByOrganization']
+>[0];
+
+type GetMachineInput = Parameters<
+  MachineRecordsEndpointDependencies['getMachineByOrganization']
+>[0];
 
 type CapturedResolveInput = {
   readonly authorizationHeader: string | undefined;
@@ -14,23 +30,11 @@ type CapturedResolveInput = {
   readonly allowedRoles?: readonly OrganizationRole[];
 };
 
-type CapturedCreateMachineInput = {
-  readonly db: PrismaClient;
-  readonly organizationId: string;
-  readonly customerId: string;
-  readonly machineModelId: string;
-  readonly machineName: string;
-  readonly serialNumber: string;
-  readonly actorUserId?: string;
-  readonly deliveryDate?: Date;
-  readonly plcType?: string;
-  readonly hmiType?: string;
-  readonly status?: string;
-};
-
 type CapturedCalls = {
   readonly resolveInputs: CapturedResolveInput[];
-  readonly createMachineInputs: CapturedCreateMachineInput[];
+  readonly createMachineInputs: CreateMachineInput[];
+  readonly listMachinesInputs: ListMachinesInput[];
+  readonly getMachineInputs: GetMachineInput[];
 };
 
 const fakeDb = {} as PrismaClient;
@@ -58,16 +62,20 @@ const fakeMachine: MachineRecord = {
   },
 };
 
-function createDependencies(capturedCalls: CapturedCalls): CreateMachineEndpointDependencies {
+function captureResolveInput(input: ResolveInput): CapturedResolveInput {
+  return {
+    authorizationHeader: input.authorizationHeader,
+    organizationId: input.organizationId,
+    db: input.db,
+    ...(input.allowedRoles ? { allowedRoles: input.allowedRoles } : {}),
+  };
+}
+
+function createDependencies(capturedCalls: CapturedCalls): MachineRecordsEndpointDependencies {
   return {
     db: fakeDb,
     resolveAuthenticatedTenantContext: async (input) => {
-      capturedCalls.resolveInputs.push({
-        authorizationHeader: input.authorizationHeader,
-        organizationId: input.organizationId,
-        db: input.db,
-        ...(input.allowedRoles ? { allowedRoles: input.allowedRoles } : {}),
-      });
+      capturedCalls.resolveInputs.push(captureResolveInput(input));
 
       return {
         currentUser: {
@@ -88,9 +96,32 @@ function createDependencies(capturedCalls: CapturedCalls): CreateMachineEndpoint
       };
     },
     createMachine: async (input) => {
-      capturedCalls.createMachineInputs.push(input as CapturedCreateMachineInput);
+      capturedCalls.createMachineInputs.push(input);
 
       return fakeMachine;
+    },
+    listMachinesByOrganization: async (input) => {
+      capturedCalls.listMachinesInputs.push(input);
+
+      return [fakeMachine];
+    },
+    getMachineByOrganization: async (input) => {
+      capturedCalls.getMachineInputs.push(input);
+
+      return fakeMachine;
+    },
+  };
+}
+
+function createDependenciesWithMissingMachine(
+  capturedCalls: CapturedCalls,
+): MachineRecordsEndpointDependencies {
+  return {
+    ...createDependencies(capturedCalls),
+    getMachineByOrganization: async (input) => {
+      capturedCalls.getMachineInputs.push(input);
+
+      return null;
     },
   };
 }
@@ -99,6 +130,8 @@ function createCapturedCalls(): CapturedCalls {
   return {
     resolveInputs: [],
     createMachineInputs: [],
+    listMachinesInputs: [],
+    getMachineInputs: [],
   };
 }
 
@@ -132,7 +165,21 @@ async function expectBadRequest(name: string, action: () => Promise<unknown>): P
   throw new Error(`${name} should throw BadRequestException.`);
 }
 
-async function runMachineRecordsControllerSmokeCheck(): Promise<void> {
+async function expectNotFound(name: string, action: () => Promise<unknown>): Promise<void> {
+  try {
+    await action();
+  } catch (error) {
+    if (error instanceof NotFoundException) {
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(`${name} should throw NotFoundException.`);
+}
+
+async function runCreateMachineSmokeCheck(): Promise<void> {
   const capturedCalls = createCapturedCalls();
 
   const response = await createMachineFromRequest({
@@ -193,7 +240,62 @@ async function runMachineRecordsControllerSmokeCheck(): Promise<void> {
     'Machine status was not forwarded.',
   );
   assert(createMachineInput.deliveryDate instanceof Date, 'Delivery date was not parsed.');
+}
 
+async function runReadMachineSmokeCheck(): Promise<void> {
+  const capturedCalls = createCapturedCalls();
+
+  const listResponse = await listMachinesFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    query: {
+      organizationId: ' organization-1 ',
+    },
+    dependencies: createDependencies(capturedCalls),
+  });
+
+  const getResponse = await getMachineFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: ' machine-1 ',
+    query: {
+      organizationId: ' organization-1 ',
+    },
+    dependencies: createDependencies(capturedCalls),
+  });
+
+  assert(listResponse.machines.length === 1, 'List endpoint did not return machines.');
+  assert(getResponse.machine.id === 'machine-1', 'Get endpoint did not return the machine.');
+
+  const listResolveInput = capturedCalls.resolveInputs[0];
+  const getResolveInput = capturedCalls.resolveInputs[1];
+  const listInput = capturedCalls.listMachinesInputs[0];
+  const getInput = capturedCalls.getMachineInputs[0];
+
+  assert(listResolveInput !== undefined, 'List auth tenant context dependency was not called.');
+  assert(getResolveInput !== undefined, 'Get auth tenant context dependency was not called.');
+  assert(listInput !== undefined, 'List machines dependency was not called.');
+  assert(getInput !== undefined, 'Get machine dependency was not called.');
+
+  assert(
+    listResolveInput.allowedRoles?.join(',') === 'OWNER,ADMIN,MEMBER',
+    'Machine list endpoint did not allow OWNER, ADMIN, MEMBER.',
+  );
+  assert(
+    getResolveInput.allowedRoles?.join(',') === 'OWNER,ADMIN,MEMBER',
+    'Machine get endpoint did not allow OWNER, ADMIN, MEMBER.',
+  );
+
+  assert(
+    listInput.organizationId === 'organization-1',
+    'List endpoint did not normalize organization ID.',
+  );
+  assert(
+    getInput.organizationId === 'organization-1',
+    'Get endpoint did not normalize organization ID.',
+  );
+  assert(getInput.machineId === 'machine-1', 'Get endpoint did not normalize machine ID.');
+}
+
+async function runValidationSmokeCheck(): Promise<void> {
   await expectBadRequest('missing organization ID', () =>
     createMachineFromRequest({
       authorizationHeader: 'Bearer token-1',
@@ -234,6 +336,28 @@ async function runMachineRecordsControllerSmokeCheck(): Promise<void> {
     }),
   );
 
+  await expectBadRequest('missing machine ID', () =>
+    getMachineFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: '   ',
+      query: {
+        organizationId: 'organization-1',
+      },
+      dependencies: createDependencies(createCapturedCalls()),
+    }),
+  );
+
+  await expectNotFound('machine not found', () =>
+    getMachineFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-404',
+      query: {
+        organizationId: 'organization-1',
+      },
+      dependencies: createDependenciesWithMissingMachine(createCapturedCalls()),
+    }),
+  );
+
   await expectThrows('auth dependency failure', () =>
     createMachineFromRequest({
       authorizationHeader: 'Bearer token-1',
@@ -252,6 +376,12 @@ async function runMachineRecordsControllerSmokeCheck(): Promise<void> {
       },
     }),
   );
+}
+
+async function runMachineRecordsControllerSmokeCheck(): Promise<void> {
+  await runCreateMachineSmokeCheck();
+  await runReadMachineSmokeCheck();
+  await runValidationSmokeCheck();
 }
 
 await runMachineRecordsControllerSmokeCheck();
