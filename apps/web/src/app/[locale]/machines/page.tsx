@@ -555,7 +555,10 @@ function renderMachineCard({
   readonly copy: (typeof machineRecordsPageCopy)['en'];
 }) {
   return (
-    <article className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6">
+    <article
+      key={machine.id}
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
