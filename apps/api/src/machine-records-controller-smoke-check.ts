@@ -18,6 +18,7 @@ import {
   listCustomersFromRequest,
   listMachineModelsFromRequest,
   listMachinesFromRequest,
+  updateMachineFromRequest,
   type MachineRecordsEndpointDependencies,
 } from './machine-records.controller.js';
 
@@ -49,6 +50,8 @@ type GetMachineModelInput = Parameters<
 
 type CreateMachineInput = Parameters<MachineRecordsEndpointDependencies['createMachine']>[0];
 
+type UpdateMachineInput = Parameters<MachineRecordsEndpointDependencies['updateMachine']>[0];
+
 type ListMachinesInput = Parameters<
   MachineRecordsEndpointDependencies['listMachinesByOrganization']
 >[0];
@@ -73,6 +76,7 @@ type CapturedCalls = {
   readonly listMachineModelsInputs: ListMachineModelsInput[];
   readonly getMachineModelInputs: GetMachineModelInput[];
   readonly createMachineInputs: CreateMachineInput[];
+  readonly updateMachineInputs: UpdateMachineInput[];
   readonly listMachinesInputs: ListMachinesInput[];
   readonly getMachineInputs: GetMachineInput[];
 };
@@ -144,6 +148,7 @@ function createCapturedCalls(): CapturedCalls {
     listMachineModelsInputs: [],
     getMachineModelInputs: [],
     createMachineInputs: [],
+    updateMachineInputs: [],
     listMachinesInputs: [],
     getMachineInputs: [],
   };
@@ -205,6 +210,11 @@ function createDependencies(capturedCalls: CapturedCalls): MachineRecordsEndpoin
     },
     createMachine: async (input) => {
       capturedCalls.createMachineInputs.push(input);
+
+      return fakeMachine;
+    },
+    updateMachine: async (input) => {
+      capturedCalls.updateMachineInputs.push(input);
 
       return fakeMachine;
     },
@@ -482,6 +492,23 @@ async function runMachineSmokeCheck(): Promise<void> {
     dependencies: createDependencies(capturedCalls),
   });
 
+  const updateResponse = await updateMachineFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: ' machine-1 ',
+    body: {
+      organizationId: ' organization-1 ',
+      customerId: ' customer-1 ',
+      machineModelId: ' machine-model-1 ',
+      machineName: ' Press One Updated ',
+      serialNumber: ' SN-101 ',
+      deliveryDate: '2026-06-13',
+      plcType: ' S7-1500F ',
+      hmiType: ' Comfort Panel Pro ',
+      status: MachineStatus.MAINTENANCE,
+    },
+    dependencies: createDependencies(capturedCalls),
+  });
+
   const listResponse = await listMachinesFromRequest({
     authorizationHeader: 'Bearer token-1',
     query: {
@@ -503,18 +530,25 @@ async function runMachineSmokeCheck(): Promise<void> {
     createResponse.machine.id === 'machine-1',
     'Create machine endpoint did not return machine.',
   );
+  assert(
+    updateResponse.machine.id === 'machine-1',
+    'Update machine endpoint did not return machine.',
+  );
   assert(listResponse.machines.length === 1, 'List machines endpoint did not return machines.');
   assert(getResponse.machine.id === 'machine-1', 'Get machine endpoint did not return machine.');
 
   assertResolveInput(capturedCalls.resolveInputs[0], ['OWNER', 'ADMIN'], 'Machine create');
-  assertResolveInput(capturedCalls.resolveInputs[1], ['OWNER', 'ADMIN', 'MEMBER'], 'Machine list');
-  assertResolveInput(capturedCalls.resolveInputs[2], ['OWNER', 'ADMIN', 'MEMBER'], 'Machine get');
+  assertResolveInput(capturedCalls.resolveInputs[1], ['OWNER', 'ADMIN'], 'Machine update');
+  assertResolveInput(capturedCalls.resolveInputs[2], ['OWNER', 'ADMIN', 'MEMBER'], 'Machine list');
+  assertResolveInput(capturedCalls.resolveInputs[3], ['OWNER', 'ADMIN', 'MEMBER'], 'Machine get');
 
   const createInput = capturedCalls.createMachineInputs[0];
+  const updateInput = capturedCalls.updateMachineInputs[0];
   const listInput = capturedCalls.listMachinesInputs[0];
   const getInput = capturedCalls.getMachineInputs[0];
 
   assert(createInput !== undefined, 'Create machine dependency was not called.');
+  assert(updateInput !== undefined, 'Update machine dependency was not called.');
   assert(listInput !== undefined, 'List machines dependency was not called.');
   assert(getInput !== undefined, 'Get machine dependency was not called.');
 
@@ -532,6 +566,28 @@ async function runMachineSmokeCheck(): Promise<void> {
   assert(createInput.hmiType === 'Comfort Panel', 'HMI type was not normalized.');
   assert(createInput.status === MachineStatus.MAINTENANCE, 'Machine status was not forwarded.');
   assert(createInput.deliveryDate instanceof Date, 'Delivery date was not parsed.');
+
+  assert(updateInput.db === fakeDb, 'DB dependency was not forwarded to machine update.');
+  assert(
+    updateInput.organizationId === 'organization-1',
+    'Machine update organization ID was wrong.',
+  );
+  assert(updateInput.machineId === 'machine-1', 'Machine update ID was not normalized.');
+  assert(updateInput.customerId === 'customer-1', 'Update customer ID was not normalized.');
+  assert(
+    updateInput.machineModelId === 'machine-model-1',
+    'Update machine model ID was not normalized.',
+  );
+  assert(
+    updateInput.machineName === 'Press One Updated',
+    'Update machine name was not normalized.',
+  );
+  assert(updateInput.serialNumber === 'SN-101', 'Update serial number was not normalized.');
+  assert(updateInput.actorUserId === 'app-user-1', 'Update actor user ID was not forwarded.');
+  assert(updateInput.plcType === 'S7-1500F', 'Update PLC type was not normalized.');
+  assert(updateInput.hmiType === 'Comfort Panel Pro', 'Update HMI type was not normalized.');
+  assert(updateInput.status === MachineStatus.MAINTENANCE, 'Update machine status was wrong.');
+  assert(updateInput.deliveryDate instanceof Date, 'Update delivery date was not parsed.');
 
   assert(listInput.organizationId === 'organization-1', 'Machine list organization ID was wrong.');
   assert(getInput.organizationId === 'organization-1', 'Machine get organization ID was wrong.');
@@ -609,9 +665,41 @@ async function runValidationSmokeCheck(): Promise<void> {
     }),
   );
 
+  await expectBadRequest('invalid update machine status', () =>
+    updateMachineFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      body: {
+        organizationId: 'organization-1',
+        customerId: 'customer-1',
+        machineModelId: 'machine-model-1',
+        machineName: 'Press One',
+        serialNumber: 'SN-100',
+        status: 'BROKEN',
+      },
+      dependencies: createDependencies(createCapturedCalls()),
+    }),
+  );
+
   await expectBadRequest('invalid delivery date', () =>
     createMachineFromRequest({
       authorizationHeader: 'Bearer token-1',
+      body: {
+        organizationId: 'organization-1',
+        customerId: 'customer-1',
+        machineModelId: 'machine-model-1',
+        machineName: 'Press One',
+        serialNumber: 'SN-100',
+        deliveryDate: 'not-a-date',
+      },
+      dependencies: createDependencies(createCapturedCalls()),
+    }),
+  );
+
+  await expectBadRequest('invalid update delivery date', () =>
+    updateMachineFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
       body: {
         organizationId: 'organization-1',
         customerId: 'customer-1',
@@ -630,6 +718,21 @@ async function runValidationSmokeCheck(): Promise<void> {
       machineId: '   ',
       query: {
         organizationId: 'organization-1',
+      },
+      dependencies: createDependencies(createCapturedCalls()),
+    }),
+  );
+
+  await expectBadRequest('missing update machine ID', () =>
+    updateMachineFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: '   ',
+      body: {
+        organizationId: 'organization-1',
+        customerId: 'customer-1',
+        machineModelId: 'machine-model-1',
+        machineName: 'Press One',
+        serialNumber: 'SN-100',
       },
       dependencies: createDependencies(createCapturedCalls()),
     }),

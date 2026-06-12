@@ -6,6 +6,7 @@ import {
   Headers,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -28,6 +29,7 @@ import {
   listMachineModelsByOrganization,
   listMachinesByOrganization,
   MachineStatus,
+  updateMachine as updateMachineRecord,
 } from '@buildtrace/db';
 import { supportedLocales, type SupportedLocale } from '@buildtrace/shared';
 
@@ -65,6 +67,8 @@ export type CreateMachineRequestBody = {
   readonly hmiType?: unknown;
   readonly status?: unknown;
 };
+
+export type UpdateMachineRequestBody = CreateMachineRequestBody;
 
 export type MachineRecordsQuery = {
   readonly organizationId?: unknown;
@@ -105,6 +109,10 @@ type CreateMachineDependency = (
   input: Parameters<typeof createMachineRecord>[0],
 ) => Promise<MachineRecord>;
 
+type UpdateMachineDependency = (
+  input: Parameters<typeof updateMachineRecord>[0],
+) => Promise<MachineRecord>;
+
 type ListMachinesDependency = (
   input: Parameters<typeof listMachinesByOrganization>[0],
 ) => Promise<readonly MachineRecord[]>;
@@ -123,6 +131,7 @@ export type MachineRecordsEndpointDependencies = {
   readonly listMachineModelsByOrganization: ListMachineModelsDependency;
   readonly getMachineModelByOrganization: GetMachineModelDependency;
   readonly createMachine: CreateMachineDependency;
+  readonly updateMachine: UpdateMachineDependency;
   readonly listMachinesByOrganization: ListMachinesDependency;
   readonly getMachineByOrganization: GetMachineDependency;
 };
@@ -171,6 +180,13 @@ type CreateMachineFromRequestInput = {
   readonly dependencies: MachineRecordsEndpointDependencies;
 };
 
+type UpdateMachineFromRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly machineId: string | undefined;
+  readonly body: UpdateMachineRequestBody | undefined;
+  readonly dependencies: MachineRecordsEndpointDependencies;
+};
+
 type ListMachinesFromRequestInput = {
   readonly authorizationHeader: string | undefined;
   readonly query: MachineRecordsQuery | undefined;
@@ -209,6 +225,10 @@ export type GetMachineModelResponse = {
 };
 
 export type CreateMachineResponse = {
+  readonly machine: MachineRecord;
+};
+
+export type UpdateMachineResponse = {
   readonly machine: MachineRecord;
 };
 
@@ -310,6 +330,7 @@ function createRealDependencies(): MachineRecordsEndpointDependencies {
     listMachineModelsByOrganization,
     getMachineModelByOrganization,
     createMachine: createMachineRecord,
+    updateMachine: updateMachineRecord,
     listMachinesByOrganization,
     getMachineByOrganization,
   };
@@ -532,6 +553,47 @@ export async function createMachineFromRequest({
   };
 }
 
+export async function updateMachineFromRequest({
+  authorizationHeader,
+  machineId,
+  body,
+  dependencies,
+}: UpdateMachineFromRequestInput): Promise<UpdateMachineResponse> {
+  const requestBody = body ?? {};
+  const organizationId = readRequiredString('organizationId', requestBody.organizationId);
+  const normalizedMachineId = readRequiredString('machineId', machineId);
+  const deliveryDate = readOptionalDate('deliveryDate', requestBody.deliveryDate);
+  const plcType = readOptionalString('plcType', requestBody.plcType);
+  const hmiType = readOptionalString('hmiType', requestBody.hmiType);
+  const status = readOptionalMachineStatus('status', requestBody.status);
+
+  const { currentUser } = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: recordCreateRoles,
+  });
+
+  const machine = await dependencies.updateMachine({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    customerId: readRequiredString('customerId', requestBody.customerId),
+    machineModelId: readRequiredString('machineModelId', requestBody.machineModelId),
+    machineName: readRequiredString('machineName', requestBody.machineName),
+    serialNumber: readRequiredString('serialNumber', requestBody.serialNumber),
+    actorUserId: currentUser.appUserId,
+    ...(deliveryDate ? { deliveryDate } : {}),
+    ...(plcType ? { plcType } : {}),
+    ...(hmiType ? { hmiType } : {}),
+    ...(status ? { status } : {}),
+  });
+
+  return {
+    machine,
+  };
+}
+
 export async function listMachinesFromRequest({
   authorizationHeader,
   query,
@@ -672,6 +734,20 @@ export class MachineRecordsController {
   ): Promise<CreateMachineResponse> {
     return createMachineFromRequest({
       authorizationHeader,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Patch('machines/:machineId')
+  async updateMachine(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Body() body: UpdateMachineRequestBody | undefined,
+  ): Promise<UpdateMachineResponse> {
+    return updateMachineFromRequest({
+      authorizationHeader,
+      machineId,
       body,
       dependencies: createRealDependencies(),
     });
