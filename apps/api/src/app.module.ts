@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+import { MachineRecordsController } from './machine-records.controller.js';
+
+@Module({
+  controllers: [MachineRecordsController],
+})
 export class AppModule {}
