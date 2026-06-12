@@ -103,6 +103,20 @@ export type CreateMachineRecordApiInput = {
   readonly status?: MachineStatusValue;
 };
 
+export type UpdateMachineRecordApiInput = {
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly accessToken: string;
+  readonly customerId?: string;
+  readonly machineModelId?: string;
+  readonly machineName?: string;
+  readonly serialNumber?: string;
+  readonly deliveryDate?: string;
+  readonly plcType?: string;
+  readonly hmiType?: string;
+  readonly status?: MachineStatusValue;
+};
+
 export type ListMachineRecordsApiInput = {
   readonly organizationId: string;
   readonly accessToken: string;
@@ -385,6 +399,54 @@ export async function createMachineRecord(
     },
     body: JSON.stringify(requestBody),
   });
+
+  const responseBody = await parseJsonResponse<MachineRecordResponseBody>(response);
+
+  return responseBody.machine;
+}
+
+export async function updateMachineRecord(
+  input: UpdateMachineRecordApiInput,
+  fetcher: Fetcher = fetch,
+): Promise<MachineRecordApiModel> {
+  assertMachineStatus(input.status);
+
+  const machineId = normalizeRequiredText('Machine ID', input.machineId);
+  const customerId = normalizeOptionalText(input.customerId);
+  const machineModelId = normalizeOptionalText(input.machineModelId);
+  const machineName = normalizeOptionalText(input.machineName);
+  const serialNumber = normalizeOptionalText(input.serialNumber);
+  const deliveryDate = normalizeOptionalText(input.deliveryDate);
+  const plcType = normalizeOptionalText(input.plcType);
+  const hmiType = normalizeOptionalText(input.hmiType);
+
+  const requestBody = {
+    organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+    ...(customerId ? { customerId } : {}),
+    ...(machineModelId ? { machineModelId } : {}),
+    ...(machineName ? { machineName } : {}),
+    ...(serialNumber ? { serialNumber } : {}),
+    ...(deliveryDate ? { deliveryDate } : {}),
+    ...(plcType ? { plcType } : {}),
+    ...(hmiType ? { hmiType } : {}),
+    ...(input.status ? { status: input.status } : {}),
+  };
+
+  if (Object.keys(requestBody).length === 1) {
+    throw new Error('At least one machine update field is required.');
+  }
+
+  const response = await fetcher(
+    buildApiUrl(`/machine-records/machines/${encodeURIComponent(machineId)}`),
+    {
+      method: 'PATCH',
+      headers: {
+        authorization: createAuthorizationHeader(input.accessToken),
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    },
+  );
 
   const responseBody = await parseJsonResponse<MachineRecordResponseBody>(response);
 

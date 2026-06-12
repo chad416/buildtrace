@@ -10,6 +10,7 @@ import {
   listCustomers,
   listMachineModels,
   listMachineRecords,
+  updateMachineRecord,
   type CustomerRecordApiModel,
   type MachineModelRecordApiModel,
   type MachineRecordApiModel,
@@ -406,6 +407,53 @@ async function verifyMachineCalls(): Promise<void> {
   assert(createBody.hmiType === 'KTP700', 'Expected machine HMI type.');
   assert(createBody.status === activeMachineStatus, 'Expected machine status.');
 
+  const updateCalls: CapturedFetchCall[] = [];
+
+  const updatedMachine = await updateMachineRecord(
+    {
+      organizationId: ' organization-1 ',
+      machineId: ' machine-1 ',
+      customerId: ' customer-1 ',
+      machineModelId: ' machine-model-1 ',
+      machineName: ' Press Line 1 Updated ',
+      serialNumber: ' SN-001-UPDATED ',
+      accessToken: ' access-token ',
+      deliveryDate: ' 2026-06-13 ',
+      plcType: ' Siemens S7-1500 ',
+      hmiType: ' KTP900 ',
+      status: activeMachineStatus,
+    },
+    createCapturingFetcher(updateCalls),
+  );
+
+  assert(updatedMachine.id === fakeMachine.id, 'Expected update response machine.');
+
+  const updateCall = updateCalls.at(0);
+
+  assert(updateCall, 'Expected update machine call.');
+
+  const updateUrl = readCallUrl(updateCall);
+
+  assert(
+    updateUrl.pathname === '/machine-records/machines/machine-1',
+    'Unexpected update machine path.',
+  );
+  assert(updateCall.init?.method === 'PATCH', 'Expected update machine PATCH.');
+  assertBearerToken(updateCall, 'update machine');
+  assertJsonContentType(updateCall, 'update machine');
+
+  const updateBody = readRequestBody(updateCall);
+
+  assert(updateBody.organizationId === 'organization-1', 'Expected update organization ID.');
+  assert(updateBody.customerId === 'customer-1', 'Expected update customer ID.');
+  assert(updateBody.machineModelId === 'machine-model-1', 'Expected update model ID.');
+  assert(updateBody.machineName === 'Press Line 1 Updated', 'Expected update machine name.');
+  assert(updateBody.serialNumber === 'SN-001-UPDATED', 'Expected update serial number.');
+  assert(updateBody.deliveryDate === '2026-06-13', 'Expected update delivery date.');
+  assert(updateBody.plcType === 'Siemens S7-1500', 'Expected update PLC type.');
+  assert(updateBody.hmiType === 'KTP900', 'Expected update HMI type.');
+  assert(updateBody.status === activeMachineStatus, 'Expected update status.');
+
   const listCalls: CapturedFetchCall[] = [];
 
   const listedMachines = await listMachineRecords(
@@ -506,6 +554,29 @@ async function verifyFailures(): Promise<void> {
         serialNumber: 'SN-001',
         accessToken: 'access-token',
         status: 'BROKEN' as MachineRecordApiModel['status'],
+      },
+      createCapturingFetcher([]),
+    ),
+  );
+
+  await expectThrows('unsupported update machine status', () =>
+    updateMachineRecord(
+      {
+        organizationId: 'organization-1',
+        machineId: 'machine-1',
+        accessToken: 'access-token',
+        status: 'BROKEN' as MachineRecordApiModel['status'],
+      },
+      createCapturingFetcher([]),
+    ),
+  );
+
+  await expectThrows('empty update machine payload', () =>
+    updateMachineRecord(
+      {
+        organizationId: 'organization-1',
+        machineId: 'machine-1',
+        accessToken: 'access-token',
       },
       createCapturingFetcher([]),
     ),
