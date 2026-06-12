@@ -10,6 +10,7 @@ import {
   listCustomersByOrganization,
   listMachineModelsByOrganization,
   listMachinesByOrganization,
+  updateMachine,
 } from './machine-records.js';
 import type { PrismaClient } from './generated/prisma/client';
 import { MachineStatus } from './generated/prisma/enums';
@@ -38,6 +39,7 @@ type FakeTransactionClient = {
     readonly create: (args: unknown) => Promise<unknown>;
     readonly findFirst: (args: unknown) => Promise<unknown>;
     readonly findMany: (args: unknown) => Promise<unknown>;
+    readonly update: (args: unknown) => Promise<unknown>;
   };
 };
 
@@ -245,6 +247,15 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
       },
       findFirst: captureFindFirst('machine'),
       findMany: capture('machine', 'findMany', []),
+      update: async (args) => {
+        capturedOperations.push({
+          model: 'machine',
+          operation: 'update',
+          args,
+        });
+
+        return createRecord('machine', args);
+      },
     },
   };
 
@@ -362,6 +373,18 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     }),
   );
 
+  await expectThrows('blank update machine ID', () =>
+    updateMachine({
+      db: createFakePrismaClient([]),
+      organizationId: 'organization-1',
+      machineId: '   ',
+      customerId: 'customer-1',
+      machineModelId: 'machine-model-1',
+      machineName: 'Press One',
+      serialNumber: 'SN-100',
+    }),
+  );
+
   const capturedOperations: CapturedOperation[] = [];
   const db = createFakePrismaClient(capturedOperations);
 
@@ -395,6 +418,21 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     plcType: ' S7-1500 ',
     hmiType: ' Comfort Panel ',
     status: MachineStatus.ACTIVE,
+  });
+
+  await updateMachine({
+    db,
+    organizationId: ' organization-1 ',
+    machineId: ' machine-1 ',
+    customerId: ' customer-1 ',
+    machineModelId: ' machine-model-1 ',
+    machineName: ' Press One Updated ',
+    serialNumber: ' SN-101 ',
+    actorUserId: ' app-user-1 ',
+    deliveryDate: new Date('2026-06-12T00:00:00.000Z'),
+    plcType: ' S7-1500F ',
+    hmiType: ' Comfort Panel Pro ',
+    status: MachineStatus.MAINTENANCE,
   });
 
   await listCustomersByOrganization({
@@ -451,6 +489,24 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     throw new Error('Machine helper did not normalize required create fields.');
   }
 
+  const machineUpdateOperation = findOperation(capturedOperations, 'machine', 'update');
+  const machineUpdateData = getData(machineUpdateOperation);
+  const machineUpdateWhere = getWhere(machineUpdateOperation);
+
+  if (
+    machineUpdateWhere.id !== 'machine-1' ||
+    machineUpdateWhere.organizationId !== 'organization-1' ||
+    machineUpdateData.customerId !== 'customer-1' ||
+    machineUpdateData.machineModelId !== 'machine-model-1' ||
+    machineUpdateData.machineName !== 'Press One Updated' ||
+    machineUpdateData.serialNumber !== 'SN-101' ||
+    machineUpdateData.status !== MachineStatus.MAINTENANCE ||
+    machineUpdateData.plcType !== 'S7-1500F' ||
+    machineUpdateData.hmiType !== 'Comfort Panel Pro'
+  ) {
+    throw new Error('Machine update helper did not normalize and scope update fields.');
+  }
+
   const activityActions = capturedOperations
     .filter((operation) => operation.model === 'activityLog')
     .map((operation) => getData(operation).action);
@@ -458,7 +514,8 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
   if (
     !activityActions.includes(activityLogActions.customerCreated) ||
     !activityActions.includes(activityLogActions.machineModelCreated) ||
-    !activityActions.includes(activityLogActions.machineCreated)
+    !activityActions.includes(activityLogActions.machineCreated) ||
+    !activityActions.includes(activityLogActions.machineUpdated)
   ) {
     throw new Error('Machine record helpers did not write the expected activity log actions.');
   }
@@ -469,30 +526,55 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     'machineModel',
     'findFirst',
   );
+  const machineFindOperations = findOperations(capturedOperations, 'machine', 'findFirst');
 
-  if (customerFindOperations.length < 2 || machineModelFindOperations.length < 2) {
-    throw new Error('Customer/model read helpers and ownership checks were not both exercised.');
+  if (
+    customerFindOperations.length < 3 ||
+    machineModelFindOperations.length < 3 ||
+    machineFindOperations.length < 2
+  ) {
+    throw new Error('Read helpers and ownership checks were not fully exercised.');
   }
 
   assertOrganizationScopedFind(
-    requireOperationAt(customerFindOperations, 0, 'customer ownership check'),
+    requireOperationAt(customerFindOperations, 0, 'create machine customer ownership check'),
     'id',
     'customer-1',
   );
   assertOrganizationScopedFind(
-    requireOperationAt(customerFindOperations, 1, 'customer read helper'),
+    requireOperationAt(customerFindOperations, 1, 'update machine customer ownership check'),
     'id',
     'customer-1',
   );
   assertOrganizationScopedFind(
-    requireOperationAt(machineModelFindOperations, 0, 'machine model ownership check'),
+    requireOperationAt(customerFindOperations, 2, 'customer read helper'),
+    'id',
+    'customer-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineModelFindOperations, 0, 'create machine model ownership check'),
     'id',
     'machine-model-1',
   );
   assertOrganizationScopedFind(
-    requireOperationAt(machineModelFindOperations, 1, 'machine model read helper'),
+    requireOperationAt(machineModelFindOperations, 1, 'update machine model ownership check'),
     'id',
     'machine-model-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineModelFindOperations, 2, 'machine model read helper'),
+    'id',
+    'machine-model-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineFindOperations, 0, 'update machine ownership check'),
+    'id',
+    'machine-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineFindOperations, 1, 'machine read helper'),
+    'id',
+    'machine-1',
   );
 
   const customerListWhere = getWhere(findOperation(capturedOperations, 'customer', 'findMany'));
@@ -500,16 +582,13 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     findOperation(capturedOperations, 'machineModel', 'findMany'),
   );
   const machineListWhere = getWhere(findOperation(capturedOperations, 'machine', 'findMany'));
-  const machineGetWhere = getWhere(findOperation(capturedOperations, 'machine', 'findFirst'));
 
   if (
     customerListWhere.organizationId !== 'organization-1' ||
     machineModelListWhere.organizationId !== 'organization-1' ||
-    machineListWhere.organizationId !== 'organization-1' ||
-    machineGetWhere.organizationId !== 'organization-1' ||
-    machineGetWhere.id !== 'machine-1'
+    machineListWhere.organizationId !== 'organization-1'
   ) {
-    throw new Error('Machine record helpers did not scope reads by organization.');
+    throw new Error('Machine record helpers did not scope list reads by organization.');
   }
 }
 

@@ -8,6 +8,7 @@ type MachineStatusValue = (typeof MachineStatus)[keyof typeof MachineStatus];
 
 type CustomerReadClient = Pick<PrismaClient, 'customer'>;
 type MachineModelReadClient = Pick<PrismaClient, 'machineModel'>;
+type MachineReadClient = Pick<PrismaClient, 'machine'>;
 
 type DbInput = {
   readonly db: PrismaClient;
@@ -42,6 +43,19 @@ type GetMachineModelByOrganizationInput = OrganizationScopedInput & {
 };
 
 type CreateMachineInput = OrganizationScopedInput & {
+  readonly customerId: string;
+  readonly machineModelId: string;
+  readonly machineName: string;
+  readonly serialNumber: string;
+  readonly actorUserId?: string;
+  readonly deliveryDate?: Date;
+  readonly plcType?: string;
+  readonly hmiType?: string;
+  readonly status?: MachineStatusValue;
+};
+
+type UpdateMachineInput = OrganizationScopedInput & {
+  readonly machineId: string;
   readonly customerId: string;
   readonly machineModelId: string;
   readonly machineName: string;
@@ -159,6 +173,26 @@ async function assertMachineModelBelongsToOrganization(
 
   if (!machineModel) {
     throw new Error('Machine model does not belong to this organization.');
+  }
+}
+
+async function assertMachineBelongsToOrganization(
+  db: MachineReadClient,
+  organizationId: string,
+  machineId: string,
+): Promise<void> {
+  const machine = await db.machine.findFirst({
+    where: {
+      id: machineId,
+      organizationId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!machine) {
+    throw new Error('Machine does not belong to this organization.');
   }
 }
 
@@ -358,6 +392,83 @@ export async function createMachine({
       db: tx,
       organizationId: normalizedOrganizationId,
       action: activityLogActions.machineCreated,
+      ...(normalizedActorUserId ? { actorUserId: normalizedActorUserId } : {}),
+      targetType: 'machine',
+      targetId: machine.id,
+    });
+
+    return machine;
+  });
+}
+
+export async function updateMachine({
+  db,
+  organizationId,
+  machineId,
+  customerId,
+  machineModelId,
+  machineName,
+  serialNumber,
+  actorUserId,
+  deliveryDate,
+  plcType,
+  hmiType,
+  status,
+}: UpdateMachineInput): Promise<MachineRecord> {
+  const normalizedOrganizationId = normalizeOrganizationId(organizationId);
+  const normalizedMachineId = normalizeRequiredText('Machine ID', machineId);
+  const normalizedCustomerId = normalizeRequiredText('Customer ID', customerId);
+  const normalizedMachineModelId = normalizeRequiredText('Machine model ID', machineModelId);
+  const normalizedMachineName = normalizeRequiredText('Machine name', machineName);
+  const normalizedSerialNumber = normalizeRequiredText('Machine serial number', serialNumber);
+  const normalizedActorUserId = normalizeOptionalText(actorUserId);
+  const normalizedPlcType = normalizeOptionalText(plcType);
+  const normalizedHmiType = normalizeOptionalText(hmiType);
+
+  return db.$transaction(async (tx) => {
+    await assertMachineBelongsToOrganization(tx, normalizedOrganizationId, normalizedMachineId);
+    await assertCustomerBelongsToOrganization(tx, normalizedOrganizationId, normalizedCustomerId);
+    await assertMachineModelBelongsToOrganization(
+      tx,
+      normalizedOrganizationId,
+      normalizedMachineModelId,
+    );
+
+    const machine = await tx.machine.update({
+      where: {
+        id: normalizedMachineId,
+        organizationId: normalizedOrganizationId,
+      },
+      data: {
+        customerId: normalizedCustomerId,
+        machineModelId: normalizedMachineModelId,
+        machineName: normalizedMachineName,
+        serialNumber: normalizedSerialNumber,
+        status: status ?? MachineStatus.ACTIVE,
+        deliveryDate: deliveryDate ?? null,
+        plcType: normalizedPlcType ?? null,
+        hmiType: normalizedHmiType ?? null,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            companyName: true,
+          },
+        },
+        machineModel: {
+          select: {
+            id: true,
+            modelName: true,
+          },
+        },
+      },
+    });
+
+    await createActivityLog({
+      db: tx,
+      organizationId: normalizedOrganizationId,
+      action: activityLogActions.machineUpdated,
       ...(normalizedActorUserId ? { actorUserId: normalizedActorUserId } : {}),
       targetType: 'machine',
       targetId: machine.id,

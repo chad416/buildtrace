@@ -11,9 +11,10 @@ export {
   listCustomersByOrganization,
   listMachineModelsByOrganization,
   listMachinesByOrganization,
+  updateMachine,
 } from './machine-records';
 export type { ActivityLogRecord } from './activity-log';
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 
-export const dbPackageStatus = 'phase-3-machine-record-helpers-ready';
+export const dbPackageStatus = 'phase-3-machine-record-update-helper-ready';
