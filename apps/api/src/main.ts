@@ -9,12 +9,6 @@ const port = Number(process.env.API_PORT ?? 4000);
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
-  app.getHttpAdapter().get('/health', () => ({
-    service: 'buildtrace-api',
-    status: 'ok',
-    phase: 'phase-3-machine-records-api-foundation',
-  }));
-
   await app.listen(port, '0.0.0.0');
 }
 
