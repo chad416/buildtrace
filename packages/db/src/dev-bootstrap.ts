@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { OrganizationRole } from './generated/prisma/enums';
 import { createPrismaClient } from './client.js';
 
