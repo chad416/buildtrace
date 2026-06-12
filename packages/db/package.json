@@ -11,6 +11,7 @@
     "activity:smoke": "tsx src/activity-log-smoke-check.ts",
     "dev:bootstrap": "pnpm run generate && tsx src/dev-bootstrap.ts",
     "machine-record:isolation": "pnpm run generate && tsx src/machine-record-isolation-check.ts",
+    "machine-records:smoke": "pnpm run generate && tsx src/machine-records-smoke-check.ts",
     "build": "pnpm run generate && tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "pnpm run generate && tsc --noEmit"

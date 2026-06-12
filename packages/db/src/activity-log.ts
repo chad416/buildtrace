@@ -2,8 +2,10 @@ import type { ActivityLogAction } from '@buildtrace/shared';
 
 import type { PrismaClient } from './generated/prisma/client';
 
+type ActivityLogWriteClient = Pick<PrismaClient, 'activityLog'>;
+
 type CreateActivityLogInput = {
-  readonly db: PrismaClient;
+  readonly db: ActivityLogWriteClient;
   readonly organizationId: string;
   readonly action: ActivityLogAction;
   readonly actorUserId?: string;
@@ -42,7 +44,7 @@ export async function createActivityLog({
   userAgent,
 }: CreateActivityLogInput): Promise<ActivityLogRecord> {
   const normalizedOrganizationId = organizationId.trim();
-  const normalizedAction = action.trim();
+  const normalizedAction = action.trim() as ActivityLogAction;
   const normalizedActorUserId = normalizeOptionalText(actorUserId);
   const normalizedTargetType = normalizeOptionalText(targetType);
   const normalizedTargetId = normalizeOptionalText(targetId);
