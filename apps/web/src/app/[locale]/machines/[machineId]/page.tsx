@@ -1,19 +1,37 @@
 import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
+import { machineStatuses } from '@buildtrace/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getMachineRecord, type MachineRecordApiModel } from '@/machine-records-api';
+import { updateMachineRecordAction } from '../actions';
+import {
+  getMachineRecord,
+  listCustomers,
+  listMachineModels,
+  type CustomerRecordApiModel,
+  type MachineModelRecordApiModel,
+  type MachineRecordApiModel,
+} from '@/machine-records-api';
+import { machineRecordsCreateCopy } from '@/machine-records-create-copy';
 import { machineRecordsPageCopy } from '@/machine-records-page-copy';
 import {
   readMachineRecordsSession,
   type MachineRecordsSessionMissingField,
 } from '@/machine-records-session';
 
+type RawSearchParams = Record<string, string | readonly string[] | undefined>;
+
+type MachineDetailSearchParams = {
+  readonly machineUpdate?: string;
+  readonly machineUpdateError?: string;
+};
+
 type PageProps = {
   params: Promise<{
     locale: string;
     machineId: string;
   }>;
+  searchParams?: Promise<RawSearchParams>;
 };
 
 type MachineDetailLoadState =
@@ -28,6 +46,8 @@ type MachineDetailLoadState =
   | {
       readonly status: 'ready';
       readonly machine: MachineRecordApiModel;
+      readonly customers: readonly CustomerRecordApiModel[];
+      readonly machineModels: readonly MachineModelRecordApiModel[];
     };
 
 const statusClassNames = {
@@ -45,6 +65,18 @@ function formatLoadError(error: unknown): string {
   return 'Unknown API error.';
 }
 
+function normalizeSearchParams(
+  searchParams: RawSearchParams | undefined,
+): MachineDetailSearchParams {
+  const machineUpdate = searchParams?.machineUpdate;
+  const machineUpdateError = searchParams?.machineUpdateError;
+
+  return {
+    ...(typeof machineUpdate === 'string' ? { machineUpdate } : {}),
+    ...(typeof machineUpdateError === 'string' ? { machineUpdateError } : {}),
+  };
+}
+
 function formatDate(value: string | null, locale: string, fallback: string): string {
   if (!value) {
     return fallback;
@@ -59,6 +91,14 @@ function formatDate(value: string | null, locale: string, fallback: string): str
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
   }).format(date);
+}
+
+function formatDateInput(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return value.slice(0, 10);
 }
 
 function renderMissingFields(
@@ -96,6 +136,28 @@ function renderStatePanel({
   );
 }
 
+function renderFeedbackPanel({
+  tone,
+  title,
+  body,
+}: {
+  readonly tone: 'success' | 'error';
+  readonly title: string;
+  readonly body: string;
+}) {
+  const className =
+    tone === 'success'
+      ? 'rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-5 sm:p-6'
+      : 'rounded-lg border border-red-500/40 bg-red-950/20 p-5 sm:p-6';
+
+  return (
+    <section className={className}>
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">{title}</p>
+      <p className="mt-3 text-sm leading-6 text-stone-200">{body}</p>
+    </section>
+  );
+}
+
 function renderDetailField({ label, value }: { readonly label: string; readonly value: string }) {
   return (
     <div className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5">
@@ -105,16 +167,162 @@ function renderDetailField({ label, value }: { readonly label: string; readonly 
   );
 }
 
+function renderMachineEditForm({
+  machine,
+  customers,
+  machineModels,
+  locale,
+  createCopy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly customers: readonly CustomerRecordApiModel[];
+  readonly machineModels: readonly MachineModelRecordApiModel[];
+  readonly locale: string;
+  readonly createCopy: (typeof machineRecordsCreateCopy)['en'];
+}) {
+  const updateAction = updateMachineRecordAction.bind(null, locale, machine.id);
+
+  return (
+    <section className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        Update machine
+      </p>
+      <h2 className="mt-3 text-2xl font-semibold tracking-normal text-white">
+        Edit machine record
+      </h2>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">
+        Save machine changes through the web server action and API PATCH boundary.
+      </p>
+
+      <form action={updateAction} className="mt-6 grid gap-5">
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.customerLabel}
+            <select
+              name="customerId"
+              defaultValue={machine.customerId}
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            >
+              {customers.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.companyName}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.modelLabel}
+            <select
+              name="machineModelId"
+              defaultValue={machine.machineModelId}
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            >
+              {machineModels.map((machineModel) => (
+                <option key={machineModel.id} value={machineModel.id}>
+                  {machineModel.modelName}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.machineNameLabel}
+            <input
+              name="machineName"
+              defaultValue={machine.machineName}
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.serialNumberLabel}
+            <input
+              name="serialNumber"
+              defaultValue={machine.serialNumber}
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.statusLabel}
+            <select
+              name="status"
+              defaultValue={machine.status}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            >
+              {machineStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {createCopy.statusLabels[status]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.deliveryDateLabel}
+            <input
+              type="date"
+              name="deliveryDate"
+              defaultValue={formatDateInput(machine.deliveryDate)}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.plcLabel}
+            <input
+              name="plcType"
+              defaultValue={machine.plcType ?? ''}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {createCopy.form.hmiLabel}
+            <input
+              name="hmiType"
+              defaultValue={machine.hmiType ?? ''}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            />
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+        >
+          Save machine changes
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
+  customers,
+  machineModels,
   locale,
   copy,
+  createCopy,
   sections,
   sectionsAriaLabel,
 }: {
   readonly machine: MachineRecordApiModel;
+  readonly customers: readonly CustomerRecordApiModel[];
+  readonly machineModels: readonly MachineModelRecordApiModel[];
   readonly locale: string;
   readonly copy: (typeof machineRecordsPageCopy)['en'];
+  readonly createCopy: (typeof machineRecordsCreateCopy)['en'];
   readonly sections: readonly {
     readonly id: string;
     readonly titleId: string;
@@ -197,6 +405,14 @@ function renderMachineDetail({
         </dl>
       </section>
 
+      {renderMachineEditForm({
+        machine,
+        customers,
+        machineModels,
+        locale,
+        createCopy,
+      })}
+
       <section aria-label={sectionsAriaLabel} className="grid gap-4 md:grid-cols-2">
         {sections.map((section) => (
           <article
@@ -222,15 +438,18 @@ function renderMachineDetail({
   );
 }
 
-export default async function MachineDetailPage({ params }: PageProps) {
+export default async function MachineDetailPage({ params, searchParams }: PageProps) {
   const { locale, machineId } = await params;
+  const resolvedSearchParams = await searchParams;
 
   if (!isSupportedLocale(locale)) {
     notFound();
   }
 
+  const normalizedSearchParams = normalizeSearchParams(resolvedSearchParams);
   const messages = appMessages[locale].pages.machineDetail;
   const copy = machineRecordsPageCopy[locale];
+  const createCopy = machineRecordsCreateCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -275,13 +494,27 @@ export default async function MachineDetailPage({ params }: PageProps) {
     };
   } else {
     try {
-      loadState = {
-        status: 'ready',
-        machine: await getMachineRecord({
+      const [machine, customers, machineModels] = await Promise.all([
+        getMachineRecord({
           organizationId: session.organizationId,
           machineId,
           accessToken: session.accessToken,
         }),
+        listCustomers({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+        listMachineModels({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+      ]);
+
+      loadState = {
+        status: 'ready',
+        machine,
+        customers,
+        machineModels,
       };
     } catch (error) {
       loadState = {
@@ -320,11 +553,30 @@ export default async function MachineDetailPage({ params }: PageProps) {
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.machineUpdate === 'updated'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Machine record updated',
+            body: 'The machine was updated through the API PATCH boundary and the detail view has refreshed.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.machineUpdateError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Machine record could not be updated',
+            body: normalizedSearchParams.machineUpdateError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
+            customers: loadState.customers,
+            machineModels: loadState.machineModels,
             locale,
             copy,
+            createCopy,
             sections,
             sectionsAriaLabel: messages.sectionsAriaLabel,
           })

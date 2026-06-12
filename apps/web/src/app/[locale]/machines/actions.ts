@@ -12,9 +12,11 @@ import {
   createCustomer,
   createMachineModel,
   createMachineRecord,
+  updateMachineRecord,
   type CreateCustomerApiInput,
   type CreateMachineModelApiInput,
   type CreateMachineRecordApiInput,
+  type UpdateMachineRecordApiInput,
 } from '@/machine-records-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
@@ -28,6 +30,14 @@ function formatActionError(error: unknown): string {
 
 function redirectWithError(locale: string, queryName: string, message: string): never {
   redirect(`/${locale}/machines?${queryName}=${encodeURIComponent(message)}`);
+}
+
+function redirectMachineDetailWithError(locale: string, machineId: string, message: string): never {
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?machineUpdateError=${encodeURIComponent(
+      message,
+    )}`,
+  );
 }
 
 function readRequiredFormText(formData: FormData, name: string, label: string): string {
@@ -197,4 +207,56 @@ export async function createMachineRecordAction(locale: string, formData: FormDa
   }
 
   redirect(`/${redirectLocale}/machines?machineCreate=created`);
+}
+
+export async function updateMachineRecordAction(
+  locale: string,
+  machineId: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = machineId.trim();
+
+  if (!normalizedMachineId) {
+    redirectWithError(redirectLocale, 'machineUpdateError', 'Machine ID is required.');
+  }
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Machine update needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const deliveryDate = readOptionalFormText(formData, 'deliveryDate');
+    const plcType = readOptionalFormText(formData, 'plcType');
+    const hmiType = readOptionalFormText(formData, 'hmiType');
+    const status = readOptionalMachineStatus(formData);
+
+    const input: UpdateMachineRecordApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      customerId: readRequiredFormText(formData, 'customerId', 'Customer'),
+      machineModelId: readRequiredFormText(formData, 'machineModelId', 'Machine model'),
+      machineName: readRequiredFormText(formData, 'machineName', 'Machine name'),
+      serialNumber: readRequiredFormText(formData, 'serialNumber', 'Serial number'),
+      ...(deliveryDate ? { deliveryDate } : {}),
+      ...(plcType ? { plcType } : {}),
+      ...(hmiType ? { hmiType } : {}),
+      ...(status ? { status } : {}),
+    };
+
+    await updateMachineRecord(input);
+  } catch (error) {
+    redirectMachineDetailWithError(redirectLocale, normalizedMachineId, formatActionError(error));
+  }
+
+  redirect(
+    `/${redirectLocale}/machines/${encodeURIComponent(normalizedMachineId)}?machineUpdate=updated`,
+  );
 }
