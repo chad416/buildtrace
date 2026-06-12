@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "machine-records:smoke": "tsx src/machine-records-api-smoke-check.ts",
+    "machine-records:session-smoke": "tsx src/machine-records-session-smoke-check.ts",
     "build": "next build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
