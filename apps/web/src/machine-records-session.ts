@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 
 export const machineRecordsSessionCookieNames = {
-  organizationId: 'buildtrace_organization_id',
-  accessToken: 'buildtrace_access_token',
+  organizationId: 'buildtrace_machine_records_organization_id',
+  accessToken: 'buildtrace_machine_records_access_token',
 } as const;
 
 export type MachineRecordsSessionMissingField = keyof typeof machineRecordsSessionCookieNames;
