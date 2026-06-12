@@ -21,7 +21,21 @@ type MachineRecordsPageCopy = {
     readonly title: string;
     readonly body: string;
   };
+  readonly prerequisites: {
+    readonly eyebrow: string;
+    readonly title: string;
+    readonly body: string;
+    readonly missingLabel: string;
+    readonly customerMissingLabel: string;
+    readonly modelMissingLabel: string;
+  };
   readonly records: {
+    readonly contextEyebrow: string;
+    readonly contextTitle: string;
+    readonly contextBody: string;
+    readonly customersCountLabel: string;
+    readonly modelsCountLabel: string;
+    readonly machinesCountLabel: string;
     readonly eyebrow: string;
     readonly countLabel: string;
     readonly emptyTitle: string;
@@ -58,12 +72,27 @@ export const machineRecordsPageCopy = {
       title: 'Machine records could not be loaded',
       body: 'The page reached the web API client boundary, but the API response failed. Retry after confirming the API, session cookies, and tenant access.',
     },
+    prerequisites: {
+      eyebrow: 'Record prerequisites',
+      title: 'Machine creation needs customer and model records first',
+      body: 'The page now checks real customers and machine models through the API boundary before machine creation UI is introduced.',
+      missingLabel: 'Missing prerequisites:',
+      customerMissingLabel: 'customer record',
+      modelMissingLabel: 'machine model record',
+    },
     records: {
+      contextEyebrow: 'API-backed context',
+      contextTitle: 'Machine record readiness',
+      contextBody:
+        'Customers, machine models, and machines are loaded through the web API client with the current tenant session. No placeholder records are shown.',
+      customersCountLabel: 'customers available',
+      modelsCountLabel: 'machine models available',
+      machinesCountLabel: 'machines loaded',
       eyebrow: 'API-backed records',
       countLabel: 'machine records loaded',
       emptyTitle: 'No machine records found',
       emptyBody:
-        'The API returned an empty list for this organization. No placeholder machine data is shown.',
+        'The API returned an empty machine list for this organization. No placeholder machine data is shown.',
       customerLabel: 'Customer',
       modelLabel: 'Model',
       serialLabel: 'Serial number',
@@ -99,12 +128,27 @@ export const machineRecordsPageCopy = {
       title: 'Záznamy strojů se nepodařilo načíst',
       body: 'Stránka dosáhla webového API klienta, ale odpověď API selhala. Zkontrolujte API, cookies relace a tenant přístup.',
     },
+    prerequisites: {
+      eyebrow: 'Předpoklady záznamů',
+      title: 'Vytvoření stroje nejprve vyžaduje zákazníka a model',
+      body: 'Stránka nyní přes API hranici kontroluje skutečné zákazníky a modely strojů před zavedením UI pro vytvoření stroje.',
+      missingLabel: 'Chybějící předpoklady:',
+      customerMissingLabel: 'záznam zákazníka',
+      modelMissingLabel: 'záznam modelu stroje',
+    },
     records: {
+      contextEyebrow: 'Kontext z API',
+      contextTitle: 'Připravenost záznamů strojů',
+      contextBody:
+        'Zákazníci, modely strojů a stroje se načítají přes webového API klienta s aktuální tenant relací. Nezobrazují se žádné placeholder záznamy.',
+      customersCountLabel: 'dostupní zákazníci',
+      modelsCountLabel: 'dostupné modely strojů',
+      machinesCountLabel: 'načtené stroje',
       eyebrow: 'Záznamy z API',
       countLabel: 'načtených záznamů strojů',
       emptyTitle: 'Nebyly nalezeny žádné stroje',
       emptyBody:
-        'API vrátilo prázdný seznam pro tuto organizaci. Nezobrazují se žádná placeholder data.',
+        'API vrátilo prázdný seznam strojů pro tuto organizaci. Nezobrazují se žádná placeholder data.',
       customerLabel: 'Zákazník',
       modelLabel: 'Model',
       serialLabel: 'Sériové číslo',
@@ -140,12 +184,27 @@ export const machineRecordsPageCopy = {
       title: 'Záznamy strojov sa nepodarilo načítať',
       body: 'Stránka dosiahla webového API klienta, ale odpoveď API zlyhala. Skontrolujte API, cookies relácie a tenant prístup.',
     },
+    prerequisites: {
+      eyebrow: 'Predpoklady záznamov',
+      title: 'Vytvorenie stroja najprv vyžaduje zákazníka a model',
+      body: 'Stránka teraz cez API hranicu kontroluje skutočných zákazníkov a modely strojov pred zavedením UI na vytvorenie stroja.',
+      missingLabel: 'Chýbajúce predpoklady:',
+      customerMissingLabel: 'záznam zákazníka',
+      modelMissingLabel: 'záznam modelu stroja',
+    },
     records: {
+      contextEyebrow: 'Kontext z API',
+      contextTitle: 'Pripravenosť záznamov strojov',
+      contextBody:
+        'Zákazníci, modely strojov a stroje sa načítavajú cez webového API klienta s aktuálnou tenant reláciou. Nezobrazujú sa žiadne placeholder záznamy.',
+      customersCountLabel: 'dostupní zákazníci',
+      modelsCountLabel: 'dostupné modely strojov',
+      machinesCountLabel: 'načítané stroje',
       eyebrow: 'Záznamy z API',
       countLabel: 'načítaných záznamov strojov',
       emptyTitle: 'Nenašli sa žiadne stroje',
       emptyBody:
-        'API vrátilo prázdny zoznam pre túto organizáciu. Nezobrazujú sa žiadne placeholder dáta.',
+        'API vrátilo prázdny zoznam strojov pre túto organizáciu. Nezobrazujú sa žiadne placeholder dáta.',
       customerLabel: 'Zákazník',
       modelLabel: 'Model',
       serialLabel: 'Sériové číslo',
@@ -181,12 +240,27 @@ export const machineRecordsPageCopy = {
       title: 'Nie udało się załadować rekordów maszyn',
       body: 'Strona dotarła do webowego klienta API, ale odpowiedź API nie powiodła się. Sprawdź API, cookies sesji i dostęp tenant.',
     },
+    prerequisites: {
+      eyebrow: 'Warunki rekordów',
+      title: 'Utworzenie maszyny wymaga najpierw klienta i modelu',
+      body: 'Strona sprawdza teraz rzeczywistych klientów i modele maszyn przez granicę API przed wprowadzeniem UI tworzenia maszyny.',
+      missingLabel: 'Brakujące warunki:',
+      customerMissingLabel: 'rekord klienta',
+      modelMissingLabel: 'rekord modelu maszyny',
+    },
     records: {
+      contextEyebrow: 'Kontekst z API',
+      contextTitle: 'Gotowość rekordów maszyn',
+      contextBody:
+        'Klienci, modele maszyn i maszyny są ładowane przez webowego klienta API z bieżącą sesją tenant. Nie są pokazywane żadne rekordy placeholder.',
+      customersCountLabel: 'dostępni klienci',
+      modelsCountLabel: 'dostępne modele maszyn',
+      machinesCountLabel: 'załadowane maszyny',
       eyebrow: 'Rekordy z API',
       countLabel: 'załadowanych rekordów maszyn',
       emptyTitle: 'Nie znaleziono maszyn',
       emptyBody:
-        'API zwróciło pustą listę dla tej organizacji. Żadne dane placeholder nie są wyświetlane.',
+        'API zwróciło pustą listę maszyn dla tej organizacji. Żadne dane placeholder nie są wyświetlane.',
       customerLabel: 'Klient',
       modelLabel: 'Model',
       serialLabel: 'Numer seryjny',
@@ -222,12 +296,27 @@ export const machineRecordsPageCopy = {
       title: 'Maschinendatensätze konnten nicht geladen werden',
       body: 'Die Seite hat den Web-API-Client erreicht, aber die API-Antwort ist fehlgeschlagen. Prüfen Sie API, Sitzungs-Cookies und Tenant-Zugriff.',
     },
+    prerequisites: {
+      eyebrow: 'Datensatz-Voraussetzungen',
+      title: 'Maschinenerstellung benötigt zuerst Kunde und Modell',
+      body: 'Die Seite prüft jetzt echte Kunden und Maschinenmodelle über die API-Grenze, bevor das UI zur Maschinenerstellung eingeführt wird.',
+      missingLabel: 'Fehlende Voraussetzungen:',
+      customerMissingLabel: 'Kundendatensatz',
+      modelMissingLabel: 'Maschinenmodelldatensatz',
+    },
     records: {
+      contextEyebrow: 'API-gestützter Kontext',
+      contextTitle: 'Bereitschaft der Maschinendatensätze',
+      contextBody:
+        'Kunden, Maschinenmodelle und Maschinen werden über den Web-API-Client mit der aktuellen Tenant-Sitzung geladen. Es werden keine Platzhalterdatensätze angezeigt.',
+      customersCountLabel: 'verfügbare Kunden',
+      modelsCountLabel: 'verfügbare Maschinenmodelle',
+      machinesCountLabel: 'geladene Maschinen',
       eyebrow: 'API-gestützte Datensätze',
       countLabel: 'geladene Maschinendatensätze',
       emptyTitle: 'Keine Maschinendatensätze gefunden',
       emptyBody:
-        'Die API hat für diese Organisation eine leere Liste zurückgegeben. Es werden keine Platzhalterdaten angezeigt.',
+        'Die API hat für diese Organisation eine leere Maschinenliste zurückgegeben. Es werden keine Platzhalterdaten angezeigt.',
       customerLabel: 'Kunde',
       modelLabel: 'Modell',
       serialLabel: 'Seriennummer',
@@ -263,12 +352,27 @@ export const machineRecordsPageCopy = {
       title: 'Les dossiers machine n’ont pas pu être chargés',
       body: "La page a atteint le client API web, mais la réponse API a échoué. Vérifiez l'API, les cookies de session et l'accès tenant.",
     },
+    prerequisites: {
+      eyebrow: 'Prérequis des dossiers',
+      title: 'La création machine nécessite d’abord un client et un modèle',
+      body: "La page vérifie maintenant les clients et modèles machine réels via la limite API avant l'introduction de l'interface de création machine.",
+      missingLabel: 'Prérequis manquants :',
+      customerMissingLabel: 'dossier client',
+      modelMissingLabel: 'dossier modèle machine',
+    },
     records: {
+      contextEyebrow: 'Contexte depuis l’API',
+      contextTitle: 'Préparation des dossiers machine',
+      contextBody:
+        "Les clients, modèles machine et machines sont chargés via le client API web avec la session tenant actuelle. Aucun dossier placeholder n'est affiché.",
+      customersCountLabel: 'clients disponibles',
+      modelsCountLabel: 'modèles machine disponibles',
+      machinesCountLabel: 'machines chargées',
       eyebrow: 'Dossiers depuis l’API',
       countLabel: 'dossiers machine chargés',
       emptyTitle: 'Aucun dossier machine trouvé',
       emptyBody:
-        "L'API a renvoyé une liste vide pour cette organisation. Aucune donnée placeholder n'est affichée.",
+        "L'API a renvoyé une liste machine vide pour cette organisation. Aucune donnée placeholder n'est affichée.",
       customerLabel: 'Client',
       modelLabel: 'Modèle',
       serialLabel: 'Numéro de série',
@@ -304,12 +408,27 @@ export const machineRecordsPageCopy = {
       title: 'No se pudieron cargar los registros de máquinas',
       body: 'La página llegó al cliente API web, pero la respuesta de la API falló. Revisa la API, las cookies de sesión y el acceso tenant.',
     },
+    prerequisites: {
+      eyebrow: 'Requisitos de registros',
+      title: 'Crear una máquina requiere primero cliente y modelo',
+      body: 'La página ahora comprueba clientes y modelos de máquina reales mediante la frontera API antes de introducir la UI de creación de máquinas.',
+      missingLabel: 'Requisitos faltantes:',
+      customerMissingLabel: 'registro de cliente',
+      modelMissingLabel: 'registro de modelo de máquina',
+    },
     records: {
+      contextEyebrow: 'Contexto desde API',
+      contextTitle: 'Preparación de registros de máquinas',
+      contextBody:
+        'Clientes, modelos de máquina y máquinas se cargan mediante el cliente API web con la sesión tenant actual. No se muestran registros placeholder.',
+      customersCountLabel: 'clientes disponibles',
+      modelsCountLabel: 'modelos de máquina disponibles',
+      machinesCountLabel: 'máquinas cargadas',
       eyebrow: 'Registros desde API',
       countLabel: 'registros de máquinas cargados',
       emptyTitle: 'No se encontraron máquinas',
       emptyBody:
-        'La API devolvió una lista vacía para esta organización. No se muestran datos placeholder.',
+        'La API devolvió una lista de máquinas vacía para esta organización. No se muestran datos placeholder.',
       customerLabel: 'Cliente',
       modelLabel: 'Modelo',
       serialLabel: 'Número de serie',

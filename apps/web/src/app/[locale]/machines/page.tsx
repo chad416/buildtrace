@@ -2,7 +2,14 @@ import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { listMachineRecords, type MachineRecordApiModel } from '@/machine-records-api';
+import {
+  listCustomers,
+  listMachineModels,
+  listMachineRecords,
+  type CustomerRecordApiModel,
+  type MachineModelRecordApiModel,
+  type MachineRecordApiModel,
+} from '@/machine-records-api';
 import { machineRecordsPageCopy } from '@/machine-records-page-copy';
 import {
   readMachineRecordsSession,
@@ -26,6 +33,8 @@ type MachineRecordsLoadState =
     }
   | {
       readonly status: 'ready';
+      readonly customers: readonly CustomerRecordApiModel[];
+      readonly machineModels: readonly MachineModelRecordApiModel[];
       readonly machines: readonly MachineRecordApiModel[];
     };
 
@@ -58,6 +67,10 @@ function formatDate(value: string | null, locale: string, fallback: string): str
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
   }).format(date);
+}
+
+function formatCount(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale).format(value);
 }
 
 function renderMissingFields(
@@ -93,6 +106,93 @@ function renderStatePanel({
       {children}
     </section>
   );
+}
+
+function renderReadinessSummary({
+  customers,
+  machineModels,
+  machines,
+  locale,
+  copy,
+}: {
+  readonly customers: readonly CustomerRecordApiModel[];
+  readonly machineModels: readonly MachineModelRecordApiModel[];
+  readonly machines: readonly MachineRecordApiModel[];
+  readonly locale: string;
+  readonly copy: (typeof machineRecordsPageCopy)['en'];
+}) {
+  const summaryItems = [
+    {
+      label: copy.records.customersCountLabel,
+      value: customers.length,
+    },
+    {
+      label: copy.records.modelsCountLabel,
+      value: machineModels.length,
+    },
+    {
+      label: copy.records.machinesCountLabel,
+      value: machines.length,
+    },
+  ];
+
+  return (
+    <section className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6">
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+          {copy.records.contextEyebrow}
+        </p>
+        <h2 className="text-2xl font-semibold tracking-normal text-white">
+          {copy.records.contextTitle}
+        </h2>
+        <p className="max-w-3xl text-sm leading-6 text-stone-300">{copy.records.contextBody}</p>
+      </div>
+
+      <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+        {summaryItems.map((item) => (
+          <div key={item.label} className="rounded-md border border-stone-800 bg-black/20 p-4">
+            <dt className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+              {item.label}
+            </dt>
+            <dd className="mt-2 text-2xl font-semibold text-white">
+              {formatCount(item.value, locale)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function renderPrerequisitePanel({
+  customers,
+  machineModels,
+  copy,
+}: {
+  readonly customers: readonly CustomerRecordApiModel[];
+  readonly machineModels: readonly MachineModelRecordApiModel[];
+  readonly copy: (typeof machineRecordsPageCopy)['en'];
+}) {
+  const missingPrerequisites = [
+    ...(customers.length === 0 ? [copy.prerequisites.customerMissingLabel] : []),
+    ...(machineModels.length === 0 ? [copy.prerequisites.modelMissingLabel] : []),
+  ];
+
+  if (missingPrerequisites.length === 0) {
+    return null;
+  }
+
+  return renderStatePanel({
+    eyebrow: copy.prerequisites.eyebrow,
+    title: copy.prerequisites.title,
+    body: copy.prerequisites.body,
+    children: (
+      <p className="mt-4 text-xs font-semibold uppercase tracking-normal text-stone-400">
+        {copy.prerequisites.missingLabel}{' '}
+        <span className="text-stone-200">{missingPrerequisites.join(', ')}</span>
+      </p>
+    ),
+  });
 }
 
 function renderMachineCard({
@@ -199,12 +299,26 @@ export default async function MachinesPage({ params }: PageProps) {
     };
   } else {
     try {
-      loadState = {
-        status: 'ready',
-        machines: await listMachineRecords({
+      const [machines, customers, machineModels] = await Promise.all([
+        listMachineRecords({
           organizationId: session.organizationId,
           accessToken: session.accessToken,
         }),
+        listCustomers({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+        listMachineModels({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+      ]);
+
+      loadState = {
+        status: 'ready',
+        customers,
+        machineModels,
+        machines,
       };
     } catch (error) {
       loadState = {
@@ -258,7 +372,28 @@ export default async function MachinesPage({ params }: PageProps) {
           })
         : null}
 
-      {loadState.status === 'ready' && loadState.machines.length === 0
+      {loadState.status === 'ready'
+        ? renderReadinessSummary({
+            customers: loadState.customers,
+            machineModels: loadState.machineModels,
+            machines: loadState.machines,
+            locale,
+            copy,
+          })
+        : null}
+
+      {loadState.status === 'ready'
+        ? renderPrerequisitePanel({
+            customers: loadState.customers,
+            machineModels: loadState.machineModels,
+            copy,
+          })
+        : null}
+
+      {loadState.status === 'ready' &&
+      loadState.customers.length > 0 &&
+      loadState.machineModels.length > 0 &&
+      loadState.machines.length === 0
         ? renderStatePanel({
             eyebrow: copy.records.eyebrow,
             title: copy.records.emptyTitle,
@@ -274,7 +409,7 @@ export default async function MachinesPage({ params }: PageProps) {
                 {copy.records.eyebrow}
               </p>
               <h2 className="mt-2 text-2xl font-semibold tracking-normal text-white">
-                {loadState.machines.length} {copy.records.countLabel}
+                {formatCount(loadState.machines.length, locale)} {copy.records.countLabel}
               </h2>
             </div>
           </div>
