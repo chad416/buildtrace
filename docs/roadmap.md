@@ -12,17 +12,15 @@ Phase 1 is complete.
 
 Phase 2 is complete.
 
+Phase 3 is in progress.
+
 Current full beta roadmap completion:
 
-- 22%
+- about 30%
 
-Current next phase:
+Current active phase:
 
 - Phase 3 - Machine/customer records foundation
-
-Latest completed Phase 2 implementation commit:
-
-- `ec2b2f1 test(db): add activity log smoke check`
 
 ## Beta scope
 
@@ -247,9 +245,13 @@ Important Phase 2 decisions:
 
 ### Phase 3 - Machine/customer records foundation
 
-Completion: 32% of beta.
+Target completion: 32% of beta.
 
-Status: next.
+Status: in progress.
+
+Current completion contribution:
+
+- about 30% of beta
 
 Scope:
 
@@ -262,12 +264,56 @@ Scope:
 - locale date/number formatting
 - machine tenant checks
 
+Completed so far:
+
+- Phase 3 machine/customer/model schema foundation
+- roadmap-aligned customer, machine model, and machine fields
+- schema migration path for machine records
+- machine status enum ownership and drift check
+- typed activity-log action constants
+- development bootstrap script for local organization, user, and membership setup
+- real PostgreSQL two-organization machine isolation check
+- database helpers for customer, machine model, and machine create/read paths
+- API endpoints for machine create/read
+- API endpoints for customer and machine-model create/read support
+- API route registration smoke check
+- web API client for machine/customer/model record calls
+- web session boundary for organization and access-token cookies
+- machine list page connected to the API boundary
+- machine detail page connected to the API boundary
+- customer create form
+- machine model create form
+- machine create form
+- verified real browser flow from Supabase token and organization cookie to API-backed records
+- verified customer, model, and machine counts load from real data
+- verified machine list renders the created machine record
+- verified machine detail page loads the created machine record by UUID
+- fixed React list-key rendering issue in the machine record card list
+- removed local `NODE_ENV` override from ignored `.env` so Next.js build behavior stays standard
+
+Remaining before Phase 3 is complete:
+
+- update/edit workflows for customers, machine models, and machines
+- activity logging for update/edit workflows
+- localized machine status labels across the UI
+- locale-aware date and number formatting closeout
+- explicit empty/loading/error-state polish for the completed machine-record flows
+- final Phase 3 regression pass
+- Phase 3 docs closeout after the full roadmap scope is actually complete
+
 Exit condition:
 
 - builder can create machine record securely
 - machine/customer records are organization-scoped
 - activity log records machine creation/edit
 - user cannot access another organization's machine/customer records
+
+Current exit-condition status:
+
+- builder can create a machine record securely: passed for the create slice
+- machine/customer records are organization-scoped: passed for the implemented create/read slice
+- activity log records machine creation/edit: create path covered, update/edit still remaining
+- user cannot access another organization's machine/customer records: passed for machine read isolation, final full CRUD regression still remaining
 
 ### Phase 4 - Document dump upload
 

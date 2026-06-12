@@ -1,5 +1,80 @@
 # BuildTrace Phase Log
 
+## 2026-06-12 - Phase 3 machine records vertical slice
+
+### Phase
+
+Phase 3 - Machine/customer records foundation.
+
+### Task completed
+
+Implemented and browser-verified the first authenticated Phase 3 machine records vertical slice.
+
+This slice proves the approved Phase 3 architecture end to end: Prisma-owned product records, typed shared constants, tenant-scoped database helpers, guarded NestJS API endpoints, Next.js web API client calls, cookie-backed browser session forwarding, and real web create/list/detail behavior through the API boundary.
+
+This does not complete all of Phase 3. Create/read are working for customers, machine models, and machines; update/delete CRUD and localization closeout remain before Phase 3 can be marked complete against the full roadmap.
+
+### Verified implementation
+
+- Phase 3 decisions locked in `docs/decisions.md`
+- customer, machine model, and machine schema added
+- machine status enum added and mirrored with a drift check
+- typed activity-log action constants added
+- development bootstrap added for real Supabase user/org/membership setup
+- real PostgreSQL tenant-isolation check added
+- DB helpers added for customer/model/machine create/read paths
+- API endpoints added for customer/model/machine create/read paths
+- web API client added through the NestJS API boundary
+- cookie-backed browser session boundary added
+- customer create form added
+- machine model create form added
+- machine create form added
+- machine list connected to real API data
+- machine detail connected to real API data
+- browser verification passed with one real customer, one real model, and one real machine
+
+### Root fixes during verification
+
+- Removed `NODE_ENV=development` from ignored local `.env` because it poisoned `next build`.
+- Fixed machine list rendering with stable `key={machine.id}` in `bbcbc48`.
+- Restarted the dev server after clearing `.next` so the browser did not use stale build state.
+
+### Verification result
+
+Passed:
+
+- web typecheck
+- web lint
+- web build
+- format check
+- git diff check
+- browser machine create flow
+- browser machine list flow
+- browser machine detail flow
+
+### Remaining Phase 3 work
+
+- customer update/delete path or explicit no-delete Phase 3 decision
+- machine model update/delete path or explicit no-delete Phase 3 decision
+- machine update/delete path or explicit no-delete Phase 3 decision
+- activity-log coverage for update/delete paths that ship
+- localization coverage for new Phase 3 copy, status labels, errors, dates, and counts
+- final Phase 3 closeout docs and review
+
+### Current completion assessment
+
+Phase 3 is in progress.
+
+The authenticated create/read vertical slice is complete and verified.
+
+Conservative current full beta roadmap completion: about 30%.
+
+### Commit message
+
+`docs: record phase 3 machine records progress`
+
+---
+
 ## 2026-06-08
 
 ### Phase

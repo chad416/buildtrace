@@ -12,37 +12,44 @@ Phase 2 review hardening is complete.
 
 Current full beta roadmap completion:
 
-- 22%
+- about 30%
 
-Current next phase:
+Current active phase:
 
 - Phase 3 - Machine/customer records foundation
 
 ## Immediate next step
 
-Start Phase 3 Step 0 - decision preflight.
+Continue Phase 3 with remaining CRUD/localization closeout.
 
 Reason:
 
-- Claude's final Phase 2 re-review passed
-- Phase 2 implementation is complete
-- Phase 2 review hardening is complete
-- final Phase 2 gates passed cleanly
-- rolling current commit lists are stale-by-construction and should not be maintained in current-state docs
-- Phase 3 should start from clean, current docs
-- Phase 3 introduces the first real product records
-- BuildTrace's quality rule requires decisions before schema, endpoint, and UI implementation
+- Phase 3 Step 0 decisions are locked
+- schema foundation is implemented
+- typed machine status drift check is implemented
+- typed activity-log action constants are implemented
+- development bootstrap exists for real Supabase auth user, app user, organization, and membership provisioning
+- real PostgreSQL tenant-isolation coverage exists for machine records
+- DB helpers exist for customer, machine model, and machine create/read paths
+- API endpoints exist for customer, machine model, and machine create/read paths
+- web API client and cookie-backed session boundary exist
+- real browser create/list/detail flow has been verified
+- machine list rendering was stabilized with `key={machine.id}`
+- full Phase 3 CRUD is not complete yet
+- localization closeout is still required before Phase 3 can be marked complete
 
 Current focus:
 
-- keep Phase 2 completion at 22%
-- keep Phase 3 listed as the next phase
-- lock the Phase 3 web data-access architecture before any product endpoint or UI data work
-- lock how the bearer token travels from browser session to API calls
-- lock the authenticated-builder and development provisioning path before claiming secure machine creation
-- lock enum ownership and drift-check policy before adding app-facing status labels
-- lock activity-log action constants before adding first real activity-log call sites
-- then begin Phase 3 decision preflight before product code
+- keep Phase 3 at about 30% full beta completion until remaining CRUD/localization closeout is done
+- keep Phase 3 listed as the active phase
+- keep the verified create/read vertical slice intact
+- finish update/delete paths or explicitly document no-delete Phase 3 scope
+- keep all product records organization-scoped
+- keep web data access through the API boundary
+- keep browser token travel through the approved session/cookie boundary
+- keep activity-log actions typed
+- keep status labels and user-facing copy localized
+- do not start Phase 4 document upload work until Phase 3 is closed
 
 ## Phase 2 review-hardening checklist
 
@@ -195,13 +202,17 @@ Reason:
 - the secret value must not be committed
 - the machine-specific URL should not invalidate caches across machines or CI environments
 
-## Phase 3 next phase
+## Phase 3 implementation status
 
 Phase 3 is Machine/customer records foundation.
 
-Phase 3 target after completion:
+Phase 3 target after full completion:
 
 - 32% of full beta roadmap
+
+Current conservative full beta roadmap completion:
+
+- about 30%
 
 Expected Phase 3 scope:
 
@@ -214,234 +225,259 @@ Expected Phase 3 scope:
 - locale date/number formatting
 - machine tenant checks
 
-Phase 3 exit condition:
+Completed Phase 3 scope so far:
 
-- builder can create machine record securely
-- machine/customer records are organization-scoped
-- activity log records machine creation/edit
-- user cannot access another organization's machine/customer records
+- Phase 3 decision preflight completed
+- web data-access path selected: web calls the NestJS API boundary
+- direct Next.js database access deferred
+- bearer-token travel path selected: server-rendered web pages read session cookies and forward bearer token to the API client
+- development provisioning path selected: explicit `dev:bootstrap` tooling for real Supabase auth user, app user, organization, and membership
+- Prisma owns `MachineStatus`
+- app-facing machine statuses are mirrored in shared constants
+- machine status drift check exists
+- typed activity-log action constants exist
+- customers, machine models, and machines added to Prisma schema
+- schema field names aligned to accepted roadmap wording
+- migrations generated and reviewed
+- Prisma schema validates
+- generated Prisma client remains ignored/generated
+- real PostgreSQL tenant-isolation check added
+- DB helpers added for customer create/read paths
+- DB helpers added for machine model create/read paths
+- DB helpers added for machine create/read/detail paths
+- API endpoints added for customer create/read paths
+- API endpoints added for machine model create/read paths
+- API endpoints added for machine create/read/detail paths
+- API route registration smoke check added
+- web API client added for customer, machine model, and machine calls
+- cookie-backed web session boundary added
+- machines page connected to real API-backed counts
+- customer create form added
+- machine model create form added
+- machine create form added
+- machine list connected to real data
+- machine detail page connected to real data
+- browser verification passed with one real customer, one real model, and one real machine
+- machine list rendering stabilized with a stable React key
 
-## Required Phase 3 Step 0 decisions
+Current Phase 3 exit-condition status:
 
-Phase 3 Step 0 must decide these before schema, endpoint, or UI implementation begins.
+- builder can create machine record securely: met for the verified dev Supabase/app-user/org path
+- machine/customer records are organization-scoped: met for current create/read paths
+- activity log records machine creation/edit: partially met; create paths exist, update/edit paths still pending if shipped in Phase 3
+- user cannot access another organization's machine/customer records: met for current helper/API read paths; repeat for update/delete if added
+
+Remaining Phase 3 scope before complete:
+
+- customer update path
+- customer delete path or explicit no-delete Phase 3 decision
+- machine model update path
+- machine model delete path or explicit no-delete Phase 3 decision
+- machine update path
+- machine delete path or explicit no-delete Phase 3 decision
+- activity-log coverage for update/delete paths that ship
+- localization coverage for all new Phase 3 copy in supported locales
+- status label verification in supported locales
+- date/number formatting verification in supported locales
+- final Phase 3 closeout docs
+- final external review before moving to Phase 4
+
+## Locked Phase 3 decisions
+
+These decisions are now implemented and should not be reopened unless a real defect requires it.
 
 ### Web data-access path
 
-Phase 3 must choose one primary data-access path before connecting the machine shell to real data.
+Selected path:
 
-Allowed options:
-
-- Option A - Next.js server components or route handlers import `@buildtrace/db` directly and enforce tenant checks in the web runtime.
 - Option B - the web app calls `apps/api` over HTTP with a bearer token, and the NestJS API remains the only runtime that touches the database.
 
-Preferred default:
+Deferred path:
 
-- Option B, unless a documented reason says otherwise.
+- Option A - Next.js server components or route handlers importing `@buildtrace/db` directly.
 
 Reason:
 
 - Phase 2 auth, current-user, tenant-access, and authenticated-tenant-context helpers live in the API boundary.
 - Keeping database access behind one API enforcement point reduces duplicated tenant-check logic.
 - Direct web database access would create a second runtime that must independently enforce organization access.
+- The verified Phase 3 browser flow proved DB -> API -> web without bypassing the API boundary.
 
-Step 0 output must record:
+Bearer-token travel result:
 
-- selected data-access path
-- why the other option is deferred
-- which package owns machine/customer reads and writes
-- how tenant checks are enforced
-- how the web app receives data without bypassing the API boundary
-- how the bearer token travels from browser session to API calls:
-  - client-side fetch using the browser-held token
-  - or server-side forwarding after reading session state from cookies
+- Web session values are read from cookies.
+- Server-rendered machine pages use the web API client.
+- API calls receive the bearer token through the approved API client path.
+- Browser verification confirmed the token and organization cookies unlock the real machine records page.
 
 ### Authenticated-builder and development provisioning
 
-Phase 3 must define how a real builder exists before claiming secure machine creation.
+Selected path:
 
-The decision must answer:
-
-- how an `Organization` is created for development
-- how an `AppUser` is created for development
-- how an `OrganizationMembership` is created for development
-- whether Phase 3 includes minimal real login or only API-layer validation with a real token
-- whether a clearly labeled bootstrap/seed script is needed
-
-Lean default:
-
-- use a documented development bootstrap/seed path for organization, app user, and membership records
-- keep it clearly labeled as development tooling
+- use a documented development bootstrap path for organization, app user, and membership records
+- require a real Supabase auth user UUID
+- keep bootstrap data clearly labeled as development tooling
 - do not present bootstrap data as product demo data
 - do not add fake production-looking customers or machines
-- do not claim browser login is complete unless Supabase browser session flow is actually implemented and verified
 
-Reason:
+Verified result:
 
-- Phase 2 intentionally deferred frontend login and browser session management.
-- Phase 3 cannot honestly claim builder can create machine record securely without a defined authenticated-builder path.
-- Development provisioning is tooling, not fake product data, when it is explicit, minimal, and not customer-facing.
+- development org/user/membership bootstrap succeeded
+- real Supabase token cookie and organization cookie unlocked the machine records UI
+- builder create/list/detail flow worked through the API boundary
+
+Important boundary:
+
+- Phase 3 still does not claim a finished frontend login flow.
+- Browser login UI remains outside this verified slice unless separately implemented and tested.
 
 ### Enum ownership and drift checks
 
-Phase 3 localized status labels imply a machine status enum.
+Selected path:
 
-Before adding machine status, Step 0 must decide:
-
-- whether `MachineStatus` is owned by Prisma first
-- whether app-facing status constants are derived or mirrored
-- where localized labels live
-- what drift check prevents Prisma enum values and app-facing status values from diverging
+- Prisma owns `MachineStatus`.
+- `packages/shared` mirrors app-facing status constants.
+- API drift check verifies Prisma enum values and shared constants stay aligned.
+- Localized labels remain labels, not source-of-truth status values.
 
 Quality rule:
 
-- if a Prisma enum is mirrored in `packages/shared`, `packages/i18n`, or app UI code, a drift check must ship in the same slice
-- no manual enum mirror should be added without a check
-- translated labels must not become the source of truth for status values
+- no Prisma enum mirror without a drift check
+- no translated status label used as a database/API value
+- status values remain stable machine-readable constants
 
-Reason:
+Verified result:
 
-- status values affect database integrity, API behavior, i18n labels, and UI filtering
-- enum drift creates subtle product bugs
-- Phase 2 avoided this because organization roles were not mirrored into app-facing i18n labels
+- machine status drift check passed
+- web status labels render from the approved app-facing values
 
 ### Activity-log action constants
 
-Phase 3 must turn activity-log action naming from a docs convention into typed code before first real call sites.
+Selected path:
 
-Required decision:
+- activity-log action names live as typed constants in shared code
+- DB and API helpers consume typed action values
+- string literal drift is avoided for implemented call sites
 
-- where activity action constants live
-- naming shape for machine/customer actions
-- whether actions are grouped by domain
-- how helpers consume action constants
+Current action coverage:
 
-Lean default:
+- machine/customer/model create actions exist where implemented
+- update/delete action coverage must be added in the same slice as update/delete behavior if those paths ship in Phase 3
 
-- define action constants in code before machine/customer create/edit logging
-- use typed constants instead of repeated string literals
-- keep the first action set minimal
+Quality rule:
 
-Expected early actions may include:
+- no new activity-log action should be introduced as an untyped ad hoc string
 
-- machine create
-- machine update
-- customer create
-- customer update
+## Recommended remaining Phase 3 baby-step sequence
 
-Reason:
-
-- activity logs are only useful if action names are consistent
-- typo-prone string literals create silent audit-log inconsistency
-- the first real call sites are the right time to introduce the small abstraction
-
-## Recommended Phase 3 baby-step sequence
-
-### Step 0 - Phase 3 decision preflight
+### Step A - Customer update/delete closeout
 
 Goal:
 
-- lock the smallest safe machine/customer records slice before adding product tables
+- complete or explicitly scope customer update/delete behavior before Phase 3 closeout
 
 Expected output:
 
-- confirmed Phase 3 schema ownership
-- confirmed customer/machine relationship model
-- confirmed tenant-check pattern for machine/customer records
-- confirmed web data-access path
-- confirmed bearer-token travel path from browser session to API call
-- confirmed authenticated-builder and development provisioning approach
-- confirmed enum ownership and drift-check policy
-- confirmed activity-log action naming convention and constants location
-- confirmed first guarded API endpoint shape
-- confirmed files allowed to change
-- no product code changes unless explicitly approved
+- customer update API path or explicit deferral decision
+- customer delete API path or explicit no-delete decision
+- tenant-scoped customer queries
+- typed activity-log action coverage for shipped mutations
+- web UI only if needed for the accepted Phase 3 exit condition
+- smoke checks updated for new behavior
 
 Quality checks:
 
-- no machine/customer schema added before relationship decisions are clear
-- no web data access before the API/direct-db architecture choice is recorded
-- no bearer-token/session plumbing before client-side versus server-side data loading is recorded
-- no secure-builder claim before auth/provisioning path is recorded
-- no machine status enum mirror without a drift check
-- no activity-log action string literals before action constants are defined
-- no fake customer or machine data
-- no dashboard metrics
-- no frontend redesign
-- no broad backend scope
-- no document, QR, ticket, storage, spare-parts, quote, or feedback work
+- no cross-organization customer access
+- no delete behavior that silently removes related production records without a documented posture
+- no fake customers
+- localized user-facing copy for any new UI/error state
 
-### Step 1 - Phase 3 schema foundation
+### Step B - Machine model update/delete closeout
 
 Goal:
 
-- add only the minimum machine/customer schema needed for Phase 3
+- complete or explicitly scope machine model update/delete behavior before Phase 3 closeout
 
-Expected tables may include:
+Expected output:
 
-- customers
-- machine_models
-- machines
-
-Expected behavior:
-
-- every product record must be organization-scoped
-- no cross-organization access path
-- no document/storage/QR/ticket fields unless explicitly needed for Phase 3
+- machine model update API path or explicit deferral decision
+- machine model delete API path or explicit no-delete decision
+- tenant-scoped model queries
+- typed activity-log action coverage for shipped mutations
+- web UI only if needed for the accepted Phase 3 exit condition
+- smoke checks updated for new behavior
 
 Quality checks:
 
-- Prisma schema validates
-- migration generated and reviewed
-- migration tested from zero against disposable PostgreSQL
-- generated client policy remains intact
-- no generated Prisma client output committed
-- enum drift check added in the same slice if machine status is mirrored outside Prisma
+- no cross-organization model access
+- no model delete that breaks existing machines without a documented posture
+- no fake machine models
+- localized user-facing copy for any new UI/error state
 
-### Step 2 - API service foundation
+### Step C - Machine update/delete closeout
 
 Goal:
 
-- add server-side machine/customer access helpers without fake endpoints
+- complete or explicitly scope machine update/delete behavior before Phase 3 closeout
 
 Expected output:
 
-- tenant-scoped query helpers or services
-- create/update helper shape
-- activity-log call points for create/edit
-- clear error behavior for unauthorized organization access
-- typed activity action constants used by first real log call sites
+- machine update API path or explicit deferral decision
+- machine delete API path or explicit no-delete decision
+- tenant-scoped machine queries
+- typed activity-log action coverage for shipped mutations
+- web UI only if needed for the accepted Phase 3 exit condition
+- smoke checks updated for new behavior
 
-Do not add:
+Quality checks:
 
-- unguarded product queries
-- public machine access
-- customer portal access
-- document upload
-- storage
-- tickets
-- fake dashboard data
+- no cross-organization machine access
+- no machine delete that conflicts with future document/ticket/portal phases without a documented posture
+- no fake machines
+- localized user-facing copy for any new UI/error state
 
-### Step 3 - Minimal UI connection
+### Step D - Localization and formatting closeout
 
 Goal:
 
-- connect the existing machine shell to real organization-scoped data only after the backend boundary exists
+- verify Phase 3 user-facing copy and formatting across supported locales
 
 Expected output:
 
-- real empty states
-- no fake metrics
-- no fake machine records
-- translated labels
-- tenant-safe data loading through the Step 0-approved data-access path
-- bearer-token/session handling through the Step 0-approved token travel path
+- all new Phase 3 copy covered across supported locale files or documented as shared internal-only copy
+- status labels verified in supported locales
+- date formatting verified through locale-aware formatting
+- number/count formatting verified through locale-aware formatting
+- no mojibake or corrupted characters
+- no hardcoded user-facing English in UI paths
 
-Do not add:
+Quality checks:
 
-- fake seeded production-looking data
-- broad dashboard analytics
-- document workflows
-- QR portal workflows
+- `pnpm.cmd format:check`
+- relevant typecheck/lint/build gates
+- manual browser checks for at least English and one non-English route
+- search for corrupted encoding markers without keeping those marker characters in this doc
+
+### Step E - Phase 3 closeout review
+
+Goal:
+
+- close Phase 3 honestly before Phase 4 document upload begins
+
+Expected output:
+
+- roadmap updated with final Phase 3 status
+- next steps updated to point to Phase 4 only after Phase 3 is actually complete
+- phase log appended with final Phase 3 closeout
+- decisions updated only if new decisions were made
+- external review prompt prepared
+- no rolling current commit lists added to forward-looking docs
+
+Quality checks:
+
+- no claim of full CRUD unless update/delete or explicit deferral decisions are documented
+- no claim of full login unless login is actually implemented and tested
+- no document upload, QR portal, ticket, storage, spare-parts, quote, feedback, or deployment scope sneaks into Phase 3
 
 ## Current frontend shell status
 
@@ -630,7 +666,7 @@ Do not start these until their roadmap phase or an explicitly approved baby step
 
 ## Next recommended prompt
 
-Use this for Phase 3 Step 0:
+Use this for the next Phase 3 slice:
 
 ```text
 You are working on BuildTrace Beta.
@@ -642,42 +678,43 @@ Current state:
 - Phase 0 is complete.
 - Phase 1 is complete.
 - Phase 2 is complete.
-- Phase 2 review hardening is complete.
-- Current full beta roadmap completion is 22%.
-- Current next phase is Phase 3 - Machine/customer records foundation.
+- Phase 3 is in progress.
+- Phase 3 Step 0 decisions are locked.
+- Phase 3 create/read vertical slice is implemented and browser-verified through DB -> API -> web.
+- Current full beta roadmap completion is about 30%.
 - Working tree should be clean before this step.
 
 Task:
-Inspect the repo and docs, then propose the smallest safe Phase 3 decision preflight step.
+Inspect the repo and implement the smallest safe remaining Phase 3 CRUD/localization slice.
+
+Recommended next slice:
+- customer update/delete, or an explicit Phase 3 no-delete decision if delete is deferred
 
 Scope:
-- Do not edit files yet.
-- Do not apply patches.
-- Do not commit.
-- Inspect current repo structure and current docs.
-- Identify the minimal first machine/customer records foundation slice.
-- Keep the proposal Lean and root-cause oriented.
-- Do not jump into document upload, QR portal, tickets, storage workflows, spare parts, quote flow, feedback, deployment, or dashboard metrics.
+- Preserve the existing API-boundary architecture.
+- Do not import `@buildtrace/db` directly into the web app.
+- Do not add fake data.
+- Do not add auth bypasses.
+- Do not touch document upload, QR portal, tickets, storage workflows, spare parts, quote flow, feedback, deployment, or dashboard metrics.
+- Do not redesign the existing shell.
+- Do not reopen Phase 0, Phase 1, Phase 2, or completed Phase 3 Step 0 decisions unless a real defect requires it.
 
-Step 0 must include decisions for:
-- web data-access path
-- bearer-token travel path from browser session to API calls
-- authenticated-builder and development provisioning path
-- machine/customer schema ownership
-- customer/machine relationship model
-- tenant-check pattern for machine/customer records
-- enum ownership and drift-check policy for status labels
-- activity-log action constants and naming convention
-- first guarded API endpoint shape
-- files allowed to change
+Quality bar:
+- organization-scoped queries only
+- typed activity-log actions for shipped mutations
+- strict TypeScript
+- localized user-facing copy
+- no hardcoded secrets
+- no stale rolling commit lists in forward-looking docs
+- no compliance, safety, CE, Machinery Regulation, CRA, or approval guarantees
 
 Output:
-1. What is already done.
-2. What Phase 3 requires.
-3. Recommended first baby step.
-4. Required Step 0 decisions.
-5. Files likely involved.
-6. What must not be touched.
-7. Gates to run after implementation.
-8. Risks and quality checks.
+1. Exact slice selected.
+2. Files likely involved.
+3. What must not be touched.
+4. Implementation.
+5. Gates run.
+6. Browser checks if UI changed.
+7. Remaining Phase 3 work after the slice.
+
 ```
