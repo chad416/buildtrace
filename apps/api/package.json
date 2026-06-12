@@ -8,6 +8,7 @@
     "auth:smoke": "tsx src/auth-smoke-check.ts",
     "tenant:smoke": "tsx src/tenant-access-smoke-check.ts",
     "machine-status:check": "pnpm --filter @buildtrace/db run generate && tsx src/machine-status-drift-check.ts",
+    "machine-records:smoke": "pnpm --filter @buildtrace/db run generate && tsx src/machine-records-controller-smoke-check.ts",
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
