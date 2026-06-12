@@ -1,9 +1,17 @@
-import { machineStatuses } from '@buildtrace/shared';
+import { machineStatuses, supportedLocales } from '@buildtrace/shared';
 
 import {
+  createCustomer,
+  createMachineModel,
   createMachineRecord,
+  getCustomer,
+  getMachineModel,
   getMachineRecord,
+  listCustomers,
+  listMachineModels,
   listMachineRecords,
+  type CustomerRecordApiModel,
+  type MachineModelRecordApiModel,
   type MachineRecordApiModel,
 } from './machine-records-api.js';
 
@@ -14,11 +22,33 @@ type CapturedFetchCall = {
 
 const activeMachineStatus = 'ACTIVE';
 
+const fakeCustomer: CustomerRecordApiModel = {
+  id: 'customer-1',
+  organizationId: 'organization-1',
+  companyName: 'ACME Manufacturing',
+  contactName: 'Ada Lovelace',
+  email: 'ada@example.com',
+  phone: '+420 123 456 789',
+  country: 'CZ',
+  preferredLocale: 'en',
+  createdAt: '2026-06-12T00:00:00.000Z',
+  updatedAt: '2026-06-12T00:00:00.000Z',
+};
+
+const fakeMachineModel: MachineModelRecordApiModel = {
+  id: 'machine-model-1',
+  organizationId: 'organization-1',
+  modelName: 'BT-9000',
+  description: 'Packaging line',
+  createdAt: '2026-06-12T00:00:00.000Z',
+  updatedAt: '2026-06-12T00:00:00.000Z',
+};
+
 const fakeMachine: MachineRecordApiModel = {
   id: 'machine-1',
   organizationId: 'organization-1',
-  customerId: 'customer-1',
-  machineModelId: 'machine-model-1',
+  customerId: fakeCustomer.id,
+  machineModelId: fakeMachineModel.id,
   machineName: 'Press Line 1',
   serialNumber: 'SN-001',
   status: activeMachineStatus,
@@ -28,12 +58,12 @@ const fakeMachine: MachineRecordApiModel = {
   createdAt: '2026-06-12T00:00:00.000Z',
   updatedAt: '2026-06-12T00:00:00.000Z',
   customer: {
-    id: 'customer-1',
-    companyName: 'ACME Manufacturing',
+    id: fakeCustomer.id,
+    companyName: fakeCustomer.companyName,
   },
   machineModel: {
-    id: 'machine-model-1',
-    modelName: 'BT-9000',
+    id: fakeMachineModel.id,
+    modelName: fakeMachineModel.modelName,
   },
 };
 
@@ -52,12 +82,20 @@ function createJsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function createCapturingFetcher(
-  calls: CapturedFetchCall[],
-  responseBody: unknown = {
+function createDefaultResponseBody(): Record<string, unknown> {
+  return {
+    customer: fakeCustomer,
+    customers: [fakeCustomer],
+    machineModel: fakeMachineModel,
+    machineModels: [fakeMachineModel],
     machine: fakeMachine,
     machines: [fakeMachine],
-  },
+  };
+}
+
+function createCapturingFetcher(
+  calls: CapturedFetchCall[],
+  responseBody: unknown = createDefaultResponseBody(),
 ): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     calls.push({
@@ -105,6 +143,20 @@ function readCallUrl(call: CapturedFetchCall): URL {
   return new URL(String(call.input));
 }
 
+function assertBearerToken(call: CapturedFetchCall, label: string): void {
+  assert(
+    readHeader(call.init?.headers, 'authorization') === 'Bearer access-token',
+    `Expected ${label} bearer token.`,
+  );
+}
+
+function assertJsonContentType(call: CapturedFetchCall, label: string): void {
+  assert(
+    readHeader(call.init?.headers, 'content-type') === 'application/json',
+    `Expected ${label} JSON content type.`,
+  );
+}
+
 async function expectThrows(
   label: string,
   action: () => Promise<unknown> | unknown,
@@ -120,7 +172,192 @@ async function expectThrows(
   assert(threw, `Expected ${label} to throw.`);
 }
 
-async function runMachineRecordsApiSmokeCheck(): Promise<void> {
+async function verifyCustomerCalls(): Promise<void> {
+  const createCalls: CapturedFetchCall[] = [];
+
+  const createdCustomer = await createCustomer(
+    {
+      organizationId: ' organization-1 ',
+      companyName: ' ACME Manufacturing ',
+      contactName: ' Ada Lovelace ',
+      email: ' ada@example.com ',
+      phone: ' +420 123 456 789 ',
+      country: ' CZ ',
+      preferredLocale: 'en',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(createCalls),
+  );
+
+  assert(createdCustomer.id === fakeCustomer.id, 'Expected create response customer.');
+
+  const createCall = createCalls.at(0);
+
+  assert(createCall, 'Expected create customer call.');
+  assert(
+    String(createCall.input) === 'http://localhost:4000/machine-records/customers',
+    'Unexpected create customer URL.',
+  );
+  assert(createCall.init?.method === 'POST', 'Expected create customer POST.');
+  assertBearerToken(createCall, 'create customer');
+  assertJsonContentType(createCall, 'create customer');
+
+  const createBody = readRequestBody(createCall);
+
+  assert(createBody.organizationId === 'organization-1', 'Expected customer organization ID.');
+  assert(createBody.companyName === 'ACME Manufacturing', 'Expected customer company name.');
+  assert(createBody.contactName === 'Ada Lovelace', 'Expected customer contact name.');
+  assert(createBody.email === 'ada@example.com', 'Expected customer email.');
+  assert(createBody.phone === '+420 123 456 789', 'Expected customer phone.');
+  assert(createBody.country === 'CZ', 'Expected customer country.');
+  assert(createBody.preferredLocale === 'en', 'Expected customer preferred locale.');
+
+  const listCalls: CapturedFetchCall[] = [];
+  const customers = await listCustomers(
+    {
+      organizationId: ' organization-1 ',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(listCalls),
+  );
+
+  assert(customers.at(0)?.id === fakeCustomer.id, 'Expected listed customer.');
+
+  const listCall = listCalls.at(0);
+
+  assert(listCall, 'Expected list customers call.');
+
+  const listUrl = readCallUrl(listCall);
+
+  assert(listUrl.pathname === '/machine-records/customers', 'Unexpected list customers path.');
+  assert(
+    listUrl.searchParams.get('organizationId') === 'organization-1',
+    'Expected list customers organization query.',
+  );
+  assert(listCall.init?.method === 'GET', 'Expected list customers GET.');
+  assertBearerToken(listCall, 'list customers');
+
+  const getCalls: CapturedFetchCall[] = [];
+  const customer = await getCustomer(
+    {
+      organizationId: ' organization-1 ',
+      customerId: ' customer-1 ',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(getCalls),
+  );
+
+  assert(customer.id === fakeCustomer.id, 'Expected get response customer.');
+
+  const getCall = getCalls.at(0);
+
+  assert(getCall, 'Expected get customer call.');
+
+  const getUrl = readCallUrl(getCall);
+
+  assert(
+    getUrl.pathname === '/machine-records/customers/customer-1',
+    'Unexpected get customer path.',
+  );
+  assert(
+    getUrl.searchParams.get('organizationId') === 'organization-1',
+    'Expected get customer organization query.',
+  );
+  assert(getCall.init?.method === 'GET', 'Expected get customer GET.');
+  assertBearerToken(getCall, 'get customer');
+}
+
+async function verifyMachineModelCalls(): Promise<void> {
+  const createCalls: CapturedFetchCall[] = [];
+
+  const createdMachineModel = await createMachineModel(
+    {
+      organizationId: ' organization-1 ',
+      modelName: ' BT-9000 ',
+      description: ' Packaging line ',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(createCalls),
+  );
+
+  assert(createdMachineModel.id === fakeMachineModel.id, 'Expected create response machine model.');
+
+  const createCall = createCalls.at(0);
+
+  assert(createCall, 'Expected create machine model call.');
+  assert(
+    String(createCall.input) === 'http://localhost:4000/machine-records/machine-models',
+    'Unexpected create machine model URL.',
+  );
+  assert(createCall.init?.method === 'POST', 'Expected create machine model POST.');
+  assertBearerToken(createCall, 'create machine model');
+  assertJsonContentType(createCall, 'create machine model');
+
+  const createBody = readRequestBody(createCall);
+
+  assert(createBody.organizationId === 'organization-1', 'Expected model organization ID.');
+  assert(createBody.modelName === 'BT-9000', 'Expected model name.');
+  assert(createBody.description === 'Packaging line', 'Expected model description.');
+
+  const listCalls: CapturedFetchCall[] = [];
+  const machineModels = await listMachineModels(
+    {
+      organizationId: ' organization-1 ',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(listCalls),
+  );
+
+  assert(machineModels.at(0)?.id === fakeMachineModel.id, 'Expected listed machine model.');
+
+  const listCall = listCalls.at(0);
+
+  assert(listCall, 'Expected list machine models call.');
+
+  const listUrl = readCallUrl(listCall);
+
+  assert(
+    listUrl.pathname === '/machine-records/machine-models',
+    'Unexpected list machine models path.',
+  );
+  assert(
+    listUrl.searchParams.get('organizationId') === 'organization-1',
+    'Expected list machine models organization query.',
+  );
+  assert(listCall.init?.method === 'GET', 'Expected list machine models GET.');
+  assertBearerToken(listCall, 'list machine models');
+
+  const getCalls: CapturedFetchCall[] = [];
+  const machineModel = await getMachineModel(
+    {
+      organizationId: ' organization-1 ',
+      machineModelId: ' machine-model-1 ',
+      accessToken: ' access-token ',
+    },
+    createCapturingFetcher(getCalls),
+  );
+
+  assert(machineModel.id === fakeMachineModel.id, 'Expected get response machine model.');
+
+  const getCall = getCalls.at(0);
+
+  assert(getCall, 'Expected get machine model call.');
+
+  const getUrl = readCallUrl(getCall);
+
+  assert(
+    getUrl.pathname === '/machine-records/machine-models/machine-model-1',
+    'Unexpected get machine model path.',
+  );
+  assert(
+    getUrl.searchParams.get('organizationId') === 'organization-1',
+    'Expected get machine model organization query.',
+  );
+  assert(getCall.init?.method === 'GET', 'Expected get machine model GET.');
+  assertBearerToken(getCall, 'get machine model');
+}
+
+async function verifyMachineCalls(): Promise<void> {
   assert(
     machineStatuses.includes(activeMachineStatus),
     'Shared machine statuses must include ACTIVE.',
@@ -144,42 +381,30 @@ async function runMachineRecordsApiSmokeCheck(): Promise<void> {
     createCapturingFetcher(createCalls),
   );
 
-  assert(createdMachine.id === fakeMachine.id, 'Expected create response machine to be returned.');
+  assert(createdMachine.id === fakeMachine.id, 'Expected create response machine.');
 
   const createCall = createCalls.at(0);
 
-  assert(createCall, 'Expected create call to be captured.');
+  assert(createCall, 'Expected create machine call.');
   assert(
     String(createCall.input) === 'http://localhost:4000/machine-records/machines',
-    'Unexpected create URL.',
+    'Unexpected create machine URL.',
   );
-  assert(createCall.init?.method === 'POST', 'Expected create request to use POST.');
-  assert(
-    readHeader(createCall.init?.headers, 'authorization') === 'Bearer access-token',
-    'Expected create request bearer token.',
-  );
-  assert(
-    readHeader(createCall.init?.headers, 'content-type') === 'application/json',
-    'Expected create request JSON content type.',
-  );
+  assert(createCall.init?.method === 'POST', 'Expected create machine POST.');
+  assertBearerToken(createCall, 'create machine');
+  assertJsonContentType(createCall, 'create machine');
 
   const createBody = readRequestBody(createCall);
 
-  assert(
-    createBody.organizationId === 'organization-1',
-    'Expected normalized create organization ID.',
-  );
-  assert(createBody.customerId === 'customer-1', 'Expected normalized create customer ID.');
-  assert(
-    createBody.machineModelId === 'machine-model-1',
-    'Expected normalized create machine model ID.',
-  );
-  assert(createBody.machineName === 'Press Line 1', 'Expected normalized create machine name.');
-  assert(createBody.serialNumber === 'SN-001', 'Expected normalized create serial number.');
-  assert(createBody.deliveryDate === '2026-06-12', 'Expected normalized create delivery date.');
-  assert(createBody.plcType === 'Siemens S7', 'Expected normalized create PLC type.');
-  assert(createBody.hmiType === 'KTP700', 'Expected normalized create HMI type.');
-  assert(createBody.status === activeMachineStatus, 'Expected create status.');
+  assert(createBody.organizationId === 'organization-1', 'Expected machine organization ID.');
+  assert(createBody.customerId === 'customer-1', 'Expected machine customer ID.');
+  assert(createBody.machineModelId === 'machine-model-1', 'Expected machine model ID.');
+  assert(createBody.machineName === 'Press Line 1', 'Expected machine name.');
+  assert(createBody.serialNumber === 'SN-001', 'Expected machine serial number.');
+  assert(createBody.deliveryDate === '2026-06-12', 'Expected machine delivery date.');
+  assert(createBody.plcType === 'Siemens S7', 'Expected machine PLC type.');
+  assert(createBody.hmiType === 'KTP700', 'Expected machine HMI type.');
+  assert(createBody.status === activeMachineStatus, 'Expected machine status.');
 
   const listCalls: CapturedFetchCall[] = [];
 
@@ -191,27 +416,21 @@ async function runMachineRecordsApiSmokeCheck(): Promise<void> {
     createCapturingFetcher(listCalls),
   );
 
-  const listedMachine = listedMachines.at(0);
-
-  assert(listedMachine, 'Expected list response to include a machine.');
-  assert(listedMachine.id === fakeMachine.id, 'Expected list response machine to be returned.');
+  assert(listedMachines.at(0)?.id === fakeMachine.id, 'Expected listed machine.');
 
   const listCall = listCalls.at(0);
 
-  assert(listCall, 'Expected list call to be captured.');
+  assert(listCall, 'Expected list machine call.');
 
   const listUrl = readCallUrl(listCall);
 
-  assert(listUrl.pathname === '/machine-records/machines', 'Unexpected list URL path.');
+  assert(listUrl.pathname === '/machine-records/machines', 'Unexpected list machine path.');
   assert(
     listUrl.searchParams.get('organizationId') === 'organization-1',
-    'Expected list organization query.',
+    'Expected list machine organization query.',
   );
-  assert(listCall.init?.method === 'GET', 'Expected list request to use GET.');
-  assert(
-    readHeader(listCall.init?.headers, 'authorization') === 'Bearer access-token',
-    'Expected list request bearer token.',
-  );
+  assert(listCall.init?.method === 'GET', 'Expected list machine GET.');
+  assertBearerToken(listCall, 'list machine');
 
   const getCalls: CapturedFetchCall[] = [];
 
@@ -224,27 +443,28 @@ async function runMachineRecordsApiSmokeCheck(): Promise<void> {
     createCapturingFetcher(getCalls),
   );
 
-  assert(machine.id === fakeMachine.id, 'Expected get response machine to be returned.');
+  assert(machine.id === fakeMachine.id, 'Expected get response machine.');
 
   const getCall = getCalls.at(0);
 
-  assert(getCall, 'Expected get call to be captured.');
+  assert(getCall, 'Expected get machine call.');
 
   const getUrl = readCallUrl(getCall);
 
-  assert(getUrl.pathname === '/machine-records/machines/machine-1', 'Unexpected get URL path.');
+  assert(getUrl.pathname === '/machine-records/machines/machine-1', 'Unexpected get machine path.');
   assert(
     getUrl.searchParams.get('organizationId') === 'organization-1',
-    'Expected get organization query.',
+    'Expected get machine organization query.',
   );
-  assert(getCall.init?.method === 'GET', 'Expected get request to use GET.');
-  assert(
-    readHeader(getCall.init?.headers, 'authorization') === 'Bearer access-token',
-    'Expected get request bearer token.',
-  );
+  assert(getCall.init?.method === 'GET', 'Expected get machine GET.');
+  assertBearerToken(getCall, 'get machine');
+}
+
+async function verifyFailures(): Promise<void> {
+  assert(supportedLocales.includes('en'), 'Supported locales must include en.');
 
   await expectThrows('missing organization ID', () =>
-    listMachineRecords(
+    listCustomers(
       {
         organizationId: '   ',
         accessToken: 'access-token',
@@ -254,11 +474,23 @@ async function runMachineRecordsApiSmokeCheck(): Promise<void> {
   );
 
   await expectThrows('missing access token', () =>
-    getMachineRecord(
+    getMachineModel(
       {
         organizationId: 'organization-1',
-        machineId: 'machine-1',
+        machineModelId: 'machine-model-1',
         accessToken: '   ',
+      },
+      createCapturingFetcher([]),
+    ),
+  );
+
+  await expectThrows('unsupported preferred locale', () =>
+    createCustomer(
+      {
+        organizationId: 'organization-1',
+        companyName: 'ACME Manufacturing',
+        accessToken: 'access-token',
+        preferredLocale: 'zz' as CustomerRecordApiModel['preferredLocale'],
       },
       createCapturingFetcher([]),
     ),
@@ -296,6 +528,13 @@ async function runMachineRecordsApiSmokeCheck(): Promise<void> {
       failingFetcher,
     ),
   );
+}
+
+async function runMachineRecordsApiSmokeCheck(): Promise<void> {
+  await verifyCustomerCalls();
+  await verifyMachineModelCalls();
+  await verifyMachineCalls();
+  await verifyFailures();
 }
 
 await runMachineRecordsApiSmokeCheck();
