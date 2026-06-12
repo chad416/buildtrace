@@ -1,9 +1,13 @@
 import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
-import { machineStatuses } from '@buildtrace/shared';
+import { machineStatuses, supportedLocales } from '@buildtrace/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { createMachineRecordAction } from './actions';
+import {
+  createCustomerRecordAction,
+  createMachineModelRecordAction,
+  createMachineRecordAction,
+} from './actions';
 import {
   listCustomers,
   listMachineModels,
@@ -20,6 +24,10 @@ import {
 } from '@/machine-records-session';
 
 type PageSearchParams = {
+  readonly customerCreate?: string | readonly string[];
+  readonly customerCreateError?: string | readonly string[];
+  readonly machineModelCreate?: string | readonly string[];
+  readonly machineModelCreateError?: string | readonly string[];
   readonly machineCreate?: string | readonly string[];
   readonly machineCreateError?: string | readonly string[];
 };
@@ -242,6 +250,160 @@ function renderPrerequisitePanel({
       </p>
     ),
   });
+}
+
+function renderCreateCustomerForm({
+  locale,
+  copy,
+}: {
+  readonly locale: string;
+  readonly copy: (typeof machineRecordsCreateCopy)['en'];
+}) {
+  return (
+    <section className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6">
+      <div className="max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+          {copy.customerForm.eyebrow}
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-normal text-white">
+          {copy.customerForm.title}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-stone-300">{copy.customerForm.body}</p>
+      </div>
+
+      <form action={createCustomerRecordAction.bind(null, locale)} className="mt-6 grid gap-4">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.companyNameLabel}
+            <input
+              name="companyName"
+              required
+              placeholder={copy.customerForm.companyNamePlaceholder}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.contactNameLabel}
+            <input
+              name="contactName"
+              placeholder={copy.customerForm.contactNamePlaceholder}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.emailLabel}
+            <input
+              name="email"
+              type="email"
+              placeholder={copy.customerForm.emailPlaceholder}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.phoneLabel}
+            <input
+              name="phone"
+              placeholder={copy.customerForm.phonePlaceholder}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+            />
+          </label>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.countryLabel}
+            <input
+              name="country"
+              placeholder={copy.customerForm.countryPlaceholder}
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            {copy.customerForm.preferredLocaleLabel}
+            <select
+              name="preferredLocale"
+              defaultValue={
+                supportedLocales.includes(locale as (typeof supportedLocales)[number])
+                  ? locale
+                  : 'en'
+              }
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition focus:border-emerald-400"
+            >
+              {supportedLocales.map((supportedLocale) => (
+                <option key={supportedLocale} value={supportedLocale}>
+                  {copy.customerForm.preferredLocaleLabels[supportedLocale]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          className="mt-2 inline-flex min-h-11 w-fit items-center rounded-md bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+        >
+          {copy.customerForm.submitLabel}
+        </button>
+      </form>
+    </section>
+  );
+}
+
+function renderCreateMachineModelForm({
+  locale,
+  copy,
+}: {
+  readonly locale: string;
+  readonly copy: (typeof machineRecordsCreateCopy)['en'];
+}) {
+  return (
+    <section className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6">
+      <div className="max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+          {copy.machineModelForm.eyebrow}
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-normal text-white">
+          {copy.machineModelForm.title}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-stone-300">{copy.machineModelForm.body}</p>
+      </div>
+
+      <form action={createMachineModelRecordAction.bind(null, locale)} className="mt-6 grid gap-4">
+        <label className="grid gap-2 text-sm font-semibold text-stone-200">
+          {copy.machineModelForm.modelNameLabel}
+          <input
+            name="modelName"
+            required
+            placeholder={copy.machineModelForm.modelNamePlaceholder}
+            className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm font-semibold text-stone-200">
+          {copy.machineModelForm.descriptionLabel}
+          <textarea
+            name="description"
+            rows={3}
+            placeholder={copy.machineModelForm.descriptionPlaceholder}
+            className="min-h-24 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm font-normal text-white outline-none transition placeholder:text-stone-600 focus:border-emerald-400"
+          />
+        </label>
+
+        <button
+          type="submit"
+          className="mt-2 inline-flex min-h-11 w-fit items-center rounded-md bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+        >
+          {copy.machineModelForm.submitLabel}
+        </button>
+      </form>
+    </section>
+  );
 }
 
 function renderCreateMachineForm({
@@ -479,6 +641,10 @@ export default async function MachinesPage({ params, searchParams }: PageProps) 
   const copy = machineRecordsPageCopy[locale];
   const createCopy = machineRecordsCreateCopy[locale];
   const session = await readMachineRecordsSession();
+  const customerCreate = readSearchParam(resolvedSearchParams.customerCreate);
+  const customerCreateError = readSearchParam(resolvedSearchParams.customerCreateError);
+  const machineModelCreate = readSearchParam(resolvedSearchParams.machineModelCreate);
+  const machineModelCreateError = readSearchParam(resolvedSearchParams.machineModelCreateError);
   const machineCreate = readSearchParam(resolvedSearchParams.machineCreate);
   const machineCreateError = readSearchParam(resolvedSearchParams.machineCreateError);
 
@@ -537,6 +703,38 @@ export default async function MachinesPage({ params, searchParams }: PageProps) 
         </p>
       </section>
 
+      {customerCreate === 'created'
+        ? renderFeedbackPanel({
+            type: 'success',
+            title: createCopy.customerFeedback.successTitle,
+            body: createCopy.customerFeedback.successBody,
+          })
+        : null}
+
+      {customerCreateError
+        ? renderFeedbackPanel({
+            type: 'error',
+            title: createCopy.customerFeedback.errorTitle,
+            body: customerCreateError,
+          })
+        : null}
+
+      {machineModelCreate === 'created'
+        ? renderFeedbackPanel({
+            type: 'success',
+            title: createCopy.machineModelFeedback.successTitle,
+            body: createCopy.machineModelFeedback.successBody,
+          })
+        : null}
+
+      {machineModelCreateError
+        ? renderFeedbackPanel({
+            type: 'error',
+            title: createCopy.machineModelFeedback.errorTitle,
+            body: machineModelCreateError,
+          })
+        : null}
+
       {machineCreate === 'created'
         ? renderFeedbackPanel({
             type: 'success',
@@ -589,6 +787,20 @@ export default async function MachinesPage({ params, searchParams }: PageProps) 
             copy,
           })
         : null}
+
+      {loadState.status === 'ready' ? (
+        <section className="grid gap-4 xl:grid-cols-2">
+          {renderCreateCustomerForm({
+            locale,
+            copy: createCopy,
+          })}
+
+          {renderCreateMachineModelForm({
+            locale,
+            copy: createCopy,
+          })}
+        </section>
+      ) : null}
 
       {loadState.status === 'ready'
         ? renderPrerequisitePanel({

@@ -1,10 +1,49 @@
 import type { Locale } from '@buildtrace/i18n';
+import type { SupportedLocale } from '@buildtrace/shared';
 
 import type { MachineRecordApiModel } from './machine-records-api';
 
 type MachineStatusValue = MachineRecordApiModel['status'];
 
 type MachineRecordsCreateCopy = {
+  readonly customerFeedback: {
+    readonly successTitle: string;
+    readonly successBody: string;
+    readonly errorTitle: string;
+  };
+  readonly customerForm: {
+    readonly eyebrow: string;
+    readonly title: string;
+    readonly body: string;
+    readonly companyNameLabel: string;
+    readonly companyNamePlaceholder: string;
+    readonly contactNameLabel: string;
+    readonly contactNamePlaceholder: string;
+    readonly emailLabel: string;
+    readonly emailPlaceholder: string;
+    readonly phoneLabel: string;
+    readonly phonePlaceholder: string;
+    readonly countryLabel: string;
+    readonly countryPlaceholder: string;
+    readonly preferredLocaleLabel: string;
+    readonly preferredLocaleLabels: Record<SupportedLocale, string>;
+    readonly submitLabel: string;
+  };
+  readonly machineModelFeedback: {
+    readonly successTitle: string;
+    readonly successBody: string;
+    readonly errorTitle: string;
+  };
+  readonly machineModelForm: {
+    readonly eyebrow: string;
+    readonly title: string;
+    readonly body: string;
+    readonly modelNameLabel: string;
+    readonly modelNamePlaceholder: string;
+    readonly descriptionLabel: string;
+    readonly descriptionPlaceholder: string;
+    readonly submitLabel: string;
+  };
   readonly feedback: {
     readonly successTitle: string;
     readonly successBody: string;
@@ -31,8 +70,66 @@ type MachineRecordsCreateCopy = {
   readonly statusLabels: Record<MachineStatusValue, string>;
 };
 
+const preferredLocaleLabels = {
+  en: 'English',
+  cs: 'Cestina',
+  sk: 'Slovencina',
+  pl: 'Polski',
+  de: 'Deutsch',
+  fr: 'Francais',
+  es: 'Espanol',
+} satisfies Record<SupportedLocale, string>;
+
+const customerFeedback = {
+  successTitle: 'Customer record created',
+  successBody:
+    'The customer was created through the API boundary and is now available for machine creation.',
+  errorTitle: 'Customer record could not be created',
+};
+
+const customerForm = {
+  eyebrow: 'Create customer',
+  title: 'Add a customer record',
+  body: 'Create the customer record first so machines can be tied to a real organization-scoped customer.',
+  companyNameLabel: 'Company name',
+  companyNamePlaceholder: 'ACME Manufacturing',
+  contactNameLabel: 'Contact name',
+  contactNamePlaceholder: 'Ada Lovelace',
+  emailLabel: 'Email',
+  emailPlaceholder: 'ada@example.com',
+  phoneLabel: 'Phone',
+  phonePlaceholder: '+420 123 456 789',
+  countryLabel: 'Country',
+  countryPlaceholder: 'CZ',
+  preferredLocaleLabel: 'Preferred locale',
+  preferredLocaleLabels,
+  submitLabel: 'Create customer',
+};
+
+const machineModelFeedback = {
+  successTitle: 'Machine model record created',
+  successBody:
+    'The machine model was created through the API boundary and is now available for machine creation.',
+  errorTitle: 'Machine model record could not be created',
+};
+
+const machineModelForm = {
+  eyebrow: 'Create machine model',
+  title: 'Add a machine model record',
+  body: 'Create the reusable machine model before assigning machines to customers.',
+  modelNameLabel: 'Model name',
+  modelNamePlaceholder: 'BT-9000',
+  descriptionLabel: 'Description',
+  descriptionPlaceholder: 'Packaging line',
+  submitLabel: 'Create model',
+};
+
 export const machineRecordsCreateCopy = {
   en: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Machine record created',
       successBody: 'The machine was created through the API boundary and the list has refreshed.',
@@ -64,6 +161,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   cs: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Záznam stroje vytvořen',
       successBody: 'Stroj byl vytvořen přes API hranici a seznam byl obnoven.',
@@ -95,6 +196,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   sk: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Záznam stroja vytvorený',
       successBody: 'Stroj bol vytvorený cez API hranicu a zoznam bol obnovený.',
@@ -126,6 +231,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   pl: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Rekord maszyny utworzony',
       successBody: 'Maszyna została utworzona przez granicę API, a lista została odświeżona.',
@@ -157,6 +266,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   de: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Maschinendatensatz erstellt',
       successBody:
@@ -189,6 +302,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   fr: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Dossier machine créé',
       successBody: 'La machine a été créée via la limite API et la liste a été actualisée.',
@@ -220,6 +337,10 @@ export const machineRecordsCreateCopy = {
     },
   },
   es: {
+    customerFeedback,
+    customerForm,
+    machineModelFeedback,
+    machineModelForm,
     feedback: {
       successTitle: 'Registro de máquina creado',
       successBody: 'La máquina se creó mediante la frontera API y la lista se actualizó.',

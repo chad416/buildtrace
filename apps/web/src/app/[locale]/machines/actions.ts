@@ -1,9 +1,21 @@
-'use server';
+﻿'use server';
 
-import { machineStatuses, type MachineStatus } from '@buildtrace/shared';
+import {
+  machineStatuses,
+  supportedLocales,
+  type MachineStatus,
+  type SupportedLocale,
+} from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
-import { createMachineRecord, type CreateMachineRecordApiInput } from '@/machine-records-api';
+import {
+  createCustomer,
+  createMachineModel,
+  createMachineRecord,
+  type CreateCustomerApiInput,
+  type CreateMachineModelApiInput,
+  type CreateMachineRecordApiInput,
+} from '@/machine-records-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
 function formatActionError(error: unknown): string {
@@ -11,11 +23,11 @@ function formatActionError(error: unknown): string {
     return error.message;
   }
 
-  return 'Unknown machine creation error.';
+  return 'Unknown machine record action error.';
 }
 
-function redirectWithError(locale: string, message: string): never {
-  redirect(`/${locale}/machines?machineCreateError=${encodeURIComponent(message)}`);
+function redirectWithError(locale: string, queryName: string, message: string): never {
+  redirect(`/${locale}/machines?${queryName}=${encodeURIComponent(message)}`);
 }
 
 function readRequiredFormText(formData: FormData, name: string, label: string): string {
@@ -37,17 +49,27 @@ function readRequiredFormText(formData: FormData, name: string, label: string): 
 function readOptionalFormText(formData: FormData, name: string): string | undefined {
   const value = formData.get(name);
 
-  if (value === null) {
-    return undefined;
-  }
-
-  if (typeof value !== 'string') {
+  if (value === null || typeof value !== 'string') {
     return undefined;
   }
 
   const normalizedValue = value.trim();
 
   return normalizedValue ? normalizedValue : undefined;
+}
+
+function readOptionalPreferredLocale(formData: FormData): SupportedLocale | undefined {
+  const preferredLocale = readOptionalFormText(formData, 'preferredLocale');
+
+  if (!preferredLocale) {
+    return undefined;
+  }
+
+  if (!supportedLocales.includes(preferredLocale as SupportedLocale)) {
+    throw new Error(`Preferred locale is not supported: ${preferredLocale}`);
+  }
+
+  return preferredLocale as SupportedLocale;
 }
 
 function readOptionalMachineStatus(formData: FormData): MachineStatus | undefined {
@@ -64,12 +86,90 @@ function readOptionalMachineStatus(formData: FormData): MachineStatus | undefine
   return status as MachineStatus;
 }
 
+export async function createCustomerRecordAction(
+  locale: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectWithError(
+      redirectLocale,
+      'customerCreateError',
+      'Customer creation needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const contactName = readOptionalFormText(formData, 'contactName');
+    const email = readOptionalFormText(formData, 'email');
+    const phone = readOptionalFormText(formData, 'phone');
+    const country = readOptionalFormText(formData, 'country');
+    const preferredLocale = readOptionalPreferredLocale(formData);
+
+    const input: CreateCustomerApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      companyName: readRequiredFormText(formData, 'companyName', 'Customer company name'),
+      ...(contactName ? { contactName } : {}),
+      ...(email ? { email } : {}),
+      ...(phone ? { phone } : {}),
+      ...(country ? { country } : {}),
+      ...(preferredLocale ? { preferredLocale } : {}),
+    };
+
+    await createCustomer(input);
+  } catch (error) {
+    redirectWithError(redirectLocale, 'customerCreateError', formatActionError(error));
+  }
+
+  redirect(`/${redirectLocale}/machines?customerCreate=created`);
+}
+
+export async function createMachineModelRecordAction(
+  locale: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectWithError(
+      redirectLocale,
+      'machineModelCreateError',
+      'Machine model creation needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const description = readOptionalFormText(formData, 'description');
+
+    const input: CreateMachineModelApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      modelName: readRequiredFormText(formData, 'modelName', 'Machine model name'),
+      ...(description ? { description } : {}),
+    };
+
+    await createMachineModel(input);
+  } catch (error) {
+    redirectWithError(redirectLocale, 'machineModelCreateError', formatActionError(error));
+  }
+
+  redirect(`/${redirectLocale}/machines?machineModelCreate=created`);
+}
+
 export async function createMachineRecordAction(locale: string, formData: FormData): Promise<void> {
   const redirectLocale = locale.trim() || 'en';
   const session = await readMachineRecordsSession();
 
   if (session.status === 'missing') {
-    redirectWithError(redirectLocale, 'Machine creation needs a signed-in workspace.');
+    redirectWithError(
+      redirectLocale,
+      'machineCreateError',
+      'Machine creation needs a signed-in workspace.',
+    );
   }
 
   try {
@@ -93,7 +193,7 @@ export async function createMachineRecordAction(locale: string, formData: FormDa
 
     await createMachineRecord(input);
   } catch (error) {
-    redirectWithError(redirectLocale, formatActionError(error));
+    redirectWithError(redirectLocale, 'machineCreateError', formatActionError(error));
   }
 
   redirect(`/${redirectLocale}/machines?machineCreate=created`);
