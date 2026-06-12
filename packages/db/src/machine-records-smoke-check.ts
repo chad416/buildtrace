@@ -4,7 +4,9 @@ import {
   createCustomer,
   createMachine,
   createMachineModel,
+  getCustomerByOrganization,
   getMachineByOrganization,
+  getMachineModelByOrganization,
   listCustomersByOrganization,
   listMachineModelsByOrganization,
   listMachinesByOrganization,
@@ -111,6 +113,63 @@ function createRecord(model: string, args: unknown): Record<string, unknown> {
   throw new Error(`Unsupported model: ${model}`);
 }
 
+function createFindRecord(model: string, args: unknown): Record<string, unknown> {
+  const where = (args as { readonly where?: Record<string, unknown> }).where ?? {};
+
+  if (model === 'customer') {
+    return {
+      id: where.id ?? 'customer-1',
+      organizationId: where.organizationId ?? 'organization-1',
+      companyName: 'Acme Industrial',
+      contactName: null,
+      email: null,
+      phone: null,
+      country: null,
+      preferredLocale: 'en',
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  if (model === 'machineModel') {
+    return {
+      id: where.id ?? 'machine-model-1',
+      organizationId: where.organizationId ?? 'organization-1',
+      modelName: 'MX-100',
+      description: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  if (model === 'machine') {
+    return {
+      id: where.id ?? 'machine-1',
+      organizationId: where.organizationId ?? 'organization-1',
+      customerId: 'customer-1',
+      machineModelId: 'machine-model-1',
+      machineName: 'Press One',
+      serialNumber: 'SN-100',
+      status: MachineStatus.ACTIVE,
+      deliveryDate: null,
+      plcType: null,
+      hmiType: null,
+      createdAt: now,
+      updatedAt: now,
+      customer: {
+        id: 'customer-1',
+        companyName: 'Acme Industrial',
+      },
+      machineModel: {
+        id: 'machine-model-1',
+        modelName: 'MX-100',
+      },
+    };
+  }
+
+  throw new Error(`Unsupported find model: ${model}`);
+}
+
 function createFakePrismaClient(capturedOperations: CapturedOperation[]): PrismaClient {
   function capture(model: string, operation: string, result: unknown) {
     return async (args: unknown): Promise<unknown> => {
@@ -121,6 +180,18 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
       });
 
       return result;
+    };
+  }
+
+  function captureFindFirst(model: string) {
+    return async (args: unknown): Promise<unknown> => {
+      capturedOperations.push({
+        model,
+        operation: 'findFirst',
+        args,
+      });
+
+      return createFindRecord(model, args);
     };
   }
 
@@ -146,7 +217,7 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
 
         return createRecord('customer', args);
       },
-      findFirst: capture('customer', 'findFirst', { id: 'customer-1' }),
+      findFirst: captureFindFirst('customer'),
       findMany: capture('customer', 'findMany', []),
     },
     machineModel: {
@@ -159,7 +230,7 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
 
         return createRecord('machineModel', args);
       },
-      findFirst: capture('machineModel', 'findFirst', { id: 'machine-model-1' }),
+      findFirst: captureFindFirst('machineModel'),
       findMany: capture('machineModel', 'findMany', []),
     },
     machine: {
@@ -172,7 +243,7 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
 
         return createRecord('machine', args);
       },
-      findFirst: capture('machine', 'findFirst', null),
+      findFirst: captureFindFirst('machine'),
       findMany: capture('machine', 'findMany', []),
     },
   };
@@ -181,9 +252,11 @@ function createFakePrismaClient(capturedOperations: CapturedOperation[]): Prisma
     $transaction: async <T>(callback: (transactionClient: FakeTransactionClient) => Promise<T>) =>
       callback(tx),
     customer: {
+      findFirst: tx.customer.findFirst,
       findMany: tx.customer.findMany,
     },
     machineModel: {
+      findFirst: tx.machineModel.findFirst,
       findMany: tx.machineModel.findMany,
     },
     machine: {
@@ -210,6 +283,31 @@ function findOperation(
   return foundOperation;
 }
 
+function findOperations(
+  capturedOperations: readonly CapturedOperation[],
+  model: string,
+  operation: string,
+): readonly CapturedOperation[] {
+  return capturedOperations.filter(
+    (capturedOperation) =>
+      capturedOperation.model === model && capturedOperation.operation === operation,
+  );
+}
+
+function requireOperationAt(
+  operations: readonly CapturedOperation[],
+  index: number,
+  label: string,
+): CapturedOperation {
+  const operation = operations[index];
+
+  if (!operation) {
+    throw new Error(`Expected ${label} operation at index ${index}.`);
+  }
+
+  return operation;
+}
+
 function getData(operation: CapturedOperation): Record<string, unknown> {
   return (operation.args as { readonly data?: Record<string, unknown> }).data ?? {};
 }
@@ -228,11 +326,39 @@ async function expectThrows(name: string, action: () => Promise<unknown>): Promi
   throw new Error(`${name} should throw.`);
 }
 
+function assertOrganizationScopedFind(
+  operation: CapturedOperation,
+  expectedIdField: string,
+  expectedId: string,
+): void {
+  const where = getWhere(operation);
+
+  if (where.organizationId !== 'organization-1' || where[expectedIdField] !== expectedId) {
+    throw new Error(`${operation.model}.${operation.operation} was not scoped by organization.`);
+  }
+}
+
 async function runMachineRecordsSmokeCheck(): Promise<void> {
   await expectThrows('blank organization ID', () =>
     listMachinesByOrganization({
       db: createFakePrismaClient([]),
       organizationId: '   ',
+    }),
+  );
+
+  await expectThrows('blank customer ID', () =>
+    getCustomerByOrganization({
+      db: createFakePrismaClient([]),
+      organizationId: 'organization-1',
+      customerId: '   ',
+    }),
+  );
+
+  await expectThrows('blank machine model ID', () =>
+    getMachineModelByOrganization({
+      db: createFakePrismaClient([]),
+      organizationId: 'organization-1',
+      machineModelId: '   ',
     }),
   );
 
@@ -276,9 +402,21 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     organizationId: ' organization-1 ',
   });
 
+  await getCustomerByOrganization({
+    db,
+    organizationId: ' organization-1 ',
+    customerId: ' customer-1 ',
+  });
+
   await listMachineModelsByOrganization({
     db,
     organizationId: ' organization-1 ',
+  });
+
+  await getMachineModelByOrganization({
+    db,
+    organizationId: ' organization-1 ',
+    machineModelId: ' machine-model-1 ',
   });
 
   await listMachinesByOrganization({
@@ -325,28 +463,48 @@ async function runMachineRecordsSmokeCheck(): Promise<void> {
     throw new Error('Machine record helpers did not write the expected activity log actions.');
   }
 
-  const customerOwnershipWhere = getWhere(
-    findOperation(capturedOperations, 'customer', 'findFirst'),
-  );
-  const machineModelOwnershipWhere = getWhere(
-    findOperation(capturedOperations, 'machineModel', 'findFirst'),
+  const customerFindOperations = findOperations(capturedOperations, 'customer', 'findFirst');
+  const machineModelFindOperations = findOperations(
+    capturedOperations,
+    'machineModel',
+    'findFirst',
   );
 
-  if (
-    customerOwnershipWhere.organizationId !== 'organization-1' ||
-    customerOwnershipWhere.id !== 'customer-1' ||
-    machineModelOwnershipWhere.organizationId !== 'organization-1' ||
-    machineModelOwnershipWhere.id !== 'machine-model-1'
-  ) {
-    throw new Error('Machine helper did not validate related records inside the organization.');
+  if (customerFindOperations.length < 2 || machineModelFindOperations.length < 2) {
+    throw new Error('Customer/model read helpers and ownership checks were not both exercised.');
   }
 
+  assertOrganizationScopedFind(
+    requireOperationAt(customerFindOperations, 0, 'customer ownership check'),
+    'id',
+    'customer-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(customerFindOperations, 1, 'customer read helper'),
+    'id',
+    'customer-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineModelFindOperations, 0, 'machine model ownership check'),
+    'id',
+    'machine-model-1',
+  );
+  assertOrganizationScopedFind(
+    requireOperationAt(machineModelFindOperations, 1, 'machine model read helper'),
+    'id',
+    'machine-model-1',
+  );
+
   const customerListWhere = getWhere(findOperation(capturedOperations, 'customer', 'findMany'));
+  const machineModelListWhere = getWhere(
+    findOperation(capturedOperations, 'machineModel', 'findMany'),
+  );
   const machineListWhere = getWhere(findOperation(capturedOperations, 'machine', 'findMany'));
   const machineGetWhere = getWhere(findOperation(capturedOperations, 'machine', 'findFirst'));
 
   if (
     customerListWhere.organizationId !== 'organization-1' ||
+    machineModelListWhere.organizationId !== 'organization-1' ||
     machineListWhere.organizationId !== 'organization-1' ||
     machineGetWhere.organizationId !== 'organization-1' ||
     machineGetWhere.id !== 'machine-1'

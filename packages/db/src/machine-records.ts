@@ -27,10 +27,18 @@ type CreateCustomerInput = OrganizationScopedInput & {
   readonly preferredLocale?: string;
 };
 
+type GetCustomerByOrganizationInput = OrganizationScopedInput & {
+  readonly customerId: string;
+};
+
 type CreateMachineModelInput = OrganizationScopedInput & {
   readonly modelName: string;
   readonly actorUserId?: string;
   readonly description?: string;
+};
+
+type GetMachineModelByOrganizationInput = OrganizationScopedInput & {
+  readonly machineModelId: string;
 };
 
 type CreateMachineInput = OrganizationScopedInput & {
@@ -214,6 +222,19 @@ export async function listCustomersByOrganization({
   });
 }
 
+export async function getCustomerByOrganization({
+  db,
+  organizationId,
+  customerId,
+}: GetCustomerByOrganizationInput): Promise<CustomerRecord | null> {
+  return db.customer.findFirst({
+    where: {
+      id: normalizeRequiredText('Customer ID', customerId),
+      organizationId: normalizeOrganizationId(organizationId),
+    },
+  });
+}
+
 export async function createMachineModel({
   db,
   organizationId,
@@ -258,6 +279,19 @@ export async function listMachineModelsByOrganization({
     },
     orderBy: {
       modelName: 'asc',
+    },
+  });
+}
+
+export async function getMachineModelByOrganization({
+  db,
+  organizationId,
+  machineModelId,
+}: GetMachineModelByOrganizationInput): Promise<MachineModelRecord | null> {
+  return db.machineModel.findFirst({
+    where: {
+      id: normalizeRequiredText('Machine model ID', machineModelId),
+      organizationId: normalizeOrganizationId(organizationId),
     },
   });
 }
