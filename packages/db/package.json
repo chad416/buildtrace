@@ -9,6 +9,7 @@
     "generate": "prisma generate",
     "prisma:validate": "prisma validate",
     "activity:smoke": "tsx src/activity-log-smoke-check.ts",
+    "dev:bootstrap": "pnpm run generate && tsx src/dev-bootstrap.ts",
     "build": "pnpm run generate && tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "pnpm run generate && tsc --noEmit"
