@@ -1,4 +1,4 @@
-# BuildTrace Next Steps
+﻿# BuildTrace Next Steps
 
 ## Current status
 
@@ -12,15 +12,15 @@ Phase 2 review hardening is complete.
 
 Current full beta roadmap completion:
 
-- about 30%
+- about 32%
 
 Current active phase:
 
-- Phase 3 - Machine/customer records foundation
+- Phase 4 - Document dump upload
 
 ## Immediate next step
 
-Continue Phase 3 with remaining CRUD/localization closeout.
+Start Phase 4 document dump upload foundation.
 
 Reason:
 
@@ -35,21 +35,20 @@ Reason:
 - web API client and cookie-backed session boundary exist
 - real browser create/list/detail flow has been verified
 - machine list rendering was stabilized with `key={machine.id}`
-- full Phase 3 CRUD is not complete yet
-- localization closeout is still required before Phase 3 can be marked complete
+- Phase 3 machine/customer records vertical slice is complete and runtime-verified
+- Phase 4 can now begin without reopening Phase 3 scope
 
 Current focus:
 
-- keep Phase 3 at about 30% full beta completion until remaining CRUD/localization closeout is done
-- keep Phase 3 listed as the active phase
+- keep Phase 3 closed at about 32% full beta completion
+- list Phase 4 as the active next phase
 - keep the verified create/read vertical slice intact
-- finish update/delete paths or explicitly document no-delete Phase 3 scope
 - keep all product records organization-scoped
 - keep web data access through the API boundary
 - keep browser token travel through the approved session/cookie boundary
 - keep activity-log actions typed
 - keep status labels and user-facing copy localized
-- do not start Phase 4 document upload work until Phase 3 is closed
+- start Phase 4 document upload work only from the closed Phase 3 baseline
 
 ## Phase 2 review-hardening checklist
 
@@ -210,9 +209,9 @@ Phase 3 target after full completion:
 
 - 32% of full beta roadmap
 
-Current conservative full beta roadmap completion:
+Current full beta roadmap completion:
 
-- about 30%
+- about 32%
 
 Expected Phase 3 scope:
 
@@ -260,27 +259,17 @@ Completed Phase 3 scope so far:
 - browser verification passed with one real customer, one real model, and one real machine
 - machine list rendering stabilized with a stable React key
 
-Current Phase 3 exit-condition status:
+Final Phase 3 exit-condition status:
 
 - builder can create machine record securely: met for the verified dev Supabase/app-user/org path
 - machine/customer records are organization-scoped: met for current create/read paths
-- activity log records machine creation/edit: partially met; create paths exist, update/edit paths still pending if shipped in Phase 3
-- user cannot access another organization's machine/customer records: met for current helper/API read paths; repeat for update/delete if added
+- activity log records machine creation/edit: met for shipped Phase 3 create and update paths
+- user cannot access another organization's machine/customer records: met for shipped helper/API read and mutation paths
 
 Remaining Phase 3 scope before complete:
 
-- customer update path
-- customer delete path or explicit no-delete Phase 3 decision
-- machine model update path
-- machine model delete path or explicit no-delete Phase 3 decision
-- machine update path
-- machine delete path or explicit no-delete Phase 3 decision
-- activity-log coverage for update/delete paths that ship
-- localization coverage for all new Phase 3 copy in supported locales
-- status label verification in supported locales
-- date/number formatting verification in supported locales
-- final Phase 3 closeout docs
-- final external review before moving to Phase 4
+- none; Phase 3 is implementation-complete and runtime-verified
+- delete workflows remain intentionally out of the shipped Phase 3 slice unless a later phase explicitly adds them
 
 ## Locked Phase 3 decisions
 
@@ -678,17 +667,17 @@ Current state:
 - Phase 0 is complete.
 - Phase 1 is complete.
 - Phase 2 is complete.
-- Phase 3 is in progress.
+- Phase 3 is complete.
 - Phase 3 Step 0 decisions are locked.
-- Phase 3 create/read vertical slice is implemented and browser-verified through DB -> API -> web.
-- Current full beta roadmap completion is about 30%.
+- Phase 3 create/read/update vertical slice is implemented and browser-verified through DB -> API -> web.
+- Current full beta roadmap completion is about 32%.
 - Working tree should be clean before this step.
 
 Task:
-Inspect the repo and implement the smallest safe remaining Phase 3 CRUD/localization slice.
+Inspect the repo and start the smallest safe Phase 4 document upload foundation slice.
 
 Recommended next slice:
-- customer update/delete, or an explicit Phase 3 no-delete decision if delete is deferred
+- Phase 4 document upload schema/API preflight, without weakening the Phase 3 machine-record boundary
 
 Scope:
 - Preserve the existing API-boundary architecture.

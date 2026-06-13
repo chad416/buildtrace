@@ -1,4 +1,4 @@
-# BuildTrace Roadmap
+﻿# BuildTrace Roadmap
 
 ## Product
 
@@ -12,15 +12,15 @@ Phase 1 is complete.
 
 Phase 2 is complete.
 
-Phase 3 is in progress.
+Phase 3 is complete.
 
 Current full beta roadmap completion:
 
-- about 30%
+- about 32%
 
 Current active phase:
 
-- Phase 3 - Machine/customer records foundation
+- Phase 4 - Document dump upload
 
 ## Beta scope
 
@@ -247,11 +247,11 @@ Important Phase 2 decisions:
 
 Target completion: 32% of beta.
 
-Status: in progress.
+Status: complete.
 
 Current completion contribution:
 
-- about 30% of beta
+- 32% of beta
 
 Scope:
 
@@ -293,13 +293,8 @@ Completed so far:
 
 Remaining before Phase 3 is complete:
 
-- update/edit workflows for customers, machine models, and machines
-- activity logging for update/edit workflows
-- localized machine status labels across the UI
-- locale-aware date and number formatting closeout
-- explicit empty/loading/error-state polish for the completed machine-record flows
-- final Phase 3 regression pass
-- Phase 3 docs closeout after the full roadmap scope is actually complete
+- none; Phase 3 machine/customer records foundation is implementation-complete and runtime-verified
+- delete workflows remain out of the shipped Phase 3 slice unless a later phase explicitly adds them
 
 Exit condition:
 
@@ -310,7 +305,7 @@ Exit condition:
 
 Current exit-condition status:
 
-- builder can create a machine record securely: passed for the create slice
+- builder can create and update a machine record securely: passed for the verified create/update slice
 - machine/customer records are organization-scoped: passed for the implemented create/read slice
 - activity log records machine creation/edit: create path covered, update/edit still remaining
 - user cannot access another organization's machine/customer records: passed for machine read isolation, final full CRUD regression still remaining

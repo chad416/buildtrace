@@ -1305,3 +1305,60 @@ This Phase 2 hardening did not add:
 ### Commit message
 
 `docs: close phase 2 hardening notes`
+
+## 2026-06-14 - Phase 3 final runtime verification
+
+### Scope
+
+Closed the Phase 3 machine records vertical slice after browser runtime verification against the real local API, local database, Supabase auth boundary, tenant session cookies, and web UI.
+
+### Verified runtime flow
+
+- Loaded local `.env` values into PowerShell for database, Supabase, API, and web runtime.
+- Ran the development bootstrap successfully for `buildtrace-development`.
+- Started the API server with the required Supabase and database environment.
+- Started the web server on `http://localhost:3000`.
+- Loaded `http://localhost:3000/en/machines`.
+- Set the machine-record tenant cookies using:
+  - `buildtrace_machine_records_organization_id`
+  - `buildtrace_machine_records_access_token`
+- Confirmed the machines page loads through the API-backed session boundary.
+- Confirmed customer, machine model, and machine counts load from real API data.
+- Confirmed create customer, create machine model, and create machine forms are visible.
+- Confirmed an existing machine record appears in the machine list.
+- Confirmed the machine detail route opens by real machine id.
+- Confirmed the machine detail page shows real machine data.
+- Confirmed the machine update form is visible and wired through the Phase 3 update path.
+
+### Final verification commands
+
+- `pnpm.cmd --filter @buildtrace/db run machine-records:smoke`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db lint`
+- `pnpm.cmd --filter @buildtrace/db build`
+- `pnpm.cmd --filter @buildtrace/api run machine-records:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api build`
+- `pnpm.cmd --filter @buildtrace/web run machine-records:smoke`
+- `pnpm.cmd --filter @buildtrace/web run machine-records:session-smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web lint`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git status --short`
+
+All final checks passed. Working tree was clean before push.
+
+### Final pushed Phase 3 commits
+
+- `8614eca fix(web): align machine record session cookies`
+- `6c213e2 feat(web): add machine update form`
+- `29af4af feat(web): add machine update api client`
+- `beb362f feat(api): add machine update endpoint`
+- `3a561da feat(db): add machine update helper`
+
+### Phase 3 closeout status
+
+Phase 3 machine records are implementation-complete and runtime-verified. Remaining closeout work is documentation alignment in roadmap and next-steps before marking Phase 3 fully complete.
