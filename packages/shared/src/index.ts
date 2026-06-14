@@ -1,4 +1,4 @@
-﻿export const supportedLocales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
+export const supportedLocales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
 
 export type SupportedLocale = (typeof supportedLocales)[number];
 
@@ -40,6 +40,10 @@ export const documentCategories = [
 ] as const;
 
 export type DocumentCategory = (typeof documentCategories)[number];
+
+export const documentLanguageCodes = [...supportedLocales, 'unknown'] as const;
+
+export type DocumentLanguageCode = (typeof documentLanguageCodes)[number];
 
 export const sensitiveEngineeringDocumentCategories = [
   'plc',

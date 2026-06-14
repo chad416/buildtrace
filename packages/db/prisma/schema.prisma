@@ -20,6 +20,42 @@ enum MachineStatus {
   ARCHIVED
 }
 
+enum DocumentCategory {
+  PLC
+  HMI
+  MECHANICAL_DRAWINGS
+  ELECTRICAL_DRAWINGS
+  CAD
+  MACHINE_PHOTOS
+  FAT
+  SAT
+  MANUALS
+  SAFETY_INSTRUCTIONS
+  SUPPLIER_DOCUMENTS
+  SPARE_PARTS_BOM
+  CERTIFICATES
+  SERVICE_NOTES
+  OTHER
+}
+
+enum DocumentVisibilityLevel {
+  CUSTOMER_VISIBLE
+  INTERNAL
+  SENSITIVE_ENGINEERING
+  RESTRICTED
+}
+
+enum DocumentLanguage {
+  EN
+  CS
+  SK
+  PL
+  DE
+  FR
+  ES
+  UNKNOWN
+}
+
 model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -29,6 +65,7 @@ model Organization {
 
   activityLogs  ActivityLog[]
   customers     Customer[]
+  documents     Document[]
   machineModels MachineModel[]
   machines      Machine[]
   memberships   OrganizationMembership[]
@@ -44,8 +81,9 @@ model AppUser {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  activityLogs ActivityLog[]
-  memberships  OrganizationMembership[]
+  activityLogs      ActivityLog[]
+  memberships       OrganizationMembership[]
+  uploadedDocuments Document[]
 
   @@map("app_users")
 }
@@ -136,12 +174,44 @@ model Machine {
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
   customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  documents    Document[]
   machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, serialNumber])
+  @@unique([organizationId, id])
   @@index([organizationId, status])
   @@index([organizationId, customerId])
   @@index([organizationId, machineModelId])
   @@map("machines")
+}
+
+model Document {
+  id                      String                  @id @default(uuid()) @db.Uuid
+  organizationId          String                  @map("organization_id") @db.Uuid
+  machineId               String                  @map("machine_id") @db.Uuid
+  fileName                String                  @map("file_name")
+  storagePath             String                  @map("storage_path")
+  fileType                String                  @map("file_type")
+  category                DocumentCategory
+  visibilityLevel         DocumentVisibilityLevel @default(INTERNAL) @map("visibility_level")
+  visibleToCustomer       Boolean                 @default(false) @map("visible_to_customer")
+  language                DocumentLanguage        @default(UNKNOWN)
+  checksum                String
+  uploadedByUserId        String?                 @map("uploaded_by") @db.Uuid
+  uploadedAt              DateTime                @default(now()) @map("uploaded_at")
+  lastDownloadUrlIssuedAt DateTime?               @map("last_download_url_issued_at")
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedAt               DateTime                @updatedAt @map("updated_at")
+
+  machine        Machine      @relation(fields: [organizationId, machineId], references: [organizationId, id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedByUser AppUser?     @relation(fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, storagePath])
+  @@index([organizationId, machineId])
+  @@index([organizationId, category])
+  @@index([organizationId, visibilityLevel])
+  @@index([uploadedByUserId])
+  @@map("documents")
 }
