@@ -169,6 +169,20 @@ function createDependencies(capturedCalls: CapturedCalls): DocumentRecordsEndpoi
               error: null,
             };
           },
+          async upload(storagePath) {
+            return {
+              data: {
+                path: storagePath,
+              },
+              error: null,
+            };
+          },
+          async remove() {
+            return {
+              data: [],
+              error: null,
+            };
+          },
         };
       },
     }),

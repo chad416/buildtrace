@@ -27,10 +27,30 @@ export type DocumentStorageSignedUrlResult = {
   readonly expiresInSeconds: number;
 };
 
+export type DocumentStorageUploadResult = {
+  readonly storagePath: string;
+};
+
 type SignedUrlResponse = {
   readonly data: {
     readonly signedUrl: string;
   } | null;
+  readonly error: {
+    readonly message: string;
+  } | null;
+};
+
+type UploadResponse = {
+  readonly data: {
+    readonly path: string;
+  } | null;
+  readonly error: {
+    readonly message: string;
+  } | null;
+};
+
+type RemoveResponse = {
+  readonly data: unknown[] | null;
   readonly error: {
     readonly message: string;
   } | null;
@@ -41,6 +61,15 @@ export type DocumentStorageBucketClient = {
     storagePath: string,
     expiresInSeconds: number,
   ) => Promise<SignedUrlResponse>;
+  readonly upload: (
+    storagePath: string,
+    fileBody: ArrayBuffer,
+    options: {
+      readonly contentType: string;
+      readonly upsert: false;
+    },
+  ) => Promise<UploadResponse>;
+  readonly remove: (storagePaths: readonly string[]) => Promise<RemoveResponse>;
 };
 
 export type DocumentStorageAdapter = {
@@ -48,6 +77,18 @@ export type DocumentStorageAdapter = {
 };
 
 export type CreateSignedDocumentDownloadUrlInput = DocumentStorageTenantScopeInput & {
+  readonly config: DocumentStorageConfig;
+  readonly storage: DocumentStorageAdapter;
+};
+
+export type UploadDocumentToStorageInput = DocumentStorageTenantScopeInput & {
+  readonly config: DocumentStorageConfig;
+  readonly storage: DocumentStorageAdapter;
+  readonly fileBody: ArrayBuffer;
+  readonly fileType: string;
+};
+
+export type RemoveDocumentFromStorageInput = DocumentStorageTenantScopeInput & {
   readonly config: DocumentStorageConfig;
   readonly storage: DocumentStorageAdapter;
 };
@@ -210,6 +251,12 @@ export function createSupabaseDocumentStorageAdapter(
         createSignedUrl(storagePath, expiresInSeconds) {
           return bucket.createSignedUrl(storagePath, expiresInSeconds);
         },
+        upload(storagePath, fileBody, options) {
+          return bucket.upload(storagePath, fileBody, options);
+        },
+        remove(storagePaths) {
+          return bucket.remove([...storagePaths]);
+        },
       };
     },
   };
@@ -240,4 +287,62 @@ export async function createSignedDocumentDownloadUrl({
     signedUrl: response.data.signedUrl,
     expiresInSeconds: config.signedUrlTtlSeconds,
   };
+}
+export async function uploadDocumentToStorage({
+  config,
+  storage,
+  organizationId,
+  machineId,
+  storagePath,
+  fileBody,
+  fileType,
+}: UploadDocumentToStorageInput): Promise<DocumentStorageUploadResult> {
+  assertDocumentStoragePathMatchesTenant({
+    organizationId,
+    machineId,
+    storagePath,
+  });
+
+  const response = await storage.from(config.bucketName).upload(storagePath, fileBody, {
+    contentType: fileType,
+    upsert: false,
+  });
+
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
+
+  const uploadedStoragePath = response.data?.path?.trim();
+
+  if (!uploadedStoragePath) {
+    throw new Error('Document upload did not return a storage path.');
+  }
+
+  if (uploadedStoragePath !== storagePath) {
+    throw new Error('Document upload returned an unexpected storage path.');
+  }
+
+  return {
+    storagePath: uploadedStoragePath,
+  };
+}
+
+export async function removeDocumentFromStorage({
+  config,
+  storage,
+  organizationId,
+  machineId,
+  storagePath,
+}: RemoveDocumentFromStorageInput): Promise<void> {
+  assertDocumentStoragePathMatchesTenant({
+    organizationId,
+    machineId,
+    storagePath,
+  });
+
+  const response = await storage.from(config.bucketName).remove([storagePath]);
+
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
 }

@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "document-records:smoke": "pnpm --filter @buildtrace/db run generate && tsx src/document-records-controller-smoke-check.ts && tsx src/document-download-url-smoke-check.ts",
-    "document-storage:smoke": "tsx src/document-storage-smoke-check.ts"
+    "document-storage:smoke": "tsx src/document-storage-smoke-check.ts",
+    "document-upload:smoke": "tsx src/document-upload-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",

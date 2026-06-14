@@ -60,6 +60,20 @@ function createCapturedStorageAdapter(calls: CapturedStorageCall[]): DocumentSto
             error: null,
           };
         },
+        async upload(storagePath) {
+          return {
+            data: {
+              path: storagePath,
+            },
+            error: null,
+          };
+        },
+        async remove() {
+          return {
+            data: [],
+            error: null,
+          };
+        },
       };
     },
   };
@@ -74,6 +88,22 @@ function createFailingStorageAdapter(): DocumentStorageAdapter {
             data: null,
             error: {
               message: 'storage refused signed url',
+            },
+          };
+        },
+        async upload() {
+          return {
+            data: null,
+            error: {
+              message: 'storage refused upload',
+            },
+          };
+        },
+        async remove() {
+          return {
+            data: null,
+            error: {
+              message: 'storage refused remove',
             },
           };
         },
