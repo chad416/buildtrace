@@ -8,6 +8,10 @@
   "scripts": {
     "build": "tsc --noEmit",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "document-constants:smoke": "tsx src/document-constants-smoke-check.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4"
   }
 }
