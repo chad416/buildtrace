@@ -9,9 +9,15 @@ type DevBootstrapConfig = {
   readonly organizationSlug: string;
   readonly authUserId: string;
   readonly userEmail: string;
-  readonly userDisplayName?: string;
+  readonly userDisplayName: string;
   readonly role: OrganizationRole;
 };
+
+function assertNonProductionEnvironment(): void {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Development bootstrap must not run in production.');
+  }
+}
 
 function readRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -23,27 +29,20 @@ function readRequiredEnv(name: string): string {
   return value;
 }
 
-function readOptionalEnv(name: string): string | undefined {
-  const value = process.env[name]?.trim();
-
-  return value ? value : undefined;
-}
-
 function readOrganizationRole(): OrganizationRole {
-  const value = readOptionalEnv('DEV_ORGANIZATION_ROLE') ?? OrganizationRole.OWNER;
+  const rawRole = process.env.DEV_ORGANIZATION_ROLE?.trim() || OrganizationRole.OWNER;
 
-  if (!Object.values(OrganizationRole).includes(value as OrganizationRole)) {
+  if (!Object.values(OrganizationRole).includes(rawRole as OrganizationRole)) {
     throw new Error(
       `DEV_ORGANIZATION_ROLE must be one of: ${Object.values(OrganizationRole).join(', ')}.`,
     );
   }
 
-  return value as OrganizationRole;
+  return rawRole as OrganizationRole;
 }
 
 function readDevBootstrapConfig(): DevBootstrapConfig {
   const authUserId = readRequiredEnv('DEV_AUTH_USER_ID');
-  const userDisplayName = readOptionalEnv('DEV_USER_DISPLAY_NAME');
 
   if (!uuidPattern.test(authUserId)) {
     throw new Error('DEV_AUTH_USER_ID must be a valid UUID from the Supabase auth user.');
@@ -54,19 +53,16 @@ function readDevBootstrapConfig(): DevBootstrapConfig {
     organizationSlug: readRequiredEnv('DEV_ORGANIZATION_SLUG'),
     authUserId,
     userEmail: readRequiredEnv('DEV_USER_EMAIL'),
-    ...(userDisplayName ? { userDisplayName } : {}),
+    userDisplayName: readRequiredEnv('DEV_USER_DISPLAY_NAME'),
     role: readOrganizationRole(),
   };
 }
 
-async function runDevBootstrap(): Promise<void> {
+export async function runDevBootstrap(): Promise<void> {
+  assertNonProductionEnvironment();
+
   const config = readDevBootstrapConfig();
   const db = createPrismaClient();
-  const displayNamePatch = config.userDisplayName
-    ? {
-        displayName: config.userDisplayName,
-      }
-    : {};
 
   try {
     const organization = await db.organization.upsert({
@@ -88,12 +84,12 @@ async function runDevBootstrap(): Promise<void> {
       },
       update: {
         email: config.userEmail,
-        ...displayNamePatch,
+        displayName: config.userDisplayName,
       },
       create: {
         authUserId: config.authUserId,
         email: config.userEmail,
-        ...displayNamePatch,
+        displayName: config.userDisplayName,
       },
     });
 
