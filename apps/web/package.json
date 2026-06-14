@@ -8,6 +8,7 @@
     "machine-records:smoke": "tsx src/machine-records-api-smoke-check.ts",
     "machine-records:session-smoke": "tsx src/machine-records-session-smoke-check.ts",
     "machine-records:copy-smoke": "tsx src/machine-records-copy-smoke-check.ts",
+    "document-records:smoke": "tsx src/document-records-api-smoke-check.ts",
     "build": "next build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
