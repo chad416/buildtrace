@@ -1,9 +1,24 @@
 import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
-import { machineStatuses } from '@buildtrace/shared';
+import {
+  documentCategories,
+  documentLanguageCodes,
+  documentVisibilityLevels,
+  machineStatuses,
+  type DocumentCategory,
+  type DocumentLanguageCode,
+  type DocumentVisibilityLevel,
+} from '@buildtrace/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { updateMachineRecordAction } from '../actions';
+import {
+  createMachineDocumentDownloadUrlAction,
+  updateMachineDocumentCategoryAction,
+  updateMachineDocumentVisibilityAction,
+  updateMachineRecordAction,
+  uploadMachineDocumentAction,
+} from '../actions';
+import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -24,6 +39,13 @@ type RawSearchParams = Record<string, string | readonly string[] | undefined>;
 type MachineDetailSearchParams = {
   readonly machineUpdate?: string;
   readonly machineUpdateError?: string;
+  readonly documentUpload?: string;
+  readonly documentUploadError?: string;
+  readonly documentCategory?: string;
+  readonly documentCategoryError?: string;
+  readonly documentVisibility?: string;
+  readonly documentVisibilityError?: string;
+  readonly documentDownloadError?: string;
 };
 
 type PageProps = {
@@ -48,6 +70,7 @@ type MachineDetailLoadState =
       readonly machine: MachineRecordApiModel;
       readonly customers: readonly CustomerRecordApiModel[];
       readonly machineModels: readonly MachineModelRecordApiModel[];
+      readonly documents: readonly DocumentMetadataApiModel[];
     };
 
 const statusClassNames = {
@@ -57,6 +80,49 @@ const statusClassNames = {
   ARCHIVED: 'border-stone-600 bg-stone-900 text-stone-300',
 } satisfies Record<MachineRecordApiModel['status'], string>;
 
+const documentCategoryLabels = {
+  plc: 'PLC',
+  hmi: 'HMI',
+  'mechanical-drawings': 'Mechanical drawings',
+  'electrical-drawings': 'Electrical drawings',
+  cad: 'CAD',
+  'machine-photos': 'Machine photos',
+  fat: 'FAT',
+  sat: 'SAT',
+  manuals: 'Manuals',
+  'safety-instructions': 'Safety instructions',
+  'supplier-documents': 'Supplier documents',
+  'spare-parts-bom': 'Spare parts BOM',
+  certificates: 'Certificates',
+  'service-notes': 'Service notes',
+  other: 'Other',
+} satisfies Record<DocumentCategory, string>;
+
+const documentVisibilityLabels = {
+  'customer-visible': 'Customer visible',
+  internal: 'Internal',
+  'sensitive-engineering': 'Sensitive engineering',
+  restricted: 'Restricted',
+} satisfies Record<DocumentVisibilityLevel, string>;
+
+const documentLanguageLabels = {
+  en: 'English',
+  cs: 'Czech',
+  sk: 'Slovak',
+  pl: 'Polish',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  unknown: 'Unknown',
+} satisfies Record<DocumentLanguageCode, string>;
+
+const documentVisibilityClassNames = {
+  'customer-visible': 'border-sky-500/40 bg-sky-950/30 text-sky-200',
+  internal: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200',
+  'sensitive-engineering': 'border-amber-500/40 bg-amber-950/30 text-amber-200',
+  restricted: 'border-red-500/40 bg-red-950/30 text-red-200',
+} satisfies Record<DocumentVisibilityLevel, string>;
+
 function formatLoadError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -65,15 +131,38 @@ function formatLoadError(error: unknown): string {
   return 'Unknown API error.';
 }
 
+function readStringSearchParam(
+  searchParams: RawSearchParams | undefined,
+  name: keyof MachineDetailSearchParams,
+): string | undefined {
+  const value = searchParams?.[name];
+
+  return typeof value === 'string' ? value : undefined;
+}
+
 function normalizeSearchParams(
   searchParams: RawSearchParams | undefined,
 ): MachineDetailSearchParams {
-  const machineUpdate = searchParams?.machineUpdate;
-  const machineUpdateError = searchParams?.machineUpdateError;
+  const machineUpdate = readStringSearchParam(searchParams, 'machineUpdate');
+  const machineUpdateError = readStringSearchParam(searchParams, 'machineUpdateError');
+  const documentUpload = readStringSearchParam(searchParams, 'documentUpload');
+  const documentUploadError = readStringSearchParam(searchParams, 'documentUploadError');
+  const documentCategory = readStringSearchParam(searchParams, 'documentCategory');
+  const documentCategoryError = readStringSearchParam(searchParams, 'documentCategoryError');
+  const documentVisibility = readStringSearchParam(searchParams, 'documentVisibility');
+  const documentVisibilityError = readStringSearchParam(searchParams, 'documentVisibilityError');
+  const documentDownloadError = readStringSearchParam(searchParams, 'documentDownloadError');
 
   return {
-    ...(typeof machineUpdate === 'string' ? { machineUpdate } : {}),
-    ...(typeof machineUpdateError === 'string' ? { machineUpdateError } : {}),
+    ...(machineUpdate ? { machineUpdate } : {}),
+    ...(machineUpdateError ? { machineUpdateError } : {}),
+    ...(documentUpload ? { documentUpload } : {}),
+    ...(documentUploadError ? { documentUploadError } : {}),
+    ...(documentCategory ? { documentCategory } : {}),
+    ...(documentCategoryError ? { documentCategoryError } : {}),
+    ...(documentVisibility ? { documentVisibility } : {}),
+    ...(documentVisibilityError ? { documentVisibilityError } : {}),
+    ...(documentDownloadError ? { documentDownloadError } : {}),
   };
 }
 
@@ -307,10 +396,211 @@ function renderMachineEditForm({
   );
 }
 
+function renderDocumentsSection({
+  machine,
+  documents,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly documents: readonly DocumentMetadataApiModel[];
+  readonly locale: string;
+  readonly copy: (typeof machineRecordsPageCopy)['en'];
+}) {
+  const uploadAction = uploadMachineDocumentAction.bind(null, locale, machine.id);
+
+  return (
+    <section
+      id="machine-documents"
+      aria-labelledby="machine-documents-title"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        Document dump
+      </p>
+      <h2 id="machine-documents-title" className="mt-3 text-2xl font-semibold text-white">
+        Machine documents
+      </h2>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">
+        Upload private machine files through the API boundary. Documents stay internal by default,
+        and downloads use signed temporary URLs.
+      </p>
+
+      <form action={uploadAction} encType="multipart/form-data" className="mt-6 grid gap-5">
+        <div className="grid gap-5 md:grid-cols-3">
+          <label className="grid gap-2 text-sm font-semibold text-stone-200 md:col-span-3">
+            File
+            <input
+              type="file"
+              name="file"
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-black"
+            />
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            Category
+            <select
+              name="category"
+              defaultValue="manuals"
+              required
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            >
+              {documentCategories.map((category) => (
+                <option key={category} value={category}>
+                  {documentCategoryLabels[category]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold text-stone-200">
+            Language
+            <select
+              name="language"
+              defaultValue="unknown"
+              className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+            >
+              {documentLanguageCodes.map((language) => (
+                <option key={language} value={language}>
+                  {documentLanguageLabels[language]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+        >
+          Upload document
+        </button>
+      </form>
+
+      <div className="mt-8 grid gap-4">
+        <h3 className="text-lg font-semibold text-white">{documents.length} documents loaded</h3>
+
+        {documents.length === 0 ? (
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            No documents have been uploaded for this machine yet.
+          </p>
+        ) : null}
+
+        {documents.map((document) => {
+          const updateCategoryAction = updateMachineDocumentCategoryAction.bind(
+            null,
+            locale,
+            machine.id,
+            document.id,
+          );
+          const updateVisibilityAction = updateMachineDocumentVisibilityAction.bind(
+            null,
+            locale,
+            machine.id,
+            document.id,
+          );
+          const downloadAction = createMachineDocumentDownloadUrlAction.bind(
+            null,
+            locale,
+            machine.id,
+            document.id,
+          );
+
+          return (
+            <article
+              key={document.id}
+              className="rounded-lg border border-stone-800 bg-black/30 p-4 sm:p-5"
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-base font-semibold text-white">{document.fileName}</p>
+                  <p className="mt-2 text-sm leading-6 text-stone-300">
+                    {documentCategoryLabels[document.category]}
+                    {' - '}
+                    {documentLanguageLabels[document.language]}
+                    {' - uploaded '}
+                    {formatDate(document.uploadedAt, locale, copy.records.unavailableLabel)}
+                  </p>
+                </div>
+
+                <span
+                  className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-normal ${
+                    documentVisibilityClassNames[document.visibilityLevel]
+                  }`}
+                >
+                  {documentVisibilityLabels[document.visibilityLevel]}
+                </span>
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                <form action={updateCategoryAction} className="grid gap-2">
+                  <label className="grid gap-2 text-sm font-semibold text-stone-200">
+                    Category
+                    <select
+                      name="category"
+                      defaultValue={document.category}
+                      className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+                    >
+                      {documentCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {documentCategoryLabels[category]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                  >
+                    Save category
+                  </button>
+                </form>
+
+                <form action={updateVisibilityAction} className="grid gap-2">
+                  <label className="grid gap-2 text-sm font-semibold text-stone-200">
+                    Visibility
+                    <select
+                      name="visibilityLevel"
+                      defaultValue={document.visibilityLevel}
+                      className="min-h-11 rounded-md border border-stone-700 bg-black px-3 py-2 text-sm text-stone-100 outline-none transition focus:border-emerald-400"
+                    >
+                      {documentVisibilityLevels.map((visibilityLevel) => (
+                        <option key={visibilityLevel} value={visibilityLevel}>
+                          {documentVisibilityLabels[visibilityLevel]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                  >
+                    Save visibility
+                  </button>
+                </form>
+
+                <form action={downloadAction}>
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-white"
+                  >
+                    Create signed download
+                  </button>
+                </form>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 function renderMachineDetail({
   machine,
   customers,
   machineModels,
+  documents,
   locale,
   copy,
   createCopy,
@@ -320,6 +610,7 @@ function renderMachineDetail({
   readonly machine: MachineRecordApiModel;
   readonly customers: readonly CustomerRecordApiModel[];
   readonly machineModels: readonly MachineModelRecordApiModel[];
+  readonly documents: readonly DocumentMetadataApiModel[];
   readonly locale: string;
   readonly copy: (typeof machineRecordsPageCopy)['en'];
   readonly createCopy: (typeof machineRecordsCreateCopy)['en'];
@@ -413,6 +704,13 @@ function renderMachineDetail({
         createCopy,
       })}
 
+      {renderDocumentsSection({
+        machine,
+        documents,
+        locale,
+        copy,
+      })}
+
       <section aria-label={sectionsAriaLabel} className="grid gap-4 md:grid-cols-2">
         {sections.map((section) => (
           <article
@@ -494,7 +792,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
     };
   } else {
     try {
-      const [machine, customers, machineModels] = await Promise.all([
+      const [machine, customers, machineModels, documents] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
           machineId,
@@ -508,6 +806,11 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           organizationId: session.organizationId,
           accessToken: session.accessToken,
         }),
+        listDocuments({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
 
       loadState = {
@@ -515,6 +818,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         machine,
         customers,
         machineModels,
+        documents,
       };
     } catch (error) {
       loadState = {
@@ -569,15 +873,72 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.documentUpload === 'uploaded'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Document uploaded',
+            body: 'The document was uploaded through the private API storage boundary.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentCategory === 'updated'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Document category updated',
+            body: 'The document category was updated through the API boundary.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentVisibility === 'updated'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Document visibility updated',
+            body: 'The document visibility was updated through the API boundary.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentUploadError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Document could not be uploaded',
+            body: normalizedSearchParams.documentUploadError,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentCategoryError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Document category could not be updated',
+            body: normalizedSearchParams.documentCategoryError,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentVisibilityError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Document visibility could not be updated',
+            body: normalizedSearchParams.documentVisibilityError,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentDownloadError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Signed download could not be created',
+            body: normalizedSearchParams.documentDownloadError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
             customers: loadState.customers,
             machineModels: loadState.machineModels,
+            documents: loadState.documents,
             locale,
             copy,
             createCopy,
-            sections,
+            sections: sections.filter((section) => section.id !== 'documents'),
             sectionsAriaLabel: messages.sectionsAriaLabel,
           })
         : null}
