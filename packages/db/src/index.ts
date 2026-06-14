@@ -1,5 +1,13 @@
 export { createActivityLog } from './activity-log';
 export { createPrismaClient } from './client';
+export {
+  createDocumentRecord,
+  getDocumentByMachine,
+  listDocumentsByMachine,
+  markDocumentDownloadUrlIssued,
+  updateDocumentCategory,
+  updateDocumentVisibility,
+} from './document-records';
 export { MachineStatus, PrismaClient } from './generated/prisma/client';
 export {
   createCustomer,
@@ -14,7 +22,17 @@ export {
   updateMachine,
 } from './machine-records';
 export type { ActivityLogRecord } from './activity-log';
+export type {
+  CreateDocumentRecordInput,
+  DocumentRecord,
+  DocumentRecordsDatabase,
+  GetDocumentByMachineInput,
+  ListDocumentsByMachineInput,
+  MarkDocumentDownloadUrlIssuedInput,
+  UpdateDocumentCategoryInput,
+  UpdateDocumentVisibilityInput,
+} from './document-records';
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 
-export const dbPackageStatus = 'phase-3-machine-record-update-helper-ready';
+export const dbPackageStatus = 'phase-4-document-record-helpers-ready';
