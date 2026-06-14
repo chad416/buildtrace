@@ -1,4 +1,4 @@
-# BuildTrace Decisions
+﻿# BuildTrace Decisions
 
 ## Current phase
 
@@ -1120,3 +1120,92 @@ Rejected alternatives:
 - leaving the typed copy modules undocumented
 - adding more web-local copy modules without a decision
 - pretending typed copy modules are the same as the existing JSON message-file system
+
+### Phase 4 document upload security boundary
+
+Approved.
+
+Decision:
+
+- Phase 4 document uploads must use private Supabase Storage only.
+- BuildTrace must not create or depend on public storage buckets.
+- Document storage buckets must remain private.
+- Raw private storage paths must not be exposed as public browser URLs.
+- Downloads must be served through signed temporary URLs.
+- Signed URL lifetime must use `SIGNED_URL_TTL_SECONDS`.
+- The API must log signed URL issuance honestly as `document.download_url_issued`.
+- Phase 4 must not claim that a browser download happened unless the file bytes are proxied through the API.
+- `lastDownloadedAt` may only mean the last signed URL issue time unless a later phase adds observable download proxying.
+- Every document metadata row must belong to exactly one `organizationId`.
+- Every document metadata row must be tied to a machine inside the same organization.
+- Document helpers and API endpoints must reject cross-organization machine/document access.
+- The first implementation test for documents must prove two-organization isolation for both database document access and signed URL issuance.
+- Organization B must not be able to list, read, update, or mint a signed URL for Organization A's document or storage path.
+- Uploaded documents default to `visible_to_customer = false`.
+- Uploaded documents default to `visibility_level = internal`.
+- Phase 4 document visibility values are limited to:
+  - `customer-visible`
+  - `internal`
+  - `sensitive-engineering`
+  - `restricted`
+- The shared `public` visibility value must not be selectable for Phase 4 documents.
+- If `public` remains in shared constants for future non-document product areas, document-specific code must explicitly exclude it.
+- Prisma document visibility enums may use SCREAMING_SNAKE values, but they must map to shared kebab-case product values through a deliberate mapping.
+- The schema/constants slice must include a drift check that proves shared document visibility/category values and Prisma enum values stay aligned after normalization.
+- PLC, HMI, CAD, electrical drawings, software/project files, and other engineering-sensitive files must not become customer-visible by default.
+- Phase 4 manual category assignment must apply the conservative default:
+  - PLC documents default to `sensitive-engineering`
+  - HMI documents default to `sensitive-engineering`
+  - CAD documents default to `sensitive-engineering`
+  - electrical drawing documents default to `sensitive-engineering`
+  - other documents default to `internal`
+- Customer-visible access must be an explicit builder action after upload.
+- Document upload, category change, visibility change, and signed URL issuance must be activity-logged.
+- Document rows must store language metadata separately from UI locale.
+- Document category names are product enums and must be displayed through localized labels.
+- Phase 4 uploads must stream through the NestJS API before reaching Supabase Storage.
+- The API must enforce file validation before storage write:
+  - maximum file size
+  - allowed MIME/extension list
+  - safe filename normalization
+  - no path traversal
+  - no empty filenames
+- Storage paths must embed the tenant and machine boundary:
+  - `organizations/{organizationId}/machines/{machineId}/documents/{documentId}/{safeFileName}`
+- Phase 4 must use a file-then-row consistency rule:
+  - write the private storage object first
+  - write the document metadata row second
+  - if metadata creation fails, delete the just-uploaded storage object
+  - do not leave a metadata row pointing at a missing file
+- AI document classification is not part of Phase 4.
+- QR portal document access is not part of Phase 4.
+- Handover completeness/export is not part of Phase 4.
+
+Reason:
+
+- Phase 4 is the first phase where BuildTrace stores the sensitive payload the product exists to protect.
+- The roadmap requires private buckets, signed temporary URLs, internal-by-default visibility, document language metadata, localized categories, and audit logs.
+- The instructions explicitly say uploaded files are private by default and customer-visible files must be selected intentionally.
+- PLC, HMI, CAD, and electrical files can contain sensitive engineering data and must not leak through default behavior.
+- The roadmap's Phase 4 document visibility scope does not include public document access.
+- The existing shared `public` visibility value must not silently enter the Phase 4 document model.
+- Organization-level tenant isolation from Phase 3 must carry forward into every document query, upload, metadata update, and signed URL request.
+- Signed URLs shift file delivery to Supabase Storage, so the honest audit event is signed URL issuance, not confirmed file download.
+- Storage and PostgreSQL are two systems, so Phase 4 needs an explicit cleanup rule for partial upload failures.
+- API-mediated upload is the simplest secure Phase 4 path because the API can validate file type, file size, file name, organization access, and machine ownership before writing to private storage.
+
+Rejected alternatives:
+
+- public storage bucket with obscure file paths
+- exposing Supabase storage paths directly to the browser
+- making uploaded documents customer-visible by default
+- silently allowing `public` as a Phase 4 document visibility level
+- allowing document metadata without `organizationId`
+- allowing a document to link to a machine from another organization
+- allowing Organization B to mint signed URLs for Organization A storage paths
+- claiming file downloads were observed when only signed URLs were issued
+- direct browser-to-Supabase upload in Phase 4
+- leaving uploaded objects orphaned when metadata creation fails
+- adding upload UI before storage, metadata, tenant isolation, validation, consistency, and signed URL rules are locked
+- adding AI classification in Phase 4
+- adding QR document access in Phase 4
