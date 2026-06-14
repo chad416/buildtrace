@@ -1,13 +1,29 @@
-﻿'use server';
+'use server';
 
 import {
+  documentCategories,
+  documentLanguageCodes,
+  documentVisibilityLevels,
   machineStatuses,
   supportedLocales,
+  type DocumentCategory,
+  type DocumentLanguageCode,
+  type DocumentVisibilityLevel,
   type MachineStatus,
   type SupportedLocale,
 } from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
+import {
+  createDocumentDownloadUrl,
+  updateDocumentCategory,
+  updateDocumentVisibility,
+  uploadDocument,
+  type CreateDocumentDownloadUrlApiInput,
+  type UpdateDocumentCategoryApiInput,
+  type UpdateDocumentVisibilityApiInput,
+  type UploadDocumentApiInput,
+} from '@/document-records-api';
 import {
   createCustomer,
   createMachineModel,
@@ -259,4 +275,271 @@ export async function updateMachineRecordAction(
   redirect(
     `/${redirectLocale}/machines/${encodeURIComponent(normalizedMachineId)}?machineUpdate=updated`,
   );
+}
+
+function redirectMachineDocumentActionWithError({
+  locale,
+  machineId,
+  errorQueryName,
+  error,
+}: {
+  readonly locale: string;
+  readonly machineId: string;
+  readonly errorQueryName: string;
+  readonly error: unknown;
+}): never {
+  redirect(
+    `/${encodeURIComponent(locale)}/machines/${encodeURIComponent(machineId)}?${errorQueryName}=${encodeURIComponent(
+      formatActionError(error),
+    )}`,
+  );
+}
+
+function readRequiredDocumentCategory(formData: FormData): DocumentCategory {
+  const category = readRequiredFormText(formData, 'category', 'Document category');
+
+  if (!documentCategories.includes(category as DocumentCategory)) {
+    throw new Error('Document category is not supported.');
+  }
+
+  return category as DocumentCategory;
+}
+
+function readOptionalDocumentLanguage(formData: FormData): DocumentLanguageCode | undefined {
+  const language = readOptionalFormText(formData, 'language');
+
+  if (!language) {
+    return undefined;
+  }
+
+  if (!documentLanguageCodes.includes(language as DocumentLanguageCode)) {
+    throw new Error('Document language is not supported.');
+  }
+
+  return language as DocumentLanguageCode;
+}
+
+function readRequiredDocumentVisibilityLevel(formData: FormData): DocumentVisibilityLevel {
+  const visibilityLevel = readRequiredFormText(
+    formData,
+    'visibilityLevel',
+    'Document visibility level',
+  );
+
+  if (!documentVisibilityLevels.includes(visibilityLevel as DocumentVisibilityLevel)) {
+    throw new Error('Document visibility level is not supported.');
+  }
+
+  return visibilityLevel as DocumentVisibilityLevel;
+}
+
+function readRequiredDocumentFile(formData: FormData): File {
+  const value = formData.get('file');
+
+  if (!(value instanceof File)) {
+    throw new Error('Document file is required.');
+  }
+
+  if (value.size <= 0) {
+    throw new Error('Document file must not be empty.');
+  }
+
+  if (!value.name.trim()) {
+    throw new Error('Document file name is required.');
+  }
+
+  return value;
+}
+
+function normalizeDocumentActionId(value: string, label: string): string {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    throw new Error(`${label} is required.`);
+  }
+
+  return normalizedValue;
+}
+
+export async function uploadMachineDocumentAction(
+  locale: string,
+  machineId: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = normalizeDocumentActionId(machineId, 'Machine id');
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Document action needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const file = readRequiredDocumentFile(formData);
+    const language = readOptionalDocumentLanguage(formData);
+
+    const input: UploadDocumentApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      file,
+      fileName: file.name,
+      category: readRequiredDocumentCategory(formData),
+      ...(language ? { language } : {}),
+    };
+
+    await uploadDocument(input);
+  } catch (error) {
+    redirectMachineDocumentActionWithError({
+      locale: redirectLocale,
+      machineId: normalizedMachineId,
+      errorQueryName: 'documentUploadError',
+      error,
+    });
+  }
+
+  redirect(
+    `/${encodeURIComponent(redirectLocale)}/machines/${encodeURIComponent(
+      normalizedMachineId,
+    )}?documentUpload=uploaded`,
+  );
+}
+
+export async function updateMachineDocumentCategoryAction(
+  locale: string,
+  machineId: string,
+  documentId: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = normalizeDocumentActionId(machineId, 'Machine id');
+  const normalizedDocumentId = normalizeDocumentActionId(documentId, 'Document id');
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Document action needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const input: UpdateDocumentCategoryApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      documentId: normalizedDocumentId,
+      category: readRequiredDocumentCategory(formData),
+    };
+
+    await updateDocumentCategory(input);
+  } catch (error) {
+    redirectMachineDocumentActionWithError({
+      locale: redirectLocale,
+      machineId: normalizedMachineId,
+      errorQueryName: 'documentCategoryError',
+      error,
+    });
+  }
+
+  redirect(
+    `/${encodeURIComponent(redirectLocale)}/machines/${encodeURIComponent(
+      normalizedMachineId,
+    )}?documentCategory=updated`,
+  );
+}
+
+export async function updateMachineDocumentVisibilityAction(
+  locale: string,
+  machineId: string,
+  documentId: string,
+  formData: FormData,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = normalizeDocumentActionId(machineId, 'Machine id');
+  const normalizedDocumentId = normalizeDocumentActionId(documentId, 'Document id');
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Document action needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const input: UpdateDocumentVisibilityApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      documentId: normalizedDocumentId,
+      visibilityLevel: readRequiredDocumentVisibilityLevel(formData),
+    };
+
+    await updateDocumentVisibility(input);
+  } catch (error) {
+    redirectMachineDocumentActionWithError({
+      locale: redirectLocale,
+      machineId: normalizedMachineId,
+      errorQueryName: 'documentVisibilityError',
+      error,
+    });
+  }
+
+  redirect(
+    `/${encodeURIComponent(redirectLocale)}/machines/${encodeURIComponent(
+      normalizedMachineId,
+    )}?documentVisibility=updated`,
+  );
+}
+
+export async function createMachineDocumentDownloadUrlAction(
+  locale: string,
+  machineId: string,
+  documentId: string,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = normalizeDocumentActionId(machineId, 'Machine id');
+  const normalizedDocumentId = normalizeDocumentActionId(documentId, 'Document id');
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Document action needs a signed-in workspace.',
+    );
+  }
+
+  let downloadUrl: string;
+
+  try {
+    const input: CreateDocumentDownloadUrlApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      documentId: normalizedDocumentId,
+    };
+
+    downloadUrl = (await createDocumentDownloadUrl(input)).downloadUrl;
+  } catch (error) {
+    redirectMachineDocumentActionWithError({
+      locale: redirectLocale,
+      machineId: normalizedMachineId,
+      errorQueryName: 'documentDownloadError',
+      error,
+    });
+  }
+
+  redirect(downloadUrl);
 }
