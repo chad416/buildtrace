@@ -1087,3 +1087,36 @@ Decision:
 
 - remove `next-intl` for now
 - re-add it later only if a future i18n implementation step intentionally adopts it
+
+### Phase 3 typed machine-record copy modules
+
+Approved with guardrails.
+
+Decision:
+
+- Phase 3 machine-record page/form copy may remain in typed web-local copy modules for now.
+- This is not approval to spread arbitrary product copy across app files.
+- The approved modules are:
+  - `apps/web/src/machine-records-page-copy.ts`
+  - `apps/web/src/machine-records-create-copy.ts`
+- The pattern must stay narrow until the project intentionally adopts a broader i18n architecture.
+
+Reason:
+
+- Phase 3 needed structured, typed copy for machine-record readiness, create forms, status labels, field labels, and action messages.
+- The copy is already translated across the supported locales.
+- Moving it into JSON message files during closeout would be a larger migration than the cleanup slice needs.
+- Leaving it undocumented would create a second silent i18n system.
+
+Guardrail:
+
+- `apps/web/src/machine-records-copy-smoke-check.ts` verifies every supported locale exists and the copy object shape stays aligned across locales.
+- `@buildtrace/web` exposes this as `pnpm.cmd --filter @buildtrace/web run machine-records:copy-smoke`.
+- Future Phase 4 screens must not copy this pattern by default.
+- A later i18n consolidation may move this copy into `packages/i18n/messages/*.json` if that becomes the canonical product-copy mechanism.
+
+Rejected alternatives:
+
+- leaving the typed copy modules undocumented
+- adding more web-local copy modules without a decision
+- pretending typed copy modules are the same as the existing JSON message-file system
