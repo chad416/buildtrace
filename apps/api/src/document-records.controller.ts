@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 import {
@@ -43,6 +44,11 @@ import {
   type DocumentStorageConfig,
   type DocumentStorageSignedUrlResult,
 } from './document-storage.js';
+import {
+  createDocumentUploadFromMultipartRequest,
+  type CreateDocumentUploadResponse,
+  type DocumentUploadHttpRequest,
+} from './document-upload-endpoint.js';
 
 export type DocumentRecordsQuery = {
   readonly organizationId?: unknown;
@@ -511,6 +517,22 @@ export class DocumentRecordsController {
       documentId,
       query,
       dependencies: createRealDependencies(),
+    });
+  }
+
+  @Post('machines/:machineId/documents/upload')
+  async uploadDocument(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Req() request: DocumentUploadHttpRequest,
+  ): Promise<CreateDocumentUploadResponse> {
+    return createDocumentUploadFromMultipartRequest({
+      authorizationHeader,
+      machineId,
+      request,
+      dependencies: {
+        db,
+      },
     });
   }
 
