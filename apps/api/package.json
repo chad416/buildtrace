@@ -12,7 +12,8 @@
     "routes:smoke": "tsx src/routes-smoke-check.ts",
     "build": "tsc --noEmit",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "document-records:smoke": "pnpm --filter @buildtrace/db run generate && tsx src/document-records-controller-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
