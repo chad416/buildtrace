@@ -4,20 +4,25 @@ import {
   Controller,
   Get,
   Headers,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 import {
+  createActivityLog,
   createPrismaClient,
   getDocumentByMachine,
   listDocumentsByMachine,
+  markDocumentDownloadUrlIssued,
   updateDocumentCategory,
   updateDocumentVisibility,
 } from '@buildtrace/db';
 import {
+  activityLogActions,
   documentCategories,
   documentVisibilityLevels,
   type DocumentCategory,
@@ -29,6 +34,15 @@ import {
   resolveAuthenticatedTenantContext,
   type AuthenticatedTenantContext,
 } from './authenticated-tenant-context.js';
+
+import {
+  createSignedDocumentDownloadUrl,
+  createSupabaseDocumentStorageAdapter,
+  readDocumentStorageConfig,
+  type DocumentStorageAdapter,
+  type DocumentStorageConfig,
+  type DocumentStorageSignedUrlResult,
+} from './document-storage.js';
 
 export type DocumentRecordsQuery = {
   readonly organizationId?: unknown;
@@ -42,6 +56,10 @@ export type UpdateDocumentCategoryRequestBody = {
 export type UpdateDocumentVisibilityRequestBody = {
   readonly organizationId?: unknown;
   readonly visibilityLevel?: unknown;
+};
+
+export type CreateDocumentDownloadUrlRequestBody = {
+  readonly organizationId?: unknown;
 };
 
 export type DocumentMetadataResponse = {
@@ -77,6 +95,12 @@ export type UpdateDocumentVisibilityResponse = {
   readonly document: DocumentMetadataResponse;
 };
 
+export type DocumentDownloadUrlResponse = {
+  readonly document: DocumentMetadataResponse;
+  readonly downloadUrl: string;
+  readonly expiresInSeconds: number;
+};
+
 type ResolveAuthenticatedTenantContextDependency = (input: {
   readonly authorizationHeader: string | undefined;
   readonly organizationId: string;
@@ -100,6 +124,24 @@ type UpdateDocumentVisibilityDependency = (
   input: Parameters<typeof updateDocumentVisibility>[0],
 ) => Promise<DocumentRecord | null>;
 
+type MarkDocumentDownloadUrlIssuedDependency = (
+  input: Parameters<typeof markDocumentDownloadUrlIssued>[0],
+) => Promise<DocumentRecord | null>;
+
+type CreateActivityLogDependency = (
+  input: Parameters<typeof createActivityLog>[0],
+) => ReturnType<typeof createActivityLog>;
+
+type ReadDocumentStorageConfigDependency = () => DocumentStorageConfig;
+
+type CreateDocumentStorageAdapterDependency = (
+  config: DocumentStorageConfig,
+) => DocumentStorageAdapter;
+
+type CreateSignedDocumentDownloadUrlDependency = (
+  input: Parameters<typeof createSignedDocumentDownloadUrl>[0],
+) => Promise<DocumentStorageSignedUrlResult>;
+
 export type DocumentRecordsEndpointDependencies = {
   readonly db: PrismaClient;
   readonly resolveAuthenticatedTenantContext: ResolveAuthenticatedTenantContextDependency;
@@ -107,6 +149,11 @@ export type DocumentRecordsEndpointDependencies = {
   readonly getDocumentByMachine: GetDocumentByMachineDependency;
   readonly updateDocumentCategory: UpdateDocumentCategoryDependency;
   readonly updateDocumentVisibility: UpdateDocumentVisibilityDependency;
+  readonly markDocumentDownloadUrlIssued: MarkDocumentDownloadUrlIssuedDependency;
+  readonly createActivityLog: CreateActivityLogDependency;
+  readonly readDocumentStorageConfig: ReadDocumentStorageConfigDependency;
+  readonly createDocumentStorageAdapter: CreateDocumentStorageAdapterDependency;
+  readonly createSignedDocumentDownloadUrl: CreateSignedDocumentDownloadUrlDependency;
 };
 
 type ListDocumentsFromRequestInput = {
@@ -137,6 +184,14 @@ type UpdateDocumentVisibilityFromRequestInput = {
   readonly machineId: string | undefined;
   readonly documentId: string | undefined;
   readonly body: UpdateDocumentVisibilityRequestBody | undefined;
+  readonly dependencies: DocumentRecordsEndpointDependencies;
+};
+
+type CreateDocumentDownloadUrlFromRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly machineId: string | undefined;
+  readonly documentId: string | undefined;
+  readonly body: CreateDocumentDownloadUrlRequestBody | undefined;
   readonly dependencies: DocumentRecordsEndpointDependencies;
 };
 
@@ -208,6 +263,11 @@ function createRealDependencies(): DocumentRecordsEndpointDependencies {
     getDocumentByMachine,
     updateDocumentCategory,
     updateDocumentVisibility,
+    markDocumentDownloadUrlIssued,
+    createActivityLog,
+    readDocumentStorageConfig,
+    createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
+    createSignedDocumentDownloadUrl,
   };
 }
 
@@ -349,6 +409,79 @@ export async function updateDocumentVisibilityFromRequest({
   };
 }
 
+export async function createDocumentDownloadUrlFromRequest({
+  authorizationHeader,
+  machineId,
+  documentId,
+  body,
+  dependencies,
+}: CreateDocumentDownloadUrlFromRequestInput): Promise<DocumentDownloadUrlResponse> {
+  const requestBody = body ?? {};
+  const organizationId = readRequiredString('organizationId', requestBody.organizationId);
+  const normalizedMachineId = readRequiredString('machineId', machineId);
+  const normalizedDocumentId = readRequiredString('documentId', documentId);
+
+  const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: documentReadRoles,
+  });
+
+  const document = await dependencies.getDocumentByMachine({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    documentId: normalizedDocumentId,
+  });
+
+  if (!document) {
+    throw new NotFoundException('Document was not found for this machine.');
+  }
+
+  let signedUrlResult: DocumentStorageSignedUrlResult;
+
+  try {
+    const config = dependencies.readDocumentStorageConfig();
+    const storage = dependencies.createDocumentStorageAdapter(config);
+
+    signedUrlResult = await dependencies.createSignedDocumentDownloadUrl({
+      config,
+      storage,
+      organizationId,
+      machineId: normalizedMachineId,
+      storagePath: document.storagePath,
+    });
+  } catch {
+    throw new InternalServerErrorException('Document download URL could not be created.');
+  }
+
+  const issuedDocument = await dependencies.markDocumentDownloadUrlIssued({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    documentId: normalizedDocumentId,
+  });
+
+  if (!issuedDocument) {
+    throw new NotFoundException('Document was not found for this machine.');
+  }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.documentDownloadUrlIssued,
+    actorUserId: tenantContext.currentUser.appUserId,
+    targetType: 'document',
+    targetId: normalizedDocumentId,
+  });
+
+  return {
+    document: toDocumentMetadataResponse(issuedDocument),
+    downloadUrl: signedUrlResult.signedUrl,
+    expiresInSeconds: signedUrlResult.expiresInSeconds,
+  };
+}
 @Controller('document-records')
 export class DocumentRecordsController {
   @Get('machines/:machineId/documents')
@@ -381,6 +514,21 @@ export class DocumentRecordsController {
     });
   }
 
+  @Post('machines/:machineId/documents/:documentId/download-url')
+  async createDocumentDownloadUrl(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Param('documentId') documentId: string | undefined,
+    @Body() body: CreateDocumentDownloadUrlRequestBody | undefined,
+  ): Promise<DocumentDownloadUrlResponse> {
+    return createDocumentDownloadUrlFromRequest({
+      authorizationHeader,
+      machineId,
+      documentId,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
   @Patch('machines/:machineId/documents/:documentId/category')
   async updateDocumentCategory(
     @Headers('authorization') authorizationHeader: string | undefined,

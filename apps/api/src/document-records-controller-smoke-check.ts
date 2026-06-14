@@ -137,6 +137,45 @@ function createDependencies(capturedCalls: CapturedCalls): DocumentRecordsEndpoi
         visibleToCustomer: input.visibilityLevel === 'customer-visible',
       };
     },
+    markDocumentDownloadUrlIssued: async () => ({
+      ...fakeDocument,
+      lastDownloadUrlIssuedAt: now,
+    }),
+    createActivityLog: async (input) => ({
+      id: 'activity-log-1',
+      organizationId: input.organizationId,
+      actorUserId: input.actorUserId ?? null,
+      action: input.action,
+      targetType: input.targetType ?? null,
+      targetId: input.targetId ?? null,
+      ipAddress: input.ipAddress ?? null,
+      userAgent: input.userAgent ?? null,
+      createdAt: now,
+    }),
+    readDocumentStorageConfig: () => ({
+      supabaseUrl: 'https://buildtrace.example.supabase.co',
+      serviceRoleKey: 'service-role-key',
+      bucketName: 'buildtrace-documents',
+      signedUrlTtlSeconds: 900,
+    }),
+    createDocumentStorageAdapter: () => ({
+      from() {
+        return {
+          async createSignedUrl() {
+            return {
+              data: {
+                signedUrl: 'https://storage.example/signed/manual.pdf',
+              },
+              error: null,
+            };
+          },
+        };
+      },
+    }),
+    createSignedDocumentDownloadUrl: async (input) => ({
+      signedUrl: 'https://storage.example/signed/manual.pdf',
+      expiresInSeconds: input.config.signedUrlTtlSeconds,
+    }),
   };
 }
 
