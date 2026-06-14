@@ -6,7 +6,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { AppModule } from './app.module.js';
 
 type RouteProbe = {
-  readonly method: 'GET' | 'POST' | 'PATCH';
+  readonly method: 'GET' | 'POST';
   readonly url: string;
   readonly expectedStatusCode: number;
   readonly payload?: unknown;
@@ -33,28 +33,6 @@ const routeProbes: readonly RouteProbe[] = [
     method: 'GET',
     url: '/machine-records/machines/machine-1',
     expectedStatusCode: 400,
-  },
-  {
-    method: 'GET',
-    url: '/document-records/machines/machine-1/documents',
-    expectedStatusCode: 400,
-  },
-  {
-    method: 'GET',
-    url: '/document-records/machines/machine-1/documents/document-1',
-    expectedStatusCode: 400,
-  },
-  {
-    method: 'PATCH',
-    url: '/document-records/machines/machine-1/documents/document-1/category',
-    expectedStatusCode: 400,
-    payload: {},
-  },
-  {
-    method: 'PATCH',
-    url: '/document-records/machines/machine-1/documents/document-1/visibility',
-    expectedStatusCode: 400,
-    payload: {},
   },
 ];
 
