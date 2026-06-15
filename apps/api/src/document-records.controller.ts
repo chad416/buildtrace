@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Body,
   Controller,
@@ -351,7 +351,7 @@ export async function updateDocumentCategoryFromRequest({
   const normalizedDocumentId = readRequiredString('documentId', documentId);
   const category = readDocumentCategory('category', requestBody.category);
 
-  await dependencies.resolveAuthenticatedTenantContext({
+  const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
     authorizationHeader,
     organizationId,
     db: dependencies.db,
@@ -369,6 +369,15 @@ export async function updateDocumentCategoryFromRequest({
   if (!document) {
     throw new NotFoundException('Document was not found for this machine.');
   }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.documentCategoryChanged,
+    actorUserId: tenantContext.currentUser.appUserId,
+    targetType: 'document',
+    targetId: normalizedDocumentId,
+  });
 
   return {
     document: toDocumentMetadataResponse(document),
@@ -391,7 +400,7 @@ export async function updateDocumentVisibilityFromRequest({
     requestBody.visibilityLevel,
   );
 
-  await dependencies.resolveAuthenticatedTenantContext({
+  const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
     authorizationHeader,
     organizationId,
     db: dependencies.db,
@@ -409,6 +418,15 @@ export async function updateDocumentVisibilityFromRequest({
   if (!document) {
     throw new NotFoundException('Document was not found for this machine.');
   }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.documentVisibilityChanged,
+    actorUserId: tenantContext.currentUser.appUserId,
+    targetType: 'document',
+    targetId: normalizedDocumentId,
+  });
 
   return {
     document: toDocumentMetadataResponse(document),
