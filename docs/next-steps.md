@@ -1,4 +1,4 @@
-﻿# BuildTrace Next Steps
+# BuildTrace Next Steps
 
 ## Current status
 
@@ -12,15 +12,15 @@ Phase 2 review hardening is complete.
 
 Current full beta roadmap completion:
 
-- about 32%
+- about 45%
 
 Current active phase:
 
-- Phase 4 - Document dump upload
+- Phase 5 - Document classification
 
 ## Immediate next step
 
-Start Phase 4 document dump upload foundation.
+Close Phase 4 document dump upload and prepare the smallest safe Phase 5 document-classification slice.
 
 Reason:
 
@@ -41,7 +41,7 @@ Reason:
 Current focus:
 
 - keep Phase 3 closed at about 32% full beta completion
-- list Phase 4 as the active next phase
+- list Phase 5 as the active next phase
 - keep the verified create/read vertical slice intact
 - keep all product records organization-scoped
 - keep web data access through the API boundary
@@ -670,7 +670,7 @@ Current state:
 - Phase 3 is complete.
 - Phase 3 Step 0 decisions are locked.
 - Phase 3 create/read/update vertical slice is implemented and browser-verified through DB -> API -> web.
-- Current full beta roadmap completion is about 32%.
+- Current full beta roadmap completion is about 45%.
 - Working tree should be clean before this step.
 
 Task:

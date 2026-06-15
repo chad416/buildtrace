@@ -1,4 +1,4 @@
-﻿# BuildTrace Roadmap
+# BuildTrace Roadmap
 
 ## Product
 
@@ -14,13 +14,15 @@ Phase 2 is complete.
 
 Phase 3 is complete.
 
+Phase 4 is complete.
+
 Current full beta roadmap completion:
 
-- about 32%
+- about 45%
 
 Current active phase:
 
-- Phase 4 - Document dump upload
+- Phase 5 - Document classification
 
 ## Beta scope
 
@@ -314,7 +316,7 @@ Current exit-condition status:
 
 Completion: 45% of beta.
 
-Status: not started.
+Status: complete.
 
 Scope:
 

@@ -1362,3 +1362,86 @@ All final checks passed. Working tree was clean before push.
 ### Phase 3 closeout status
 
 Phase 3 machine records are implementation-complete and runtime-verified. Remaining closeout work is documentation alignment in roadmap and next-steps before marking Phase 3 fully complete.
+
+## Phase 4 document dump upload closeout
+
+Phase 4 is complete.
+
+Full beta roadmap completion moved from about 32% to about 45%.
+
+Verified shipped scope:
+
+- shared document categories, visibility levels, language codes, defaults, and drift checks
+- Prisma document metadata schema and migration
+- organization-scoped document metadata tied to machines
+- private Supabase Storage bucket configuration
+- service-role storage write boundary
+- browser document upload through API and web server action boundaries
+- signed temporary document download URLs
+- document category update
+- document visibility update
+- activity logs for document upload, signed download URL issuance, category change, and visibility change
+- Phase 4 dev preflight for env, DB membership, private bucket, and service-role storage write readiness
+
+Final verification passed:
+
+- `pnpm.cmd dev:preflight`
+- `pnpm.cmd --filter @buildtrace/shared run document-constants:smoke`
+- `pnpm.cmd --filter @buildtrace/shared typecheck`
+- `pnpm.cmd --filter @buildtrace/shared lint`
+- `pnpm.cmd --filter @buildtrace/shared build`
+- `pnpm.cmd --filter @buildtrace/db run document-schema:drift`
+- `pnpm.cmd --filter @buildtrace/db run document-records:isolation`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db lint`
+- `pnpm.cmd --filter @buildtrace/db build`
+- `pnpm.cmd --filter @buildtrace/api run document-storage:smoke`
+- `pnpm.cmd --filter @buildtrace/api run document-upload:smoke`
+- `pnpm.cmd --filter @buildtrace/api run document-upload-endpoint:smoke`
+- `pnpm.cmd --filter @buildtrace/api run document-records:smoke`
+- `pnpm.cmd --filter @buildtrace/api run routes:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api build`
+- `pnpm.cmd --filter @buildtrace/web run document-records:smoke`
+- `pnpm.cmd --filter @buildtrace/web run machine-records:session-smoke`
+- `pnpm.cmd --filter @buildtrace/web run machine-records:smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web lint`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+
+Browser/runtime proof:
+
+- machine list loaded through API session boundary
+- machine detail loaded through API session boundary
+- document uploaded through private API storage boundary
+- uploaded document listed on machine detail
+- signed download URL opened the private stored document
+- category update saved from browser
+- visibility update saved from browser
+- DB activity-log query showed:
+  - `document.uploaded`
+  - `document.download_url_issued`
+  - `document.category_changed`
+  - `document.visibility_changed`
+
+Issues found and resolved:
+
+- missing `DOCUMENT_STORAGE_BUCKET` in local `.env`
+- Supabase bucket did not exist
+- service-role env var accidentally held anon key
+- storage RLS blocked writes until private bucket and service-role policy were correctly configured
+- browser token/session cookies were stale after restarts
+- document upload form incorrectly set `encType`/`method` on a React server-action form
+- category and visibility updates initially did not write activity logs; fixed in `b36a19b`
+
+Out of scope for Phase 4:
+
+- AI document classification
+- QR customer portal access
+- handover completeness scoring
+- export packaging
+- ticket workflows
+- spare-parts intelligence
