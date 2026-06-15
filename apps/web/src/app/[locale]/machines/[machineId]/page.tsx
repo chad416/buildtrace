@@ -1,4 +1,4 @@
-﻿import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
+import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
@@ -549,6 +549,10 @@ function renderDocumentsSection({
                       ))}
                     </select>
                   </label>
+                  <p className="text-xs leading-5 text-amber-200">
+                    Changing category applies that category&apos;s default visibility. Review
+                    visibility before sharing with customers.
+                  </p>
                   <button
                     type="submit"
                     className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
