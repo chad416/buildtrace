@@ -14,7 +14,8 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "dev:preflight": "pnpm --filter @buildtrace/api run dev:preflight"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
