@@ -1,4 +1,4 @@
-import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
+﻿import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
@@ -426,7 +426,7 @@ function renderDocumentsSection({
         and downloads use signed temporary URLs.
       </p>
 
-      <form action={uploadAction} encType="multipart/form-data" className="mt-6 grid gap-5">
+      <form action={uploadAction} className="mt-6 grid gap-5">
         <div className="grid gap-5 md:grid-cols-3">
           <label className="grid gap-2 text-sm font-semibold text-stone-200 md:col-span-3">
             File
