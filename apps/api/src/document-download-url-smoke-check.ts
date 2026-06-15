@@ -395,9 +395,69 @@ async function runDownloadUrlValidationSmokeCheck(): Promise<void> {
   );
 }
 
+async function runDownloadUrlTenantIsolationSmokeCheck(): Promise<void> {
+  const capturedCalls = createCapturedCalls();
+
+  await expectException('cross-tenant signed URL', NotFoundException, () =>
+    createDocumentDownloadUrlFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      documentId: 'document-1',
+      body: {
+        organizationId: 'organization-2',
+      },
+      dependencies: createDependencies(capturedCalls, {
+        getDocumentByMachine: async (input) => {
+          capturedCalls.getDocumentInputs.push(input);
+
+          if (
+            input.organizationId === fakeDocument.organizationId &&
+            input.machineId === fakeDocument.machineId &&
+            input.documentId === fakeDocument.id
+          ) {
+            return fakeDocument;
+          }
+
+          return null;
+        },
+      }),
+    }),
+  );
+
+  const resolveInput = capturedCalls.resolveInputs[0];
+  const getInput = capturedCalls.getDocumentInputs[0];
+
+  assert(resolveInput !== undefined, 'Cross-tenant auth dependency was not called.');
+  assert(
+    resolveInput.organizationId === 'organization-2',
+    'Cross-tenant auth did not use the requested organization.',
+  );
+
+  assert(getInput !== undefined, 'Cross-tenant document lookup was not called.');
+  assert(
+    getInput.organizationId === 'organization-2',
+    'Cross-tenant lookup was not scoped to the requested organization.',
+  );
+  assert(getInput.machineId === 'machine-1', 'Cross-tenant machine ID was wrong.');
+  assert(getInput.documentId === 'document-1', 'Cross-tenant document ID was wrong.');
+
+  assert(
+    capturedCalls.signedUrlInputs.length === 0,
+    'Cross-tenant request must not mint a signed URL.',
+  );
+  assert(
+    capturedCalls.markDocumentDownloadUrlIssuedInputs.length === 0,
+    'Cross-tenant request must not mark a download URL as issued.',
+  );
+  assert(
+    capturedCalls.createActivityLogInputs.length === 0,
+    'Cross-tenant request must not activity-log URL issuance.',
+  );
+}
 async function runDocumentDownloadUrlSmokeCheck(): Promise<void> {
   await runDownloadUrlSuccessSmokeCheck();
   await runDownloadUrlValidationSmokeCheck();
+  await runDownloadUrlTenantIsolationSmokeCheck();
 }
 
 await runDocumentDownloadUrlSmokeCheck();

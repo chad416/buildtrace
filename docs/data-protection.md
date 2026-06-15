@@ -30,14 +30,14 @@ Customer data belongs to the builder organization using BuildTrace.
 
 BuildTrace should store and organize machine records, uploaded documents, tickets, quotes, software-version metadata, spare-part metadata, feedback, exports, and activity logs.
 
-Current Phase 2 implementation stores only the trust-foundation schema:
+Current Phase 4 implementation stores the trust-foundation schema, organization-scoped customer and machine records, document metadata, private uploaded document files, signed temporary document download URLs, and activity logs:
 
 - organizations
 - app users
 - organization memberships
 - activity logs
 
-Current implementation does not yet store real customer records, machine records, uploaded documents, tickets, quotes, spare parts, feedback, handover exports, or software-version records.
+Current implementation now stores real customer records, machine records, uploaded document metadata, private uploaded document files, and signed document download activity. It does not yet store tickets, quotes, spare parts, feedback, handover exports, QR portal access, or software-version records.
 
 ## Current implementation status
 
@@ -222,11 +222,7 @@ Current implementation does not yet include:
 
 - real frontend login flow
 - mounted protected API routes
-- real customer records
-- real machine records
-- document upload
-- private storage
-- signed URLs
+- QR portal
 - QR portal
 - ticket workflows
 - customer data export
