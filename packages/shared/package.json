@@ -9,7 +9,8 @@
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "document-constants:smoke": "tsx src/document-constants-smoke-check.ts"
+    "document-constants:smoke": "tsx src/document-constants-smoke-check.ts",
+    "document-classifier:smoke": "tsx src/document-classifier-smoke-check.ts"
   },
   "devDependencies": {
     "tsx": "^4.22.4"

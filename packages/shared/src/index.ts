@@ -1,3 +1,8 @@
+export { classifyDocumentFromFilename } from './document-classifier.js';
+export type {
+  ClassifyDocumentFromFilenameInput,
+  DocumentClassificationSuggestion,
+} from './document-classifier.js';
 export const supportedLocales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
 
 export type SupportedLocale = (typeof supportedLocales)[number];
