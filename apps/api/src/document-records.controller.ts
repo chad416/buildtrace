@@ -15,6 +15,7 @@ import {
 import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 import {
   applyDocumentClassificationSuggestion,
+  confirmDocumentClassificationSuggestion,
   createActivityLog,
   createPrismaClient,
   getDocumentByMachine,
@@ -75,6 +76,10 @@ export type ApplyDocumentClassificationSuggestionRequestBody = {
   readonly organizationId?: unknown;
 };
 
+export type ConfirmDocumentClassificationSuggestionRequestBody = {
+  readonly organizationId?: unknown;
+};
+
 export type DocumentMetadataResponse = {
   readonly id: string;
   readonly organizationId: string;
@@ -116,6 +121,10 @@ export type ApplyDocumentClassificationSuggestionResponse = {
   readonly document: DocumentMetadataResponse;
 };
 
+export type ConfirmDocumentClassificationSuggestionResponse = {
+  readonly document: DocumentMetadataResponse;
+};
+
 export type DocumentDownloadUrlResponse = {
   readonly document: DocumentMetadataResponse;
   readonly downloadUrl: string;
@@ -147,6 +156,10 @@ type UpdateDocumentVisibilityDependency = (
 
 type ApplyDocumentClassificationSuggestionDependency = (
   input: Parameters<typeof applyDocumentClassificationSuggestion>[0],
+) => Promise<DocumentRecord | null>;
+
+type ConfirmDocumentClassificationSuggestionDependency = (
+  input: Parameters<typeof confirmDocumentClassificationSuggestion>[0],
 ) => Promise<DocumentRecord | null>;
 
 type MarkDocumentDownloadUrlIssuedDependency = (
@@ -181,6 +194,11 @@ export type DocumentRecordsEndpointDependencies = {
   readonly createDocumentStorageAdapter: CreateDocumentStorageAdapterDependency;
   readonly createSignedDocumentDownloadUrl: CreateSignedDocumentDownloadUrlDependency;
 };
+
+type ConfirmDocumentClassificationSuggestionEndpointDependencies =
+  DocumentRecordsEndpointDependencies & {
+    readonly confirmDocumentClassificationSuggestion: ConfirmDocumentClassificationSuggestionDependency;
+  };
 
 type ListDocumentsFromRequestInput = {
   readonly authorizationHeader: string | undefined;
@@ -227,6 +245,14 @@ type ApplyDocumentClassificationSuggestionFromRequestInput = {
   readonly documentId: string | undefined;
   readonly body: ApplyDocumentClassificationSuggestionRequestBody | undefined;
   readonly dependencies: DocumentRecordsEndpointDependencies;
+};
+
+type ConfirmDocumentClassificationSuggestionFromRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly machineId: string | undefined;
+  readonly documentId: string | undefined;
+  readonly body: ConfirmDocumentClassificationSuggestionRequestBody | undefined;
+  readonly dependencies: ConfirmDocumentClassificationSuggestionEndpointDependencies;
 };
 
 const documentReadRoles: readonly OrganizationRole[] = ['OWNER', 'ADMIN', 'MEMBER'];
@@ -307,6 +333,13 @@ function createRealDependencies(): DocumentRecordsEndpointDependencies {
     readDocumentStorageConfig,
     createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
     createSignedDocumentDownloadUrl,
+  };
+}
+
+function createRealDocumentClassificationConfirmationDependencies(): ConfirmDocumentClassificationSuggestionEndpointDependencies {
+  return {
+    ...createRealDependencies(),
+    confirmDocumentClassificationSuggestion,
   };
 }
 
@@ -501,6 +534,64 @@ export async function applyDocumentClassificationSuggestionFromRequest({
   };
 }
 
+export async function confirmDocumentClassificationSuggestionFromRequest({
+  authorizationHeader,
+  machineId,
+  documentId,
+  body,
+  dependencies,
+}: ConfirmDocumentClassificationSuggestionFromRequestInput): Promise<ConfirmDocumentClassificationSuggestionResponse> {
+  const requestBody = body ?? {};
+  const organizationId = readRequiredString('organizationId', requestBody.organizationId);
+  const normalizedMachineId = readRequiredString('machineId', machineId);
+  const normalizedDocumentId = readRequiredString('documentId', documentId);
+
+  const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: documentUpdateRoles,
+  });
+
+  const existingDocument = await dependencies.getDocumentByMachine({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    documentId: normalizedDocumentId,
+  });
+
+  if (!existingDocument) {
+    throw new NotFoundException('Document was not found for this machine.');
+  }
+
+  if (!existingDocument.suggestedCategory) {
+    throw new BadRequestException('Document does not have a classification suggestion to confirm.');
+  }
+
+  const document = await dependencies.confirmDocumentClassificationSuggestion({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    documentId: normalizedDocumentId,
+  });
+
+  if (!document) {
+    throw new BadRequestException('Document classification suggestion could not be confirmed.');
+  }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.documentClassificationConfirmed,
+    actorUserId: tenantContext.currentUser.appUserId,
+    targetType: 'document',
+    targetId: normalizedDocumentId,
+  });
+
+  return {
+    document: toDocumentMetadataResponse(document),
+  };
+}
 export async function createDocumentDownloadUrlFromRequest({
   authorizationHeader,
   machineId,
@@ -638,6 +729,21 @@ export class DocumentRecordsController {
     });
   }
 
+  @Post('machines/:machineId/documents/:documentId/classification-confirmation')
+  async confirmDocumentClassificationSuggestion(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Param('documentId') documentId: string | undefined,
+    @Body() body: ConfirmDocumentClassificationSuggestionRequestBody | undefined,
+  ): Promise<ConfirmDocumentClassificationSuggestionResponse> {
+    return confirmDocumentClassificationSuggestionFromRequest({
+      authorizationHeader,
+      machineId,
+      documentId,
+      body,
+      dependencies: createRealDocumentClassificationConfirmationDependencies(),
+    });
+  }
   @Post('machines/:machineId/documents/:documentId/download-url')
   async createDocumentDownloadUrl(
     @Headers('authorization') authorizationHeader: string | undefined,

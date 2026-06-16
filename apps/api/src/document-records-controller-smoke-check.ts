@@ -1,13 +1,20 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
+import type {
+  ConfirmDocumentClassificationSuggestionInput,
+  DocumentRecord,
+  OrganizationRole,
+  PrismaClient,
+} from '@buildtrace/db';
 
 import {
   applyDocumentClassificationSuggestionFromRequest,
+  confirmDocumentClassificationSuggestionFromRequest,
   getDocumentFromRequest,
   listDocumentsFromRequest,
   updateDocumentCategoryFromRequest,
   updateDocumentVisibilityFromRequest,
   type ApplyDocumentClassificationSuggestionResponse,
+  type ConfirmDocumentClassificationSuggestionResponse,
   type DocumentMetadataResponse,
   type DocumentRecordsEndpointDependencies,
 } from './document-records.controller.js';
@@ -34,6 +41,10 @@ type ApplyDocumentClassificationSuggestionInput = Parameters<
   DocumentRecordsEndpointDependencies['applyDocumentClassificationSuggestion']
 >[0];
 
+type CreateActivityLogInput = Parameters<
+  DocumentRecordsEndpointDependencies['createActivityLog']
+>[0];
+
 type CapturedResolveInput = {
   readonly authorizationHeader: string | undefined;
   readonly organizationId: string;
@@ -48,6 +59,8 @@ type CapturedCalls = {
   readonly updateDocumentCategoryInputs: UpdateDocumentCategoryInput[];
   readonly updateDocumentVisibilityInputs: UpdateDocumentVisibilityInput[];
   readonly applyDocumentClassificationSuggestionInputs: ApplyDocumentClassificationSuggestionInput[];
+  readonly confirmDocumentClassificationSuggestionInputs: ConfirmDocumentClassificationSuggestionInput[];
+  readonly createActivityLogInputs: CreateActivityLogInput[];
 };
 
 const fakeDb = {} as PrismaClient;
@@ -93,6 +106,8 @@ function createCapturedCalls(): CapturedCalls {
     updateDocumentCategoryInputs: [],
     updateDocumentVisibilityInputs: [],
     applyDocumentClassificationSuggestionInputs: [],
+    confirmDocumentClassificationSuggestionInputs: [],
+    createActivityLogInputs: [],
   };
 }
 
@@ -216,6 +231,62 @@ function createDependencies(capturedCalls: CapturedCalls): DocumentRecordsEndpoi
   };
 }
 
+type ConfirmDocumentClassificationSuggestionDependencies = DocumentRecordsEndpointDependencies & {
+  readonly confirmDocumentClassificationSuggestion: (
+    input: ConfirmDocumentClassificationSuggestionInput,
+  ) => Promise<DocumentRecord | null>;
+};
+
+type ConfirmationDependencyOptions = {
+  readonly currentDocument?: DocumentRecord | null;
+  readonly confirmedDocument?: DocumentRecord | null;
+};
+
+function createConfirmationDependencies(
+  capturedCalls: CapturedCalls,
+  options: ConfirmationDependencyOptions = {},
+): ConfirmDocumentClassificationSuggestionDependencies {
+  const baseDependencies = createDependencies(capturedCalls);
+  const suggestedDocument: DocumentRecord = {
+    ...fakeDocument,
+    category: 'other',
+    suggestedCategory: 'plc',
+    classificationConfidence: 96,
+    classificationStatus: 'classified',
+    classificationSource: 'filename-type',
+  };
+  const confirmedDocument: DocumentRecord = {
+    ...suggestedDocument,
+    category: 'plc',
+    classificationStatus: 'manually-confirmed',
+    classificationSource: 'manual',
+    visibilityLevel: fakeDocument.visibilityLevel,
+    visibleToCustomer: fakeDocument.visibleToCustomer,
+  };
+  const currentDocument =
+    'currentDocument' in options ? options.currentDocument : suggestedDocument;
+  const confirmationResult =
+    'confirmedDocument' in options ? options.confirmedDocument : confirmedDocument;
+
+  return {
+    ...baseDependencies,
+    getDocumentByMachine: async (input) => {
+      capturedCalls.getDocumentInputs.push(input);
+
+      return currentDocument;
+    },
+    confirmDocumentClassificationSuggestion: async (input) => {
+      capturedCalls.confirmDocumentClassificationSuggestionInputs.push(input);
+
+      return confirmationResult;
+    },
+    createActivityLog: async (input) => {
+      capturedCalls.createActivityLogInputs.push(input);
+
+      return baseDependencies.createActivityLog(input);
+    },
+  };
+}
 function createDependenciesWithMissingDocument(
   capturedCalls: CapturedCalls,
 ): DocumentRecordsEndpointDependencies {
@@ -340,6 +411,28 @@ function assertClassificationResponse(
   );
 }
 
+function assertConfirmationResponse(
+  response: ConfirmDocumentClassificationSuggestionResponse,
+  label: string,
+): void {
+  assert(response.document.category === 'plc', `${label} did not apply suggested category.`);
+  assert(
+    response.document.classificationStatus === 'manually-confirmed',
+    `${label} did not mark manual confirmation.`,
+  );
+  assert(
+    response.document.classificationSource === 'manual',
+    `${label} did not record manual source.`,
+  );
+  assert(
+    response.document.visibilityLevel === fakeDocument.visibilityLevel,
+    `${label} must not change visibility.`,
+  );
+  assert(
+    response.document.visibleToCustomer === fakeDocument.visibleToCustomer,
+    `${label} must not change customer exposure.`,
+  );
+}
 async function runDocumentReadSmokeCheck(): Promise<void> {
   const capturedCalls = createCapturedCalls();
 
@@ -506,6 +599,91 @@ async function runDocumentUpdateSmokeCheck(): Promise<void> {
   assert(classificationInput.documentId === 'document-1', 'Classification document ID was wrong.');
 }
 
+async function runDocumentClassificationConfirmationSmokeCheck(): Promise<void> {
+  const capturedCalls = createCapturedCalls();
+
+  const response = await confirmDocumentClassificationSuggestionFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: ' machine-1 ',
+    documentId: ' document-1 ',
+    body: {
+      organizationId: ' organization-1 ',
+    },
+    dependencies: createConfirmationDependencies(capturedCalls),
+  });
+
+  assertConfirmationResponse(response, 'Classification confirmation response');
+  assertSanitizedDocument(response.document, 'Classification confirmation response');
+
+  assertResolveInput(
+    capturedCalls.resolveInputs[0],
+    ['OWNER', 'ADMIN'],
+    'Document classification confirmation',
+  );
+
+  const getInput = capturedCalls.getDocumentInputs[0];
+  const confirmationInput = capturedCalls.confirmDocumentClassificationSuggestionInputs[0];
+  const activityLogInput = capturedCalls.createActivityLogInputs[0];
+
+  assert(getInput !== undefined, 'Confirmation did not read the current document.');
+  assert(confirmationInput !== undefined, 'Confirmation dependency was not called.');
+  assert(activityLogInput !== undefined, 'Confirmation activity log was not created.');
+
+  assert(getInput.db === fakeDb, 'DB dependency was not forwarded to confirmation read.');
+  assert(
+    getInput.organizationId === 'organization-1',
+    'Confirmation read organization ID was wrong.',
+  );
+  assert(getInput.machineId === 'machine-1', 'Confirmation read machine ID was wrong.');
+  assert(getInput.documentId === 'document-1', 'Confirmation read document ID was wrong.');
+
+  assert(
+    confirmationInput.db === fakeDb,
+    'DB dependency was not forwarded to classification confirmation.',
+  );
+  assert(
+    confirmationInput.organizationId === 'organization-1',
+    'Confirmation organization ID was wrong.',
+  );
+  assert(confirmationInput.machineId === 'machine-1', 'Confirmation machine ID was wrong.');
+  assert(confirmationInput.documentId === 'document-1', 'Confirmation document ID was wrong.');
+
+  assert(
+    activityLogInput.action === 'document.classification_confirmed',
+    'Confirmation audit action was wrong.',
+  );
+  assert(activityLogInput.actorUserId === 'app-user-1', 'Confirmation audit actor was wrong.');
+  assert(activityLogInput.targetType === 'document', 'Confirmation audit target type was wrong.');
+  assert(activityLogInput.targetId === 'document-1', 'Confirmation audit target ID was wrong.');
+
+  await expectBadRequest('classification confirmation without suggestion', () =>
+    confirmDocumentClassificationSuggestionFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      documentId: 'document-1',
+      body: {
+        organizationId: 'organization-1',
+      },
+      dependencies: createConfirmationDependencies(createCapturedCalls(), {
+        currentDocument: fakeDocument,
+      }),
+    }),
+  );
+
+  await expectNotFound('classification confirmation document not found', () =>
+    confirmDocumentClassificationSuggestionFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      documentId: 'document-404',
+      body: {
+        organizationId: 'organization-1',
+      },
+      dependencies: createConfirmationDependencies(createCapturedCalls(), {
+        currentDocument: null,
+      }),
+    }),
+  );
+}
 async function runValidationSmokeCheck(): Promise<void> {
   await expectBadRequest('missing document list organization ID', () =>
     listDocumentsFromRequest({
@@ -637,6 +815,7 @@ async function runValidationSmokeCheck(): Promise<void> {
 async function runDocumentRecordsControllerSmokeCheck(): Promise<void> {
   await runDocumentReadSmokeCheck();
   await runDocumentUpdateSmokeCheck();
+  await runDocumentClassificationConfirmationSmokeCheck();
   await runValidationSmokeCheck();
 }
 
