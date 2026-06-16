@@ -15,10 +15,12 @@ import {
 import { redirect } from 'next/navigation';
 
 import {
+  applyDocumentClassificationSuggestion,
   createDocumentDownloadUrl,
   updateDocumentCategory,
   updateDocumentVisibility,
   uploadDocument,
+  type ApplyDocumentClassificationSuggestionApiInput,
   type CreateDocumentDownloadUrlApiInput,
   type UpdateDocumentCategoryApiInput,
   type UpdateDocumentVisibilityApiInput,
@@ -542,4 +544,47 @@ export async function createMachineDocumentDownloadUrlAction(
   }
 
   redirect(downloadUrl);
+}
+export async function refreshMachineDocumentClassificationSuggestionAction(
+  locale: string,
+  machineId: string,
+  documentId: string,
+): Promise<void> {
+  const redirectLocale = locale.trim() || 'en';
+  const normalizedMachineId = normalizeDocumentActionId(machineId, 'Machine id');
+  const normalizedDocumentId = normalizeDocumentActionId(documentId, 'Document id');
+
+  const session = await readMachineRecordsSession();
+
+  if (session.status === 'missing') {
+    redirectMachineDetailWithError(
+      redirectLocale,
+      normalizedMachineId,
+      'Document classification refresh needs a signed-in workspace.',
+    );
+  }
+
+  try {
+    const input: ApplyDocumentClassificationSuggestionApiInput = {
+      organizationId: session.organizationId,
+      accessToken: session.accessToken,
+      machineId: normalizedMachineId,
+      documentId: normalizedDocumentId,
+    };
+
+    await applyDocumentClassificationSuggestion(input);
+  } catch (error) {
+    redirectMachineDocumentActionWithError({
+      locale: redirectLocale,
+      machineId: normalizedMachineId,
+      errorQueryName: 'documentClassificationError',
+      error,
+    });
+  }
+
+  redirect(
+    `/${encodeURIComponent(redirectLocale)}/machines/${encodeURIComponent(
+      normalizedMachineId,
+    )}?documentClassification=refreshed`,
+  );
 }

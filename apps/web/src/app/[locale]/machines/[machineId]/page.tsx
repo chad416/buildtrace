@@ -5,6 +5,8 @@ import {
   documentVisibilityLevels,
   machineStatuses,
   type DocumentCategory,
+  type DocumentClassificationSource,
+  type DocumentClassificationStatus,
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
 } from '@buildtrace/shared';
@@ -13,6 +15,7 @@ import { notFound } from 'next/navigation';
 
 import {
   createMachineDocumentDownloadUrlAction,
+  refreshMachineDocumentClassificationSuggestionAction,
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
@@ -46,6 +49,8 @@ type MachineDetailSearchParams = {
   readonly documentVisibility?: string;
   readonly documentVisibilityError?: string;
   readonly documentDownloadError?: string;
+  readonly documentClassification?: string;
+  readonly documentClassificationError?: string;
 };
 
 type PageProps = {
@@ -123,6 +128,24 @@ const documentVisibilityClassNames = {
   restricted: 'border-red-500/40 bg-red-950/30 text-red-200',
 } satisfies Record<DocumentVisibilityLevel, string>;
 
+const documentClassificationStatusLabels = {
+  unclassified: 'Unclassified',
+  classified: 'Suggested',
+  'needs-review': 'Needs review',
+  'manually-confirmed': 'Manually confirmed',
+} satisfies Record<DocumentClassificationStatus, string>;
+
+const documentClassificationSourceLabels = {
+  'filename-type': 'Filename',
+  manual: 'Manual',
+} satisfies Record<DocumentClassificationSource, string>;
+
+const documentClassificationStatusClassNames = {
+  unclassified: 'border-stone-700 bg-stone-950/40 text-stone-300',
+  classified: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200',
+  'needs-review': 'border-amber-500/40 bg-amber-950/30 text-amber-200',
+  'manually-confirmed': 'border-sky-500/40 bg-sky-950/30 text-sky-200',
+} satisfies Record<DocumentClassificationStatus, string>;
 function formatLoadError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -152,6 +175,11 @@ function normalizeSearchParams(
   const documentVisibility = readStringSearchParam(searchParams, 'documentVisibility');
   const documentVisibilityError = readStringSearchParam(searchParams, 'documentVisibilityError');
   const documentDownloadError = readStringSearchParam(searchParams, 'documentDownloadError');
+  const documentClassification = readStringSearchParam(searchParams, 'documentClassification');
+  const documentClassificationError = readStringSearchParam(
+    searchParams,
+    'documentClassificationError',
+  );
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -163,6 +191,8 @@ function normalizeSearchParams(
     ...(documentVisibility ? { documentVisibility } : {}),
     ...(documentVisibilityError ? { documentVisibilityError } : {}),
     ...(documentDownloadError ? { documentDownloadError } : {}),
+    ...(documentClassification ? { documentClassification } : {}),
+    ...(documentClassificationError ? { documentClassificationError } : {}),
   };
 }
 
@@ -506,6 +536,13 @@ function renderDocumentsSection({
             machine.id,
             document.id,
           );
+          const refreshClassificationAction =
+            refreshMachineDocumentClassificationSuggestionAction.bind(
+              null,
+              locale,
+              machine.id,
+              document.id,
+            );
 
           return (
             <article
@@ -533,6 +570,64 @@ function renderDocumentsSection({
                 </span>
               </div>
 
+              <div className="mt-5 grid gap-3 border-t border-stone-800 pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                      Classification suggestion
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-stone-300">
+                      Suggested category:{' '}
+                      <span className="font-semibold text-stone-100">
+                        {document.suggestedCategory
+                          ? documentCategoryLabels[document.suggestedCategory]
+                          : 'No suggestion'}
+                      </span>
+                    </p>
+                  </div>
+
+                  <span
+                    className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-normal ${
+                      documentClassificationStatusClassNames[document.classificationStatus]
+                    }`}
+                  >
+                    {documentClassificationStatusLabels[document.classificationStatus]}
+                  </span>
+                </div>
+
+                <dl className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                      Confidence
+                    </dt>
+                    <dd className="mt-1 text-sm text-stone-200">
+                      {document.classificationConfidence === null
+                        ? 'No confidence'
+                        : `${document.classificationConfidence}%`}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                      Source
+                    </dt>
+                    <dd className="mt-1 text-sm text-stone-200">
+                      {document.classificationSource
+                        ? documentClassificationSourceLabels[document.classificationSource]
+                        : 'No source'}
+                    </dd>
+                  </div>
+                </dl>
+
+                <form action={refreshClassificationAction}>
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                  >
+                    Refresh suggestion
+                  </button>
+                </form>
+              </div>
               <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
                 <form action={updateCategoryAction} className="grid gap-2">
                   <label className="grid gap-2 text-sm font-semibold text-stone-200">
@@ -901,6 +996,21 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.documentClassification === 'refreshed'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Document classification refreshed',
+            body: 'The suggestion was recalculated without changing category or visibility.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentClassificationError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: 'Document classification could not be refreshed',
+            body: normalizedSearchParams.documentClassificationError,
+          })
+        : null}
       {loadState.status === 'ready' && normalizedSearchParams.documentUploadError
         ? renderFeedbackPanel({
             tone: 'error',
