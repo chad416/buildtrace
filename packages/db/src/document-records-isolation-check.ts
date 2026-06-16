@@ -1,11 +1,17 @@
 import {
+  applyDocumentClassificationSuggestion,
   createDocumentRecord,
   listDocumentsByMachine,
   markDocumentDownloadUrlIssued,
   updateDocumentVisibility,
 } from './document-records';
 import { createPrismaClient } from './client';
-import { MachineStatus } from './generated/prisma/enums';
+import {
+  DocumentCategory,
+  DocumentClassificationSource,
+  DocumentClassificationStatus,
+  MachineStatus,
+} from './generated/prisma/enums';
 
 function assert(condition: boolean, message: string): asserts condition {
   if (!condition) {
@@ -123,6 +129,17 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
 
     assertEqual(documentA.visibilityLevel, 'internal', 'Manual documents must default internal.');
     assertEqual(documentA.visibleToCustomer, false, 'Documents must default private.');
+    assertEqual(documentA.suggestedCategory, 'manuals', 'Manual file name should suggest manuals.');
+    assertEqual(
+      documentA.classificationStatus,
+      'classified',
+      'Manual file name should classify confidently.',
+    );
+    assertEqual(
+      documentA.classificationSource,
+      'filename-type',
+      'Manual classification should use filename-type source.',
+    );
 
     const plcDocument = await createDocumentRecord({
       db,
@@ -139,6 +156,48 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
       plcDocument.visibilityLevel,
       'sensitive-engineering',
       'PLC documents must default sensitive-engineering.',
+    );
+    assertEqual(plcDocument.suggestedCategory, 'plc', 'PLC file name should suggest plc.');
+    assertEqual(
+      plcDocument.classificationStatus,
+      'classified',
+      'PLC file name should classify confidently.',
+    );
+
+    await db.document.update({
+      where: {
+        id: plcDocument.id,
+      },
+      data: {
+        suggestedCategory: DocumentCategory.HMI,
+        classificationConfidence: 99,
+        classificationStatus: DocumentClassificationStatus.MANUALLY_CONFIRMED,
+        classificationSource: DocumentClassificationSource.MANUAL,
+      },
+    });
+
+    const manuallyConfirmedDocument = await applyDocumentClassificationSuggestion({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      documentId: plcDocument.id,
+    });
+
+    assert(manuallyConfirmedDocument !== null, 'Manually confirmed document should reload.');
+    assertEqual(
+      manuallyConfirmedDocument.suggestedCategory,
+      'hmi',
+      'Classifier rerun must not overwrite manually confirmed category.',
+    );
+    assertEqual(
+      manuallyConfirmedDocument.classificationStatus,
+      'manually-confirmed',
+      'Classifier rerun must not downgrade manual confirmation.',
+    );
+    assertEqual(
+      manuallyConfirmedDocument.classificationSource,
+      'manual',
+      'Classifier rerun must preserve manual source.',
     );
 
     await createDocumentRecord({
@@ -210,6 +269,19 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
       crossTenantVisibilityUpdate,
       null,
       'Organization B must not update Organization A document visibility.',
+    );
+
+    const crossTenantClassificationUpdate = await applyDocumentClassificationSuggestion({
+      db,
+      organizationId: organizationB.id,
+      machineId: machineA.id,
+      documentId: documentA.id,
+    });
+
+    assertEqual(
+      crossTenantClassificationUpdate,
+      null,
+      'Organization B must not classify Organization A documents.',
     );
 
     const crossTenantDownloadUrlIssued = await markDocumentDownloadUrlIssued({

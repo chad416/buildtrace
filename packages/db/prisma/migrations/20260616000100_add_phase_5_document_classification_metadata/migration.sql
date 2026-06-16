@@ -1,4 +1,4 @@
-﻿CREATE TYPE "DocumentClassificationStatus" AS ENUM (
+CREATE TYPE "DocumentClassificationStatus" AS ENUM (
   'UNCLASSIFIED',
   'CLASSIFIED',
   'NEEDS_REVIEW',

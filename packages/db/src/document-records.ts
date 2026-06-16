@@ -1,19 +1,33 @@
 import type {
   DocumentCategory,
+  DocumentClassificationSource,
+  DocumentClassificationStatus,
+  DocumentClassificationSuggestion,
   DocumentLanguageCode,
   DocumentVisibilityLevel,
 } from '@buildtrace/shared';
-import { getDefaultDocumentVisibilityForCategory } from '@buildtrace/shared';
+import {
+  classifyDocumentFromFilename,
+  getDefaultDocumentVisibilityForCategory,
+} from '@buildtrace/shared';
 
 import type { PrismaClient } from './generated/prisma/client';
 import {
   DocumentCategory as PrismaDocumentCategory,
+  DocumentClassificationSource as PrismaDocumentClassificationSource,
+  DocumentClassificationStatus as PrismaDocumentClassificationStatus,
   DocumentLanguage as PrismaDocumentLanguage,
   DocumentVisibilityLevel as PrismaDocumentVisibilityLevel,
 } from './generated/prisma/enums';
 
 type PrismaDocumentCategoryValue =
   (typeof PrismaDocumentCategory)[keyof typeof PrismaDocumentCategory];
+
+type PrismaDocumentClassificationStatusValue =
+  (typeof PrismaDocumentClassificationStatus)[keyof typeof PrismaDocumentClassificationStatus];
+
+type PrismaDocumentClassificationSourceValue =
+  (typeof PrismaDocumentClassificationSource)[keyof typeof PrismaDocumentClassificationSource];
 
 type PrismaDocumentVisibilityLevelValue =
   (typeof PrismaDocumentVisibilityLevel)[keyof typeof PrismaDocumentVisibilityLevel];
@@ -29,6 +43,10 @@ type PrismaDocumentRecord = {
   readonly storagePath: string;
   readonly fileType: string;
   readonly category: PrismaDocumentCategoryValue;
+  readonly suggestedCategory: PrismaDocumentCategoryValue | null;
+  readonly classificationConfidence: number | null;
+  readonly classificationStatus: PrismaDocumentClassificationStatusValue;
+  readonly classificationSource: PrismaDocumentClassificationSourceValue | null;
   readonly visibilityLevel: PrismaDocumentVisibilityLevelValue;
   readonly visibleToCustomer: boolean;
   readonly language: PrismaDocumentLanguageValue;
@@ -50,6 +68,10 @@ export type DocumentRecord = {
   readonly storagePath: string;
   readonly fileType: string;
   readonly category: DocumentCategory;
+  readonly suggestedCategory: DocumentCategory | null;
+  readonly classificationConfidence: number | null;
+  readonly classificationStatus: DocumentClassificationStatus;
+  readonly classificationSource: DocumentClassificationSource | null;
   readonly visibilityLevel: DocumentVisibilityLevel;
   readonly visibleToCustomer: boolean;
   readonly language: DocumentLanguageCode;
@@ -99,6 +121,8 @@ export type MarkDocumentDownloadUrlIssuedInput = GetDocumentByMachineInput & {
   readonly issuedAt?: Date;
 };
 
+export type ApplyDocumentClassificationSuggestionInput = GetDocumentByMachineInput;
+
 const prismaDocumentCategoryByCategory = {
   plc: PrismaDocumentCategory.PLC,
   hmi: PrismaDocumentCategory.HMI,
@@ -116,6 +140,18 @@ const prismaDocumentCategoryByCategory = {
   'service-notes': PrismaDocumentCategory.SERVICE_NOTES,
   other: PrismaDocumentCategory.OTHER,
 } satisfies Record<DocumentCategory, PrismaDocumentCategoryValue>;
+
+const prismaDocumentClassificationStatusByStatus = {
+  unclassified: PrismaDocumentClassificationStatus.UNCLASSIFIED,
+  classified: PrismaDocumentClassificationStatus.CLASSIFIED,
+  'needs-review': PrismaDocumentClassificationStatus.NEEDS_REVIEW,
+  'manually-confirmed': PrismaDocumentClassificationStatus.MANUALLY_CONFIRMED,
+} satisfies Record<DocumentClassificationStatus, PrismaDocumentClassificationStatusValue>;
+
+const prismaDocumentClassificationSourceBySource = {
+  'filename-type': PrismaDocumentClassificationSource.FILENAME_TYPE,
+  manual: PrismaDocumentClassificationSource.MANUAL,
+} satisfies Record<DocumentClassificationSource, PrismaDocumentClassificationSourceValue>;
 
 const prismaDocumentVisibilityLevelByVisibilityLevel = {
   'customer-visible': PrismaDocumentVisibilityLevel.CUSTOMER_VISIBLE,
@@ -141,6 +177,24 @@ const categoryByPrismaDocumentCategory = Object.fromEntries(
     category,
   ]),
 ) as Record<PrismaDocumentCategoryValue, DocumentCategory>;
+
+const classificationStatusByPrismaDocumentClassificationStatus = Object.fromEntries(
+  Object.entries(prismaDocumentClassificationStatusByStatus).map(
+    ([classificationStatus, prismaClassificationStatus]) => [
+      prismaClassificationStatus,
+      classificationStatus,
+    ],
+  ),
+) as Record<PrismaDocumentClassificationStatusValue, DocumentClassificationStatus>;
+
+const classificationSourceByPrismaDocumentClassificationSource = Object.fromEntries(
+  Object.entries(prismaDocumentClassificationSourceBySource).map(
+    ([classificationSource, prismaClassificationSource]) => [
+      prismaClassificationSource,
+      classificationSource,
+    ],
+  ),
+) as Record<PrismaDocumentClassificationSourceValue, DocumentClassificationSource>;
 
 const visibilityLevelByPrismaDocumentVisibilityLevel = Object.fromEntries(
   Object.entries(prismaDocumentVisibilityLevelByVisibilityLevel).map(
@@ -171,6 +225,25 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   return normalizedValue ? normalizedValue : null;
 }
 
+function toPrismaDocumentClassificationData(suggestion: DocumentClassificationSuggestion): {
+  readonly suggestedCategory: PrismaDocumentCategoryValue | null;
+  readonly classificationConfidence: number | null;
+  readonly classificationStatus: PrismaDocumentClassificationStatusValue;
+  readonly classificationSource: PrismaDocumentClassificationSourceValue | null;
+} {
+  return {
+    suggestedCategory: suggestion.suggestedCategory
+      ? prismaDocumentCategoryByCategory[suggestion.suggestedCategory]
+      : null,
+    classificationConfidence: suggestion.classificationConfidence,
+    classificationStatus:
+      prismaDocumentClassificationStatusByStatus[suggestion.classificationStatus],
+    classificationSource: suggestion.classificationSource
+      ? prismaDocumentClassificationSourceBySource[suggestion.classificationSource]
+      : null,
+  };
+}
+
 function toDocumentRecord(record: PrismaDocumentRecord): DocumentRecord {
   return {
     id: record.id,
@@ -180,6 +253,15 @@ function toDocumentRecord(record: PrismaDocumentRecord): DocumentRecord {
     storagePath: record.storagePath,
     fileType: record.fileType,
     category: categoryByPrismaDocumentCategory[record.category],
+    suggestedCategory: record.suggestedCategory
+      ? categoryByPrismaDocumentCategory[record.suggestedCategory]
+      : null,
+    classificationConfidence: record.classificationConfidence,
+    classificationStatus:
+      classificationStatusByPrismaDocumentClassificationStatus[record.classificationStatus],
+    classificationSource: record.classificationSource
+      ? classificationSourceByPrismaDocumentClassificationSource[record.classificationSource]
+      : null,
     visibilityLevel: visibilityLevelByPrismaDocumentVisibilityLevel[record.visibilityLevel],
     visibleToCustomer: record.visibleToCustomer,
     language: languageByPrismaDocumentLanguage[record.language],
@@ -224,16 +306,23 @@ export async function createDocumentRecord({
   language = 'unknown',
   uploadedByUserId,
 }: CreateDocumentRecordInput): Promise<DocumentRecord> {
+  const normalizedFileName = requireNonEmptyText(fileName, 'fileName');
+  const normalizedFileType = requireNonEmptyText(fileType, 'fileType');
   const defaultVisibility = getDefaultDocumentVisibilityForCategory(category);
+  const classificationSuggestion = classifyDocumentFromFilename({
+    fileName: normalizedFileName,
+    fileType: normalizedFileType,
+  });
 
   const record = await db.document.create({
     data: {
       organizationId: requireNonEmptyText(organizationId, 'organizationId'),
       machineId: requireNonEmptyText(machineId, 'machineId'),
-      fileName: requireNonEmptyText(fileName, 'fileName'),
+      fileName: normalizedFileName,
       storagePath: requireNonEmptyText(storagePath, 'storagePath'),
-      fileType: requireNonEmptyText(fileType, 'fileType'),
+      fileType: normalizedFileType,
       category: prismaDocumentCategoryByCategory[category],
+      ...toPrismaDocumentClassificationData(classificationSuggestion),
       visibilityLevel:
         prismaDocumentVisibilityLevelByVisibilityLevel[defaultVisibility.visibilityLevel],
       visibleToCustomer: defaultVisibility.visibleToCustomer,
@@ -335,6 +424,64 @@ export async function updateDocumentVisibility({
 
   if (result.count === 0) {
     return null;
+  }
+
+  return readDocumentAfterUpdate({
+    db,
+    organizationId,
+    machineId,
+    documentId,
+  });
+}
+
+export async function applyDocumentClassificationSuggestion({
+  db,
+  organizationId,
+  machineId,
+  documentId,
+}: ApplyDocumentClassificationSuggestionInput): Promise<DocumentRecord | null> {
+  const existingRecord = await db.document.findFirst({
+    where: {
+      id: requireNonEmptyText(documentId, 'documentId'),
+      organizationId: requireNonEmptyText(organizationId, 'organizationId'),
+      machineId: requireNonEmptyText(machineId, 'machineId'),
+    },
+  });
+
+  if (!existingRecord) {
+    return null;
+  }
+
+  const document = toDocumentRecord(existingRecord);
+
+  if (document.classificationStatus === 'manually-confirmed') {
+    return document;
+  }
+
+  const suggestion = classifyDocumentFromFilename({
+    fileName: document.fileName,
+    fileType: document.fileType,
+  });
+
+  const result = await db.document.updateMany({
+    where: {
+      id: requireNonEmptyText(documentId, 'documentId'),
+      organizationId: requireNonEmptyText(organizationId, 'organizationId'),
+      machineId: requireNonEmptyText(machineId, 'machineId'),
+      classificationStatus: {
+        not: PrismaDocumentClassificationStatus.MANUALLY_CONFIRMED,
+      },
+    },
+    data: toPrismaDocumentClassificationData(suggestion),
+  });
+
+  if (result.count === 0) {
+    return readDocumentAfterUpdate({
+      db,
+      organizationId,
+      machineId,
+      documentId,
+    });
   }
 
   return readDocumentAfterUpdate({
