@@ -1,5 +1,6 @@
 import {
   applyDocumentClassificationSuggestion,
+  confirmDocumentClassificationSuggestion,
   createDocumentRecord,
   listDocumentsByMachine,
   markDocumentDownloadUrlIssued,
@@ -141,6 +142,50 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
       'Manual classification should use filename-type source.',
     );
 
+    const suggestedManualDocument = await createDocumentRecord({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      fileName: 'Operator Manual.pdf',
+      storagePath: `organizations/${organizationA.id}/machines/${machineA.id}/documents/document-suggested-manual/manual.pdf`,
+      fileType: 'application/pdf',
+      category: 'other',
+      checksum: `checksum-suggested-manual-${suffix}`,
+    });
+
+    const confirmedSuggestedManualDocument = await confirmDocumentClassificationSuggestion({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      documentId: suggestedManualDocument.id,
+    });
+
+    assert(confirmedSuggestedManualDocument !== null, 'Suggested manual document should confirm.');
+    assertEqual(
+      confirmedSuggestedManualDocument.category,
+      'manuals',
+      'Confirmation must apply the suggested category.',
+    );
+    assertEqual(
+      confirmedSuggestedManualDocument.classificationStatus,
+      'manually-confirmed',
+      'Confirmation must mark classification manually confirmed.',
+    );
+    assertEqual(
+      confirmedSuggestedManualDocument.classificationSource,
+      'manual',
+      'Confirmation must record manual source.',
+    );
+    assertEqual(
+      confirmedSuggestedManualDocument.visibilityLevel,
+      suggestedManualDocument.visibilityLevel,
+      'Confirmation must preserve visibility.',
+    );
+    assertEqual(
+      confirmedSuggestedManualDocument.visibleToCustomer,
+      false,
+      'Confirmation must not expose the document to customers.',
+    );
     const plcDocument = await createDocumentRecord({
       db,
       organizationId: organizationA.id,
@@ -241,7 +286,7 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
 
     assertEqual(
       organizationADocuments.length,
-      2,
+      3,
       'Organization A must list only documents for its machine.',
     );
 
@@ -284,6 +329,18 @@ async function runDocumentRecordsIsolationCheck(): Promise<void> {
       'Organization B must not classify Organization A documents.',
     );
 
+    const crossTenantClassificationConfirmation = await confirmDocumentClassificationSuggestion({
+      db,
+      organizationId: organizationB.id,
+      machineId: machineA.id,
+      documentId: documentA.id,
+    });
+
+    assertEqual(
+      crossTenantClassificationConfirmation,
+      null,
+      'Organization B must not confirm classification for Organization A documents.',
+    );
     const crossTenantDownloadUrlIssued = await markDocumentDownloadUrlIssued({
       db,
       organizationId: organizationB.id,

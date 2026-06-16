@@ -123,6 +123,8 @@ export type MarkDocumentDownloadUrlIssuedInput = GetDocumentByMachineInput & {
 
 export type ApplyDocumentClassificationSuggestionInput = GetDocumentByMachineInput;
 
+export type ConfirmDocumentClassificationSuggestionInput = GetDocumentByMachineInput;
+
 const prismaDocumentCategoryByCategory = {
   plc: PrismaDocumentCategory.PLC,
   hmi: PrismaDocumentCategory.HMI,
@@ -492,6 +494,57 @@ export async function applyDocumentClassificationSuggestion({
   });
 }
 
+export async function confirmDocumentClassificationSuggestion({
+  db,
+  organizationId,
+  machineId,
+  documentId,
+}: ConfirmDocumentClassificationSuggestionInput): Promise<DocumentRecord | null> {
+  const existingRecord = await db.document.findFirst({
+    where: {
+      id: requireNonEmptyText(documentId, 'documentId'),
+      organizationId: requireNonEmptyText(organizationId, 'organizationId'),
+      machineId: requireNonEmptyText(machineId, 'machineId'),
+    },
+  });
+
+  if (!existingRecord) {
+    return null;
+  }
+
+  const document = toDocumentRecord(existingRecord);
+
+  if (!document.suggestedCategory) {
+    return null;
+  }
+
+  const suggestedCategory = prismaDocumentCategoryByCategory[document.suggestedCategory];
+
+  const result = await db.document.updateMany({
+    where: {
+      id: requireNonEmptyText(documentId, 'documentId'),
+      organizationId: requireNonEmptyText(organizationId, 'organizationId'),
+      machineId: requireNonEmptyText(machineId, 'machineId'),
+      suggestedCategory,
+    },
+    data: {
+      category: suggestedCategory,
+      classificationStatus: PrismaDocumentClassificationStatus.MANUALLY_CONFIRMED,
+      classificationSource: PrismaDocumentClassificationSource.MANUAL,
+    },
+  });
+
+  if (result.count === 0) {
+    return null;
+  }
+
+  return readDocumentAfterUpdate({
+    db,
+    organizationId,
+    machineId,
+    documentId,
+  });
+}
 export async function markDocumentDownloadUrlIssued({
   db,
   organizationId,

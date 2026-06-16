@@ -2,6 +2,7 @@ export { createActivityLog } from './activity-log';
 export { createPrismaClient } from './client';
 export {
   applyDocumentClassificationSuggestion,
+  confirmDocumentClassificationSuggestion,
   createDocumentRecord,
   getDocumentByMachine,
   listDocumentsByMachine,
@@ -25,6 +26,7 @@ export {
 export type { ActivityLogRecord } from './activity-log';
 export type {
   ApplyDocumentClassificationSuggestionInput,
+  ConfirmDocumentClassificationSuggestionInput,
   CreateDocumentRecordInput,
   DocumentRecord,
   DocumentRecordsDatabase,
