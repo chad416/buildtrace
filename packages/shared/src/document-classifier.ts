@@ -2,8 +2,11 @@ import type {
   DocumentCategory,
   DocumentClassificationSource,
   DocumentClassificationStatus,
-} from './index.js';
-import { documentClassificationNeedsReviewThreshold } from './index.js';
+  documentClassificationNeedsReviewThreshold,
+} from './index';
+
+const classificationNeedsReviewThreshold =
+  70 satisfies typeof documentClassificationNeedsReviewThreshold;
 
 export type ClassifyDocumentFromFilenameInput = {
   readonly fileName: string;
@@ -201,7 +204,7 @@ export function classifyDocumentFromFilename({
     suggestedCategory: bestMatch.category,
     classificationConfidence: bestMatch.confidence,
     classificationStatus:
-      isAmbiguous || bestMatch.confidence < documentClassificationNeedsReviewThreshold
+      isAmbiguous || bestMatch.confidence < classificationNeedsReviewThreshold
         ? 'needs-review'
         : 'classified',
     classificationSource: 'filename-type',
