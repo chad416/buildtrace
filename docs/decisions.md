@@ -1209,3 +1209,118 @@ Rejected alternatives:
 - adding upload UI before storage, metadata, tenant isolation, validation, consistency, and signed URL rules are locked
 - adding AI classification in Phase 4
 - adding QR document access in Phase 4
+
+### Phase 5 document classification boundary
+
+Approved.
+
+Decision:
+
+- Phase 5 document classification is suggestion-only.
+- The classifier must never auto-apply a category.
+- The classifier must never change `visibility_level`.
+- The classifier must never change `visible_to_customer`.
+- The classifier must never expose raw private storage paths.
+- Phase 5 must not send uploaded files to external model-training paths.
+- Phase 5 must not add AI classification, OCR, PDF text extraction, semantic PLC/HMI parsing, vector search, or worker-queue processing.
+- Existing builder-controlled `category` remains the effective document category.
+- New classification metadata is advisory:
+  - `suggestedCategory`
+  - `classificationConfidence`
+  - `classificationStatus`
+  - `classificationSource`
+- `suggestedCategory` is nullable.
+- `classificationConfidence` is nullable and uses an integer `0-100` scale.
+- The needs-review threshold is a named shared constant.
+- The initial needs-review threshold is `70`.
+- Classification status values are:
+  - `unclassified`
+  - `classified`
+  - `needs-review`
+  - `manually-confirmed`
+- Classification source values are:
+  - `filename-type`
+  - `manual`
+- New classification status/source enums must ship with shared-vs-Prisma drift checks in the same implementation slice.
+
+Backfill rule:
+
+- Existing Phase 4 documents must not be classified inside a Prisma migration.
+- Existing documents start as `unclassified`.
+- Existing documents have `suggestedCategory = null`.
+- Existing documents have `classificationConfidence = null`.
+- Classification runs on new upload or through an explicit builder action.
+
+Classifier rule:
+
+- The first classifier is deterministic and filename/type based only.
+- It may use:
+  - normalized file name
+  - extension
+  - MIME type
+  - small keyword sets across supported locales
+- Matching must normalize casing.
+- Matching must fold or strip diacritics before keyword comparison.
+- The classifier may suggest only existing document categories.
+- Exact high-signal keyword plus compatible extension/MIME should produce high confidence.
+- Extension/MIME-only matches should produce medium confidence.
+- Weak keyword-only matches should produce lower confidence.
+- No useful match should produce `unclassified` or `needs-review`, depending on whether classification was attempted.
+- Ambiguous matches must produce `needs-review` instead of guessing.
+- Conservative handling is required for PLC, HMI, CAD, electrical drawings, and other sensitive engineering files.
+
+Apply-suggestion rule:
+
+- Applying a suggested category is an explicit builder action.
+- Applying a suggested category is treated as a category update.
+- Because category updates apply the category default visibility, the UI must warn or show that applying a suggestion may apply the category default visibility.
+- Applying a suggestion must not create a customer-visible state without explicit builder confirmation.
+- The classifier itself must never make that decision.
+
+Status lifecycle:
+
+- Legal lifecycle:
+  - `unclassified` -> `classified`
+  - `unclassified` -> `needs-review`
+  - `classified` -> `manually-confirmed`
+  - `needs-review` -> `manually-confirmed`
+- Once a builder manually confirms or corrects a document category, classifier reruns must not downgrade `classificationStatus`.
+- A later classifier rerun may update advisory suggestion metadata only if it does not replace the builder-controlled category and does not downgrade manual confirmation.
+
+Audit rule:
+
+- Accepting a suggested category must be activity-logged as `document.classification_confirmed`.
+- Manually correcting a category away from the suggestion remains a document category change and must be activity-logged through the category-change path.
+- Manual classification actions must remain organization-scoped and document-scoped.
+
+UI rule:
+
+- `unclassified` should be visually quiet.
+- `needs-review` should be visibly actionable.
+- UI must display internal category enums through localized labels.
+- Uploaded document language metadata remains separate from UI locale.
+
+Reason:
+
+- Phase 5 exists to organize document dumps without weakening Phase 4's private-by-default security boundary.
+- The roadmap requires filename/type classification, confidence, manual correction, and needs-review state.
+- The roadmap says AI is optional later, so Phase 5 must not introduce external model processing now.
+- The instructions say uploaded files must not be used for external model training.
+- BuildTrace is a multi-tenant document product; classification must never widen access, expose storage paths, or bypass organization checks.
+- Suggestion-only preserves the builder as the decision-maker.
+- Separating advisory classification metadata from the effective category keeps automation from silently changing customer exposure.
+- `unclassified` and `needs-review` represent different builder states and must not be collapsed.
+- A deterministic multilingual keyword set is lean enough to serve EU users without adding NLP or translation infrastructure.
+- Drift checks keep shared constants, Prisma enums, and UI/API behavior aligned.
+
+Rejected alternatives:
+
+- auto-applying high-confidence categories
+- letting classifier update document visibility
+- treating old documents as `needs-review` without running classification
+- running classifier logic inside a Prisma migration
+- using AI, OCR, PDF text extraction, vector search, or worker queues in Phase 5
+- exposing raw storage paths to classification UI or API clients
+- English-only keyword matching without documenting the limitation
+- guessing when multiple categories match
+- letting classifier reruns downgrade manual builder decisions
