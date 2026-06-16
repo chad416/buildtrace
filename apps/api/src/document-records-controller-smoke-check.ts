@@ -2,10 +2,12 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 
 import {
+  applyDocumentClassificationSuggestionFromRequest,
   getDocumentFromRequest,
   listDocumentsFromRequest,
   updateDocumentCategoryFromRequest,
   updateDocumentVisibilityFromRequest,
+  type ApplyDocumentClassificationSuggestionResponse,
   type DocumentMetadataResponse,
   type DocumentRecordsEndpointDependencies,
 } from './document-records.controller.js';
@@ -28,6 +30,10 @@ type UpdateDocumentVisibilityInput = Parameters<
   DocumentRecordsEndpointDependencies['updateDocumentVisibility']
 >[0];
 
+type ApplyDocumentClassificationSuggestionInput = Parameters<
+  DocumentRecordsEndpointDependencies['applyDocumentClassificationSuggestion']
+>[0];
+
 type CapturedResolveInput = {
   readonly authorizationHeader: string | undefined;
   readonly organizationId: string;
@@ -41,6 +47,7 @@ type CapturedCalls = {
   readonly getDocumentInputs: GetDocumentInput[];
   readonly updateDocumentCategoryInputs: UpdateDocumentCategoryInput[];
   readonly updateDocumentVisibilityInputs: UpdateDocumentVisibilityInput[];
+  readonly applyDocumentClassificationSuggestionInputs: ApplyDocumentClassificationSuggestionInput[];
 };
 
 const fakeDb = {} as PrismaClient;
@@ -85,6 +92,7 @@ function createCapturedCalls(): CapturedCalls {
     getDocumentInputs: [],
     updateDocumentCategoryInputs: [],
     updateDocumentVisibilityInputs: [],
+    applyDocumentClassificationSuggestionInputs: [],
   };
 }
 
@@ -139,6 +147,17 @@ function createDependencies(capturedCalls: CapturedCalls): DocumentRecordsEndpoi
         ...fakeDocument,
         visibilityLevel: input.visibilityLevel,
         visibleToCustomer: input.visibilityLevel === 'customer-visible',
+      };
+    },
+    applyDocumentClassificationSuggestion: async (input) => {
+      capturedCalls.applyDocumentClassificationSuggestionInputs.push(input);
+
+      return {
+        ...fakeDocument,
+        suggestedCategory: 'plc',
+        classificationConfidence: 96,
+        classificationStatus: 'classified',
+        classificationSource: 'filename-type',
       };
     },
     markDocumentDownloadUrlIssued: async () => ({
@@ -217,6 +236,11 @@ function createDependenciesWithMissingDocument(
 
       return null;
     },
+    applyDocumentClassificationSuggestion: async (input) => {
+      capturedCalls.applyDocumentClassificationSuggestionInputs.push(input);
+
+      return null;
+    },
   };
 }
 
@@ -290,6 +314,30 @@ function assertSanitizedDocument(document: DocumentMetadataResponse, label: stri
 
   assert(!('storagePath' in runtimeDocument), `${label} exposed raw private storage path.`);
   assert(!('checksum' in runtimeDocument), `${label} exposed checksum.`);
+}
+
+function assertClassificationResponse(
+  response: ApplyDocumentClassificationSuggestionResponse,
+  label: string,
+): void {
+  assert(response.document.suggestedCategory === 'plc', `${label} did not expose suggestion.`);
+  assert(response.document.classificationConfidence === 96, `${label} did not expose confidence.`);
+  assert(
+    response.document.classificationStatus === 'classified',
+    `${label} did not expose status.`,
+  );
+  assert(
+    response.document.classificationSource === 'filename-type',
+    `${label} did not expose source.`,
+  );
+  assert(
+    response.document.category === fakeDocument.category,
+    `${label} must not auto-apply suggested category.`,
+  );
+  assert(
+    response.document.visibilityLevel === fakeDocument.visibilityLevel,
+    `${label} must not change visibility.`,
+  );
 }
 
 async function runDocumentReadSmokeCheck(): Promise<void> {
@@ -373,6 +421,16 @@ async function runDocumentUpdateSmokeCheck(): Promise<void> {
     dependencies: createDependencies(capturedCalls),
   });
 
+  const classificationResponse = await applyDocumentClassificationSuggestionFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: ' machine-1 ',
+    documentId: ' document-1 ',
+    body: {
+      organizationId: ' organization-1 ',
+    },
+    dependencies: createDependencies(capturedCalls),
+  });
+
   assert(categoryResponse.document.category === 'plc', 'Category update did not return category.');
   assert(
     categoryResponse.document.visibilityLevel === 'sensitive-engineering',
@@ -386,6 +444,7 @@ async function runDocumentUpdateSmokeCheck(): Promise<void> {
     visibilityResponse.document.visibleToCustomer === true,
     'Customer-visible update did not expose explicit visibility.',
   );
+  assertClassificationResponse(classificationResponse, 'Classification suggestion response');
 
   assertSanitizedDocument(categoryResponse.document, 'Category update response');
   assertSanitizedDocument(visibilityResponse.document, 'Visibility update response');
@@ -400,12 +459,22 @@ async function runDocumentUpdateSmokeCheck(): Promise<void> {
     ['OWNER', 'ADMIN'],
     'Document visibility update',
   );
+  assertResolveInput(
+    capturedCalls.resolveInputs[2],
+    ['OWNER', 'ADMIN'],
+    'Document classification suggestion',
+  );
 
   const categoryInput = capturedCalls.updateDocumentCategoryInputs[0];
   const visibilityInput = capturedCalls.updateDocumentVisibilityInputs[0];
+  const classificationInput = capturedCalls.applyDocumentClassificationSuggestionInputs[0];
 
   assert(categoryInput !== undefined, 'Update document category dependency was not called.');
   assert(visibilityInput !== undefined, 'Update document visibility dependency was not called.');
+  assert(
+    classificationInput !== undefined,
+    'Apply document classification suggestion dependency was not called.',
+  );
 
   assert(categoryInput.db === fakeDb, 'DB dependency was not forwarded to category update.');
   assert(categoryInput.organizationId === 'organization-1', 'Category organization ID was wrong.');
@@ -424,6 +493,17 @@ async function runDocumentUpdateSmokeCheck(): Promise<void> {
     visibilityInput.visibilityLevel === 'customer-visible',
     'Visibility level was not normalized.',
   );
+
+  assert(
+    classificationInput.db === fakeDb,
+    'DB dependency was not forwarded to classification suggestion.',
+  );
+  assert(
+    classificationInput.organizationId === 'organization-1',
+    'Classification suggestion organization ID was wrong.',
+  );
+  assert(classificationInput.machineId === 'machine-1', 'Classification machine ID was wrong.');
+  assert(classificationInput.documentId === 'document-1', 'Classification document ID was wrong.');
 }
 
 async function runValidationSmokeCheck(): Promise<void> {
@@ -520,6 +600,18 @@ async function runValidationSmokeCheck(): Promise<void> {
       body: {
         organizationId: 'organization-1',
         visibilityLevel: 'internal',
+      },
+      dependencies: missingDocumentDependencies,
+    }),
+  );
+
+  await expectNotFound('classification document not found', () =>
+    applyDocumentClassificationSuggestionFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      documentId: 'document-404',
+      body: {
+        organizationId: 'organization-1',
       },
       dependencies: missingDocumentDependencies,
     }),

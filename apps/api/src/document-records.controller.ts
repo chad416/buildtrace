@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Body,
   Controller,
@@ -14,6 +14,7 @@
 } from '@nestjs/common';
 import type { DocumentRecord, OrganizationRole, PrismaClient } from '@buildtrace/db';
 import {
+  applyDocumentClassificationSuggestion,
   createActivityLog,
   createPrismaClient,
   getDocumentByMachine,
@@ -27,8 +28,10 @@ import {
   documentCategories,
   documentVisibilityLevels,
   type DocumentCategory,
-  type DocumentVisibilityLevel,
+  type DocumentClassificationSource,
+  type DocumentClassificationStatus,
   type DocumentLanguageCode,
+  type DocumentVisibilityLevel,
 } from '@buildtrace/shared';
 
 import {
@@ -68,6 +71,10 @@ export type CreateDocumentDownloadUrlRequestBody = {
   readonly organizationId?: unknown;
 };
 
+export type ApplyDocumentClassificationSuggestionRequestBody = {
+  readonly organizationId?: unknown;
+};
+
 export type DocumentMetadataResponse = {
   readonly id: string;
   readonly organizationId: string;
@@ -75,6 +82,10 @@ export type DocumentMetadataResponse = {
   readonly fileName: string;
   readonly fileType: string;
   readonly category: DocumentCategory;
+  readonly suggestedCategory: DocumentCategory | null;
+  readonly classificationConfidence: number | null;
+  readonly classificationStatus: DocumentClassificationStatus;
+  readonly classificationSource: DocumentClassificationSource | null;
   readonly visibilityLevel: DocumentVisibilityLevel;
   readonly visibleToCustomer: boolean;
   readonly language: DocumentLanguageCode;
@@ -98,6 +109,10 @@ export type UpdateDocumentCategoryResponse = {
 };
 
 export type UpdateDocumentVisibilityResponse = {
+  readonly document: DocumentMetadataResponse;
+};
+
+export type ApplyDocumentClassificationSuggestionResponse = {
   readonly document: DocumentMetadataResponse;
 };
 
@@ -130,6 +145,10 @@ type UpdateDocumentVisibilityDependency = (
   input: Parameters<typeof updateDocumentVisibility>[0],
 ) => Promise<DocumentRecord | null>;
 
+type ApplyDocumentClassificationSuggestionDependency = (
+  input: Parameters<typeof applyDocumentClassificationSuggestion>[0],
+) => Promise<DocumentRecord | null>;
+
 type MarkDocumentDownloadUrlIssuedDependency = (
   input: Parameters<typeof markDocumentDownloadUrlIssued>[0],
 ) => Promise<DocumentRecord | null>;
@@ -155,6 +174,7 @@ export type DocumentRecordsEndpointDependencies = {
   readonly getDocumentByMachine: GetDocumentByMachineDependency;
   readonly updateDocumentCategory: UpdateDocumentCategoryDependency;
   readonly updateDocumentVisibility: UpdateDocumentVisibilityDependency;
+  readonly applyDocumentClassificationSuggestion: ApplyDocumentClassificationSuggestionDependency;
   readonly markDocumentDownloadUrlIssued: MarkDocumentDownloadUrlIssuedDependency;
   readonly createActivityLog: CreateActivityLogDependency;
   readonly readDocumentStorageConfig: ReadDocumentStorageConfigDependency;
@@ -198,6 +218,14 @@ type CreateDocumentDownloadUrlFromRequestInput = {
   readonly machineId: string | undefined;
   readonly documentId: string | undefined;
   readonly body: CreateDocumentDownloadUrlRequestBody | undefined;
+  readonly dependencies: DocumentRecordsEndpointDependencies;
+};
+
+type ApplyDocumentClassificationSuggestionFromRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly machineId: string | undefined;
+  readonly documentId: string | undefined;
+  readonly body: ApplyDocumentClassificationSuggestionRequestBody | undefined;
   readonly dependencies: DocumentRecordsEndpointDependencies;
 };
 
@@ -250,6 +278,10 @@ function toDocumentMetadataResponse(document: DocumentRecord): DocumentMetadataR
     fileName: document.fileName,
     fileType: document.fileType,
     category: document.category,
+    suggestedCategory: document.suggestedCategory,
+    classificationConfidence: document.classificationConfidence,
+    classificationStatus: document.classificationStatus,
+    classificationSource: document.classificationSource,
     visibilityLevel: document.visibilityLevel,
     visibleToCustomer: document.visibleToCustomer,
     language: document.language,
@@ -269,6 +301,7 @@ function createRealDependencies(): DocumentRecordsEndpointDependencies {
     getDocumentByMachine,
     updateDocumentCategory,
     updateDocumentVisibility,
+    applyDocumentClassificationSuggestion,
     markDocumentDownloadUrlIssued,
     createActivityLog,
     readDocumentStorageConfig,
@@ -433,6 +466,41 @@ export async function updateDocumentVisibilityFromRequest({
   };
 }
 
+export async function applyDocumentClassificationSuggestionFromRequest({
+  authorizationHeader,
+  machineId,
+  documentId,
+  body,
+  dependencies,
+}: ApplyDocumentClassificationSuggestionFromRequestInput): Promise<ApplyDocumentClassificationSuggestionResponse> {
+  const requestBody = body ?? {};
+  const organizationId = readRequiredString('organizationId', requestBody.organizationId);
+  const normalizedMachineId = readRequiredString('machineId', machineId);
+  const normalizedDocumentId = readRequiredString('documentId', documentId);
+
+  await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: documentUpdateRoles,
+  });
+
+  const document = await dependencies.applyDocumentClassificationSuggestion({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    documentId: normalizedDocumentId,
+  });
+
+  if (!document) {
+    throw new NotFoundException('Document was not found for this machine.');
+  }
+
+  return {
+    document: toDocumentMetadataResponse(document),
+  };
+}
+
 export async function createDocumentDownloadUrlFromRequest({
   authorizationHeader,
   machineId,
@@ -551,6 +619,22 @@ export class DocumentRecordsController {
       dependencies: {
         db,
       },
+    });
+  }
+
+  @Post('machines/:machineId/documents/:documentId/classification-suggestion')
+  async applyDocumentClassificationSuggestion(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Param('documentId') documentId: string | undefined,
+    @Body() body: ApplyDocumentClassificationSuggestionRequestBody | undefined,
+  ): Promise<ApplyDocumentClassificationSuggestionResponse> {
+    return applyDocumentClassificationSuggestionFromRequest({
+      authorizationHeader,
+      machineId,
+      documentId,
+      body,
+      dependencies: createRealDependencies(),
     });
   }
 

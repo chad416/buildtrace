@@ -164,6 +164,7 @@ function createDependencies(
     },
     updateDocumentCategory: async () => fakeDocument,
     updateDocumentVisibility: async () => fakeDocument,
+    applyDocumentClassificationSuggestion: async () => fakeDocument,
     markDocumentDownloadUrlIssued: async (input) => {
       capturedCalls.markDocumentDownloadUrlIssuedInputs.push(input);
 

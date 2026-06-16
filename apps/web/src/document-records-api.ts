@@ -3,6 +3,8 @@ import {
   documentLanguageCodes,
   documentVisibilityLevels,
   type DocumentCategory,
+  type DocumentClassificationSource,
+  type DocumentClassificationStatus,
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
 } from '@buildtrace/shared';
@@ -14,6 +16,10 @@ export type DocumentMetadataApiModel = {
   readonly fileName: string;
   readonly fileType: string;
   readonly category: DocumentCategory;
+  readonly suggestedCategory: DocumentCategory | null;
+  readonly classificationConfidence: number | null;
+  readonly classificationStatus: DocumentClassificationStatus;
+  readonly classificationSource: DocumentClassificationSource | null;
   readonly visibilityLevel: DocumentVisibilityLevel;
   readonly visibleToCustomer: boolean;
   readonly language: DocumentLanguageCode;
@@ -77,6 +83,13 @@ export type UpdateDocumentVisibilityApiInput = {
 };
 
 export type CreateDocumentDownloadUrlApiInput = {
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly documentId: string;
+  readonly accessToken: string;
+};
+
+export type ApplyDocumentClassificationSuggestionApiInput = {
   readonly organizationId: string;
   readonly machineId: string;
   readonly documentId: string;
@@ -304,6 +317,33 @@ export async function updateDocumentVisibility(
       visibilityLevel: normalizeDocumentVisibilityLevel(input.visibilityLevel),
     }),
   });
+
+  const responseBody = await parseJsonResponse<DocumentResponseBody>(response);
+
+  return responseBody.document;
+}
+
+export async function applyDocumentClassificationSuggestion(
+  input: ApplyDocumentClassificationSuggestionApiInput,
+  fetcher: Fetcher = fetch,
+): Promise<DocumentMetadataApiModel> {
+  const machineId = normalizeRequiredText('Machine ID', input.machineId);
+  const documentId = normalizeRequiredText('Document ID', input.documentId);
+  const response = await fetcher(
+    buildApiUrl(
+      `/document-records/machines/${encodeURIComponent(machineId)}/documents/${encodeURIComponent(documentId)}/classification-suggestion`,
+    ),
+    {
+      method: 'POST',
+      headers: {
+        authorization: createAuthorizationHeader(input.accessToken),
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+      }),
+    },
+  );
 
   const responseBody = await parseJsonResponse<DocumentResponseBody>(response);
 

@@ -1,4 +1,5 @@
 import {
+  applyDocumentClassificationSuggestion,
   createDocumentDownloadUrl,
   getDocument,
   listDocuments,
@@ -26,6 +27,10 @@ function createDocument(
     fileName: 'Manual.pdf',
     fileType: 'application/pdf',
     category: 'manuals',
+    suggestedCategory: null,
+    classificationConfidence: null,
+    classificationStatus: 'unclassified',
+    classificationSource: null,
     visibilityLevel: 'internal',
     visibleToCustomer: false,
     language: 'en',
@@ -52,6 +57,17 @@ function createCapturingFetcher(calls: CapturedRequest[]): Fetcher {
     calls.push({ input, init });
 
     const url = input instanceof URL ? input : new URL(String(input));
+
+    if (url.pathname.endsWith('/classification-suggestion')) {
+      return createJsonResponse({
+        document: createDocument({
+          suggestedCategory: 'plc',
+          classificationConfidence: 96,
+          classificationStatus: 'classified',
+          classificationSource: 'filename-type',
+        }),
+      });
+    }
 
     if (url.pathname.endsWith('/download-url')) {
       return createJsonResponse({
@@ -231,6 +247,38 @@ async function runDocumentRecordsApiSmokeCheck(): Promise<void> {
   assert(
     visibilityDocument.visibilityLevel === 'customer-visible',
     'Visibility update response was not returned.',
+  );
+
+  const classificationDocument = await applyDocumentClassificationSuggestion(
+    {
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      documentId: 'document-1',
+      accessToken: 'token-1',
+    },
+    fetcher,
+  );
+
+  assert(
+    classificationDocument.suggestedCategory === 'plc',
+    'Classification suggestion response was not returned.',
+  );
+  assert(
+    classificationDocument.classificationStatus === 'classified',
+    'Classification status response was not returned.',
+  );
+
+  const classificationCall = readCapturedCall(calls, 5);
+  const classificationUrl = readUrl(classificationCall.input);
+
+  assert(
+    classificationUrl.pathname ===
+      '/document-records/machines/machine-1/documents/document-1/classification-suggestion',
+    'Wrong classification suggestion path.',
+  );
+  assert(
+    classificationCall.init?.method === 'POST',
+    'Classification suggestion used wrong method.',
   );
 
   const downloadUrl = await createDocumentDownloadUrl(
