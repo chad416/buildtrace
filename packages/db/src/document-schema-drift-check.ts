@@ -1,11 +1,15 @@
 import {
   documentCategories,
+  documentClassificationSources,
+  documentClassificationStatuses,
   documentLanguageCodes,
   documentVisibilityLevels,
 } from '@buildtrace/shared';
 
 import {
   DocumentCategory,
+  DocumentClassificationSource,
+  DocumentClassificationStatus,
   DocumentLanguage,
   DocumentVisibilityLevel,
 } from './generated/prisma/enums';
@@ -44,6 +48,18 @@ function runDocumentSchemaDriftCheck(): void {
     'DocumentVisibilityLevel',
     documentVisibilityLevels,
     Object.values(DocumentVisibilityLevel).map(toKebabCase),
+  );
+
+  assertSameValues(
+    'DocumentClassificationStatus',
+    documentClassificationStatuses,
+    Object.values(DocumentClassificationStatus).map(toKebabCase),
+  );
+
+  assertSameValues(
+    'DocumentClassificationSource',
+    documentClassificationSources,
+    Object.values(DocumentClassificationSource).map(toKebabCase),
   );
 
   assertSameValues(

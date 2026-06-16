@@ -56,6 +56,18 @@ enum DocumentLanguage {
   UNKNOWN
 }
 
+enum DocumentClassificationStatus {
+  UNCLASSIFIED
+  CLASSIFIED
+  NEEDS_REVIEW
+  MANUALLY_CONFIRMED
+}
+
+enum DocumentClassificationSource {
+  FILENAME_TYPE
+  MANUAL
+}
+
 model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -187,22 +199,26 @@ model Machine {
 }
 
 model Document {
-  id                      String                  @id @default(uuid()) @db.Uuid
-  organizationId          String                  @map("organization_id") @db.Uuid
-  machineId               String                  @map("machine_id") @db.Uuid
-  fileName                String                  @map("file_name")
-  storagePath             String                  @map("storage_path")
-  fileType                String                  @map("file_type")
-  category                DocumentCategory
-  visibilityLevel         DocumentVisibilityLevel @default(INTERNAL) @map("visibility_level")
-  visibleToCustomer       Boolean                 @default(false) @map("visible_to_customer")
-  language                DocumentLanguage        @default(UNKNOWN)
-  checksum                String
-  uploadedByUserId        String?                 @map("uploaded_by") @db.Uuid
-  uploadedAt              DateTime                @default(now()) @map("uploaded_at")
-  lastDownloadUrlIssuedAt DateTime?               @map("last_download_url_issued_at")
-  createdAt               DateTime                @default(now()) @map("created_at")
-  updatedAt               DateTime                @updatedAt @map("updated_at")
+  id                       String                        @id @default(uuid()) @db.Uuid
+  organizationId           String                        @map("organization_id") @db.Uuid
+  machineId                String                        @map("machine_id") @db.Uuid
+  fileName                 String                        @map("file_name")
+  storagePath              String                        @map("storage_path")
+  fileType                 String                        @map("file_type")
+  category                 DocumentCategory
+  suggestedCategory        DocumentCategory?             @map("suggested_category")
+  classificationConfidence Int?                          @map("classification_confidence")
+  classificationStatus     DocumentClassificationStatus  @default(UNCLASSIFIED) @map("classification_status")
+  classificationSource     DocumentClassificationSource? @map("classification_source")
+  visibilityLevel          DocumentVisibilityLevel       @default(INTERNAL) @map("visibility_level")
+  visibleToCustomer        Boolean                       @default(false) @map("visible_to_customer")
+  language                 DocumentLanguage              @default(UNKNOWN)
+  checksum                 String
+  uploadedByUserId         String?                       @map("uploaded_by") @db.Uuid
+  uploadedAt               DateTime                      @default(now()) @map("uploaded_at")
+  lastDownloadUrlIssuedAt  DateTime?                     @map("last_download_url_issued_at")
+  createdAt                DateTime                      @default(now()) @map("created_at")
+  updatedAt                DateTime                      @updatedAt @map("updated_at")
 
   machine        Machine      @relation(fields: [organizationId, machineId], references: [organizationId, id], onDelete: Cascade)
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -211,6 +227,8 @@ model Document {
   @@unique([organizationId, storagePath])
   @@index([organizationId, machineId])
   @@index([organizationId, category])
+  @@index([organizationId, classificationStatus])
+  @@index([organizationId, suggestedCategory])
   @@index([organizationId, visibilityLevel])
   @@index([uploadedByUserId])
   @@map("documents")
