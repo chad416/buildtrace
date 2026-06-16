@@ -1,7 +1,10 @@
-﻿import {
+import {
   activityLogActions,
   defaultDocumentVisibility,
   documentCategories,
+  documentClassificationNeedsReviewThreshold,
+  documentClassificationSources,
+  documentClassificationStatuses,
   documentVisibilityLevels,
   fileVisibilityLevels,
   getDefaultDocumentVisibilityForCategory,
@@ -24,6 +27,8 @@ function runSharedDocumentConstantsSmokeCheck(): void {
   assertUniqueValues('fileVisibilityLevels', fileVisibilityLevels);
   assertUniqueValues('documentVisibilityLevels', documentVisibilityLevels);
   assertUniqueValues('documentCategories', documentCategories);
+  assertUniqueValues('documentClassificationStatuses', documentClassificationStatuses);
+  assertUniqueValues('documentClassificationSources', documentClassificationSources);
   assertUniqueValues(
     'sensitiveEngineeringDocumentCategories',
     sensitiveEngineeringDocumentCategories,
@@ -37,6 +42,22 @@ function runSharedDocumentConstantsSmokeCheck(): void {
   assert(
     !documentVisibilityLevels.includes('public' as never),
     'Phase 4 document visibility levels must not include public.',
+  );
+
+  assert(
+    documentClassificationStatuses.join('|') ===
+      'unclassified|classified|needs-review|manually-confirmed',
+    'Document classification statuses drifted.',
+  );
+
+  assert(
+    documentClassificationSources.join('|') === 'filename-type|manual',
+    'Document classification sources drifted.',
+  );
+
+  assert(
+    documentClassificationNeedsReviewThreshold === 70,
+    'Document classification needs-review threshold drifted.',
   );
 
   assert(
@@ -81,6 +102,11 @@ function runSharedDocumentConstantsSmokeCheck(): void {
   assert(
     activityLogActions.documentDownloadUrlIssued === 'document.download_url_issued',
     'Document signed URL issuance action drifted.',
+  );
+
+  assert(
+    activityLogActions.documentClassificationConfirmed === 'document.classification_confirmed',
+    'Document classification confirmation action drifted.',
   );
 }
 

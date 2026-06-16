@@ -44,6 +44,20 @@ export type DocumentCategory = (typeof documentCategories)[number];
 export const documentLanguageCodes = [...supportedLocales, 'unknown'] as const;
 
 export type DocumentLanguageCode = (typeof documentLanguageCodes)[number];
+export const documentClassificationStatuses = [
+  'unclassified',
+  'classified',
+  'needs-review',
+  'manually-confirmed',
+] as const;
+
+export type DocumentClassificationStatus = (typeof documentClassificationStatuses)[number];
+
+export const documentClassificationSources = ['filename-type', 'manual'] as const;
+
+export type DocumentClassificationSource = (typeof documentClassificationSources)[number];
+
+export const documentClassificationNeedsReviewThreshold = 70 as const;
 
 export const sensitiveEngineeringDocumentCategories = [
   'plc',
@@ -71,6 +85,7 @@ export const activityLogActions = {
   documentCategoryChanged: 'document.category_changed',
   documentVisibilityChanged: 'document.visibility_changed',
   documentDownloadUrlIssued: 'document.download_url_issued',
+  documentClassificationConfirmed: 'document.classification_confirmed',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];
