@@ -659,7 +659,11 @@ function renderDocumentsSection({
                 ) : null}
               </div>
               <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
-                <form action={updateCategoryAction} className="grid gap-2">
+                <form
+                  key={`${document.id}-${document.category}-category`}
+                  action={updateCategoryAction}
+                  className="grid gap-2"
+                >
                   <label className="grid gap-2 text-sm font-semibold text-stone-200">
                     Category
                     <select
@@ -686,7 +690,11 @@ function renderDocumentsSection({
                   </button>
                 </form>
 
-                <form action={updateVisibilityAction} className="grid gap-2">
+                <form
+                  key={`${document.id}-${document.visibilityLevel}-visibility`}
+                  action={updateVisibilityAction}
+                  className="grid gap-2"
+                >
                   <label className="grid gap-2 text-sm font-semibold text-stone-200">
                     Visibility
                     <select
