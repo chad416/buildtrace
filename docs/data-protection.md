@@ -2,15 +2,15 @@
 
 ## Current phase
 
-Phase 2 - Database + auth + tenancy is complete.
+Phase 5 - Document classification is complete.
 
 Current full beta roadmap completion:
 
-- 22%
+- about 55%
 
 Next phase:
 
-- Phase 3 - Machine/customer records foundation
+- Phase 6 - Handover completeness + export
 
 ## EU hosting intent
 
