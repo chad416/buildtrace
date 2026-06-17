@@ -1,4 +1,4 @@
-# AGENTS.md â€” BuildTrace
+# AGENTS.md Ã¢â‚¬â€ BuildTrace
 
 > Instructions for any AI coding agent working in this repo.
 > Read this first. The closest AGENTS.md to the file you edit wins; an explicit user prompt overrides everything here.
@@ -8,7 +8,7 @@
 BuildTrace is a multi-tenant industrial SaaS platform for machine documentation and
 service management, with an EU-first data-protection posture. Tenants manage machines,
 upload and classify documents, raise service tickets, and expose a public QR portal per
-machine. The product is in **Beta** (~45â€“55% complete; Phases 0â€“4 done, Phase 5 in progress).
+machine. The product is in **Beta** (about 55% complete; Phases 0-5 done, Phase 6 in progress).
 
 ## Stack
 
@@ -17,9 +17,9 @@ machine. The product is in **Beta** (~45â€“55% complete; Phases 0â€“4 
 - **API:** NestJS
 - **Worker:** background job processor (`apps/worker`)
 - **DB:** Prisma + PostgreSQL on Supabase, multi-tenant with Row-Level Security (RLS)
-- **Auth:** Supabase auth. Anon key in web â†’ JWT sent to NestJS â†’ **service-role key only in `apps/api`**, never in web
+- **Auth:** Supabase auth. Anon key in web Ã¢â€ â€™ JWT sent to NestJS Ã¢â€ â€™ **service-role key only in `apps/api`**, never in web
 - **Tests:** Jest + per-package smoke scripts (e.g. `document-records:smoke`)
-- **OS:** developed on Windows / PowerShell â€” package commands use `pnpm.cmd` locally, `pnpm` in CI/Unix
+- **OS:** developed on Windows / PowerShell Ã¢â‚¬â€ package commands use `pnpm.cmd` locally, `pnpm` in CI/Unix
 
 ## Layout
 
@@ -70,7 +70,7 @@ git diff --check      # catch whitespace / conflict markers
 - Strict TypeScript. No `any` escape hatches to make types pass.
 - Make the **smallest correct change** for the task. No drive-by refactors.
 - **Root-cause fixes, not workarounds.** Do not patch files with brittle regex/text-anchor
-  surgery â€” edit the actual source cleanly. If an edit doesn't apply, re-read the file and
+  surgery Ã¢â‚¬â€ edit the actual source cleanly. If an edit doesn't apply, re-read the file and
   fix the real cause.
 - Tenant isolation is non-negotiable: every data path must respect RLS / tenant scoping.
 - Use translation keys for all user-facing copy.
@@ -95,9 +95,9 @@ git diff --check      # catch whitespace / conflict markers
 
 ## Phase 5 Current State
 
-Phase 4 is complete. Phase 5 - Document classification is active.
+Phase 5 - Document classification is complete. Phase 6 - Handover completeness + export is active.
 
-As of commit `48342d9 feat(web): show document classification suggestions`, Phase 5 is roughly 70-75% complete and the full beta roadmap is roughly 52-53% complete.
+As of commit `dfb57f2 test(api): add dev browser session bootstrap`, Phase 5 is complete and the full beta roadmap is roughly 55% complete.
 
 Completed Phase 5 pieces:
 
@@ -109,18 +109,26 @@ Completed Phase 5 pieces:
 - API exposure and refresh endpoint
 - web API client support
 - machine detail UI display and refresh action
-
-Still required before Phase 5 can be closed:
-
 - explicit builder accept/confirm suggestion path
 - status transition to `manually-confirmed`
+- source transition to `manual`
 - activity log action `document.classification_confirmed`
+- browser verification
+- stale metadata control root fix after confirmation
+- dev browser-session bootstrap for repeatable verification
+
+Still required before Phase 6 can be closed:
+
+- handover completeness foundation
+- missing required document list
+- completeness percentage
+- export-readiness boundary
 - browser verification
 - roadmap/docs closeout
 
 ## Hard Warning For Future AI Agents
 
-Do not treat Phase 5 as complete yet.
+Do not reopen Phase 5 unless a real defect is found.
 
 Do not implement AI/OCR/vector search/worker queues for Phase 5.
 

@@ -10,45 +10,45 @@ Phase 2 - Database + auth + tenancy is complete.
 
 Phase 2 review hardening is complete.
 
+Phase 3 - Machine/customer records is complete.
+
+Phase 4 - Document dump upload is complete.
+
+Phase 5 - Document classification is complete.
+
 Current full beta roadmap completion:
 
-- about 45%
+- about 55%
 
 Current active phase:
 
-- Phase 5 - Document classification
+- Phase 6 - Handover completeness + export
 
 ## Immediate next step
 
-Close Phase 4 document dump upload and prepare the smallest safe Phase 5 document-classification slice.
+Start the smallest safe Phase 6 handover-completeness foundation slice.
 
 Reason:
 
-- Phase 3 Step 0 decisions are locked
-- schema foundation is implemented
-- typed machine status drift check is implemented
-- typed activity-log action constants are implemented
-- development bootstrap exists for real Supabase auth user, app user, organization, and membership provisioning
-- real PostgreSQL tenant-isolation coverage exists for machine records
-- DB helpers exist for customer, machine model, and machine create/read paths
-- API endpoints exist for customer, machine model, and machine create/read paths
-- web API client and cookie-backed session boundary exist
-- real browser create/list/detail flow has been verified
-- machine list rendering was stabilized with `key={machine.id}`
-- Phase 3 machine/customer records vertical slice is complete and runtime-verified
-- Phase 4 can now begin without reopening Phase 3 scope
+- Phase 5 classification is browser-verified end to end.
+- Classification suggestions are explicit builder-confirm only.
+- Classification does not change visibility or customer exposure.
+- `document.classification_confirmed` activity logging exists.
+- Dev preflight and dev browser-session bootstrap now reduce browser-verification token errors.
+- Phase 6 can start from a clean DB -> API -> web document foundation.
 
 Current focus:
 
-- keep Phase 3 closed at about 32% full beta completion
-- list Phase 5 as the active next phase
-- keep the verified create/read vertical slice intact
+- keep Phase 5 closed at about 55% full beta completion
+- list Phase 6 as the active next phase
+- keep private document storage and signed download URL boundaries intact
+- keep classification suggestion-only; do not add AI/OCR/vector search in Phase 6
+- build handover completeness from existing machine/document metadata
 - keep all product records organization-scoped
 - keep web data access through the API boundary
-- keep browser token travel through the approved session/cookie boundary
+- keep browser token travel through the approved dev browser-session flow
 - keep activity-log actions typed
 - keep status labels and user-facing copy localized
-- start Phase 4 document upload work only from the closed Phase 3 baseline
 
 ## Phase 2 review-hardening checklist
 

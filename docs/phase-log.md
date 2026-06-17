@@ -1445,3 +1445,81 @@ Out of scope for Phase 4:
 - export packaging
 - ticket workflows
 - spare-parts intelligence
+
+## 2026-06-17 - Phase 5 document classification closeout
+
+Phase 5 is complete.
+
+Full beta roadmap completion moved from about 45% to about 55%.
+
+Verified shipped scope:
+
+- classification boundary decision locked
+- shared classification constants
+- DB classification metadata
+- filename/type classifier
+- DB persistence of suggestions
+- API exposure and refresh endpoint
+- web API client support
+- machine detail UI display and refresh action
+- explicit builder confirmation action
+- status transition to manually-confirmed
+- classification source transition to manual
+- activity log action document.classification_confirmed
+- confirmation preserves visibility and customer exposure
+- stale metadata controls fixed after server-action confirmation
+- dev browser-session bootstrap added for repeatable browser verification
+
+Final verification passed:
+
+- `pnpm.cmd dev:preflight`
+- `pnpm.cmd --filter @buildtrace/web run document-records:smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web lint`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+
+Browser/runtime proof:
+
+- machine detail loaded through API session boundary
+- document classification suggestion displayed
+- refresh suggestion action worked
+- explicit confirm suggested category action worked
+- category changed to the suggested category only after explicit builder action
+- classification status showed manually confirmed
+- classification source showed manual
+- visibility stayed internal
+- category dropdown remounted to the confirmed category after reload
+- no product-breaking browser/API error remained
+
+Final pushed Phase 5 commits:
+
+- `dfb57f2 test(api): add dev browser session bootstrap`
+- `950f55f fix(web): remount document metadata controls after confirmation`
+- `812100e feat(web): confirm document classification suggestions`
+- `52fe84e feat(api): confirm document classification suggestions`
+- `e503366 feat(db): confirm document classification suggestions`
+- `48342d9 feat(web): show document classification suggestions`
+- `503a381 feat(api): expose document classification suggestions`
+- `26d29c9 fix(db): persist document classification suggestions`
+- `bf0ba38 fix(shared): align classifier exports with web bundler`
+- `ea48307 feat(shared): add document filename classifier`
+- `255c5f9 feat(db): add document classification metadata`
+- `e88857a feat(shared): add document classification constants`
+- `0e9f724 docs: lock phase 5 classification boundary`
+
+Out of scope for Phase 5:
+
+- AI classification
+- OCR
+- PDF text extraction
+- vector search
+- worker queues
+- automatic visibility changes
+- QR customer portal access
+- handover completeness scoring
+- export packaging

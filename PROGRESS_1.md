@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- 48342d9 feat(web): show document classification suggestions
+- dfb57f2 test(api): add dev browser session bootstrap
 
 Current branch:
 
@@ -16,17 +16,17 @@ Current phase:
 
 Current full beta roadmap completion:
 
-- about 52-53%
+- about 55%
 
 Phase 5 completion:
 
-- about 70-75%
+- complete
 
 ## Product / Roadmap Truth
 
 BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, and later QR customer portal, service tickets, software version timeline, spare parts intelligence, quotes, and feedback.
 
-Phase 4 is complete. Phase 5 is active. Phase 6 and later are not started.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is active. Phase 7 and later are not started.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -84,61 +84,55 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - machine detail document UI
 - dev preflight for DB, membership, storage bucket, and service-role setup
 
-## Phase 5 Completed So Far
+## Phase 5 Completed
 
 - Phase 5 classification decision lock added.
 - Classification is suggestion-only.
-- Classifier must never auto-apply category.
-- Classifier must never change visibility level.
-- Classifier must never make a file customer-visible.
+- Classifier never auto-applies category.
+- Classifier never changes visibility level.
+- Classifier never makes a file customer-visible.
 - No AI, OCR, PDF extraction, vector search, or worker queue in this lean Phase 5 slice.
-- Shared classification constants added:
-  - classification status
-  - classification source
-  - needs-review threshold
+- Shared classification constants added.
 - DB classification metadata added.
 - Filename/type classifier added in packages/shared.
 - DB persistence of suggested category, confidence, status, and source added.
 - API exposes classification metadata.
 - API endpoint added to refresh classification suggestion.
 - Web API client supports classification suggestion refresh.
-- Machine detail UI shows:
-  - suggested category
-  - classification status
-  - confidence
-  - source
-  - refresh suggestion action
-- Latest pushed commit:
-  - 48342d9 feat(web): show document classification suggestions
+- Machine detail UI shows suggested category, classification status, confidence, source, and refresh action.
+- Explicit builder confirm action added.
+- Confirmation applies the suggested category only after builder action.
+- Confirmation preserves visibility and customer exposure.
+- Confirmation sets status to manually-confirmed and source to manual.
+- Confirmation logs document.classification_confirmed.
+- Browser verification passed.
+- Stale category/visibility controls after confirmation were fixed.
+- Dev browser-session bootstrap added for repeatable browser testing.
 
-## Phase 5 Not Complete Yet
+## Phase 6 Not Complete Yet
 
-Still required before Phase 5 can be closed:
+Still required before Phase 6 can be closed:
 
-1. Explicit builder action to accept/confirm a suggested category.
-2. Preserve security boundary during accept:
-   - do not silently change visibility to customer-visible
-   - do not allow classifier to override builder decision
-3. Set classification status to manually-confirmed after explicit builder confirmation.
-4. Activity log:
-   - document.classification_confirmed
-5. Browser verification of the full classification flow.
-6. Docs update for honest Phase 5 progress/closeout after the accept path is complete.
+1. Handover completeness foundation.
+2. Required-document checklist.
+3. Missing document list.
+4. Completeness percentage.
+5. Export-readiness boundary.
+6. Browser verification.
+7. Docs update for honest Phase 6 progress/closeout.
 
 ## Next Exact Engineering Step
 
-Implement the explicit accept/confirm suggestion path.
+Start the smallest safe Phase 6 handover-completeness foundation slice.
 
 Lean/no-compromise rules for that step:
 
-- It must be builder-triggered.
-- It must be tenant-scoped.
-- It must be document-scoped.
-- It must preserve or explicitly handle visibility.
-- It must log document.classification_confirmed.
-- It must not introduce AI/OCR/vector search/worker queues.
-- It must not weaken Phase 4 private-by-default storage.
-- It must pass smoke/typecheck/lint/build/format gates before commit.
+- It must build on existing machine/document metadata.
+- It must stay tenant-scoped.
+- It must not weaken private storage or signed download boundaries.
+- It must not add AI/OCR/vector search/worker queues.
+- It must not expose sensitive documents to customers automatically.
+- It must pass relevant smoke/typecheck/lint/build/format gates before commit.
 
 ## Handoff Docs
 

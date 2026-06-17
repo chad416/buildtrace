@@ -16,13 +16,15 @@ Phase 3 is complete.
 
 Phase 4 is complete.
 
+Phase 5 is complete.
+
 Current full beta roadmap completion:
 
-- about 45%
+- about 55%
 
 Current active phase:
 
-- Phase 5 - Document classification
+- Phase 6 - Handover completeness + export
 
 ## Beta scope
 
@@ -340,24 +342,24 @@ Exit condition:
 
 Completion: 55% of beta.
 
-Status: not started.
+Status: complete.
 
-Scope:
+Delivered scope:
 
 - filename/type classifier
-- optional AI classifier later
-- confidence score
-- manual correction
-- needs-review state
-- localized category display
+- classification status, source, confidence, and needs-review threshold
+- suggestion-only classification metadata
+- manual correction and explicit builder confirmation
+- localized category display through existing category labels
 - security defaults preserved
-- manual override logging
+- manual override and confirmation logging
+- no AI, OCR, vector search, or worker queue in the lean Phase 5 slice
 
 Exit condition:
 
-- document dump becomes organized
-- sensitive files remain protected
-- AI suggestions never override security defaults
+- document dump becomes organized: met for filename/type suggestions and explicit builder confirmation
+- sensitive files remain protected: met; classification does not change visibility or customer exposure
+- AI suggestions never override security defaults: met by excluding AI and requiring explicit builder confirmation
 
 ### Phase 6 - Handover completeness + export
 
