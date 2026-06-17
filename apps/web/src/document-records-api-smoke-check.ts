@@ -1,5 +1,6 @@
 import {
   applyDocumentClassificationSuggestion,
+  confirmDocumentClassificationSuggestion,
   createDocumentDownloadUrl,
   getDocument,
   listDocuments,
@@ -65,6 +66,20 @@ function createCapturingFetcher(calls: CapturedRequest[]): Fetcher {
           classificationConfidence: 96,
           classificationStatus: 'classified',
           classificationSource: 'filename-type',
+        }),
+      });
+    }
+
+    if (url.pathname.endsWith('/classification-confirmation')) {
+      return createJsonResponse({
+        document: createDocument({
+          category: 'plc',
+          suggestedCategory: 'plc',
+          classificationConfidence: 96,
+          classificationStatus: 'manually-confirmed',
+          classificationSource: 'manual',
+          visibilityLevel: 'internal',
+          visibleToCustomer: false,
         }),
       });
     }
@@ -281,6 +296,49 @@ async function runDocumentRecordsApiSmokeCheck(): Promise<void> {
     'Classification suggestion used wrong method.',
   );
 
+  const confirmedClassificationDocument = await confirmDocumentClassificationSuggestion(
+    {
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      documentId: 'document-1',
+      accessToken: 'token-1',
+    },
+    fetcher,
+  );
+
+  assert(
+    confirmedClassificationDocument.category === 'plc',
+    'Classification confirmation did not apply the suggested category.',
+  );
+  assert(
+    confirmedClassificationDocument.classificationStatus === 'manually-confirmed',
+    'Classification confirmation status was not returned.',
+  );
+  assert(
+    confirmedClassificationDocument.classificationSource === 'manual',
+    'Classification confirmation source was not returned.',
+  );
+  assert(
+    confirmedClassificationDocument.visibilityLevel === 'internal',
+    'Classification confirmation must preserve visibility.',
+  );
+  assert(
+    confirmedClassificationDocument.visibleToCustomer === false,
+    'Classification confirmation must not expose the document.',
+  );
+
+  const confirmationCall = readCapturedCall(calls, 6);
+  const confirmationUrl = readUrl(confirmationCall.input);
+
+  assert(
+    confirmationUrl.pathname ===
+      '/document-records/machines/machine-1/documents/document-1/classification-confirmation',
+    'Wrong classification confirmation path.',
+  );
+  assert(
+    confirmationCall.init?.method === 'POST',
+    'Classification confirmation used wrong method.',
+  );
   const downloadUrl = await createDocumentDownloadUrl(
     {
       organizationId: 'organization-1',

@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
+  confirmMachineDocumentClassificationSuggestionAction,
   createMachineDocumentDownloadUrlAction,
   refreshMachineDocumentClassificationSuggestionAction,
   updateMachineDocumentCategoryAction,
@@ -543,6 +544,16 @@ function renderDocumentsSection({
               machine.id,
               document.id,
             );
+          const confirmClassificationAction =
+            confirmMachineDocumentClassificationSuggestionAction.bind(
+              null,
+              locale,
+              machine.id,
+              document.id,
+            );
+          const canConfirmClassificationSuggestion =
+            document.suggestedCategory !== null &&
+            document.classificationStatus !== 'manually-confirmed';
 
           return (
             <article
@@ -619,14 +630,33 @@ function renderDocumentsSection({
                   </div>
                 </dl>
 
-                <form action={refreshClassificationAction}>
-                  <button
-                    type="submit"
-                    className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
-                  >
-                    Refresh suggestion
-                  </button>
-                </form>
+                <div className="flex flex-wrap gap-3">
+                  <form action={refreshClassificationAction}>
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                    >
+                      Refresh suggestion
+                    </button>
+                  </form>
+
+                  {canConfirmClassificationSuggestion ? (
+                    <form action={confirmClassificationAction}>
+                      <button
+                        type="submit"
+                        className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-white"
+                      >
+                        Confirm suggested category
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+
+                {canConfirmClassificationSuggestion ? (
+                  <p className="text-xs leading-5 text-amber-200">
+                    Confirmation applies the suggested category only. Visibility stays unchanged.
+                  </p>
+                ) : null}
               </div>
               <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
                 <form action={updateCategoryAction} className="grid gap-2">
@@ -993,6 +1023,14 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             tone: 'success',
             title: 'Document visibility updated',
             body: 'The document visibility was updated through the API boundary.',
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.documentClassification === 'confirmed'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: 'Document classification confirmed',
+            body: 'The suggested category was applied explicitly without changing visibility.',
           })
         : null}
 

@@ -96,6 +96,9 @@ export type ApplyDocumentClassificationSuggestionApiInput = {
   readonly accessToken: string;
 };
 
+export type ConfirmDocumentClassificationSuggestionApiInput =
+  ApplyDocumentClassificationSuggestionApiInput;
+
 type DocumentsResponseBody = {
   readonly documents: readonly DocumentMetadataApiModel[];
 };
@@ -350,6 +353,32 @@ export async function applyDocumentClassificationSuggestion(
   return responseBody.document;
 }
 
+export async function confirmDocumentClassificationSuggestion(
+  input: ConfirmDocumentClassificationSuggestionApiInput,
+  fetcher: Fetcher = fetch,
+): Promise<DocumentMetadataApiModel> {
+  const machineId = normalizeRequiredText('Machine ID', input.machineId);
+  const documentId = normalizeRequiredText('Document ID', input.documentId);
+  const response = await fetcher(
+    buildApiUrl(
+      `/document-records/machines/${encodeURIComponent(machineId)}/documents/${encodeURIComponent(documentId)}/classification-confirmation`,
+    ),
+    {
+      method: 'POST',
+      headers: {
+        authorization: createAuthorizationHeader(input.accessToken),
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+      }),
+    },
+  );
+
+  const responseBody = await parseJsonResponse<DocumentResponseBody>(response);
+
+  return responseBody.document;
+}
 export async function createDocumentDownloadUrl(
   input: CreateDocumentDownloadUrlApiInput,
   fetcher: Fetcher = fetch,
