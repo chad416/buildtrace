@@ -17,7 +17,8 @@
     "document-storage:smoke": "tsx src/document-storage-smoke-check.ts",
     "document-upload:smoke": "tsx src/document-upload-smoke-check.ts",
     "document-upload-endpoint:smoke": "tsx src/document-upload-endpoint-smoke-check.ts",
-    "dev:preflight": "tsx src/dev-preflight.ts"
+    "dev:preflight": "tsx src/dev-preflight.ts",
+    "dev:browser-session": "tsx src/dev-browser-session.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
