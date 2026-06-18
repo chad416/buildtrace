@@ -1,13 +1,18 @@
-import { appMessages, isSupportedLocale } from '@buildtrace/i18n';
+import {
+  appMessages,
+  documentLabels,
+  handoverCompletenessCopy,
+  isSupportedLocale,
+  type DocumentLabels,
+  type HandoverCompletenessCopy,
+} from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
-  type DocumentCategory,
-  type DocumentClassificationSource,
+  type CustomerHandoverCompleteness,
   type DocumentClassificationStatus,
-  type DocumentLanguageCode,
   type DocumentVisibilityLevel,
 } from '@buildtrace/shared';
 import Link from 'next/link';
@@ -23,6 +28,7 @@ import {
   uploadMachineDocumentAction,
 } from '../actions';
 import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
+import { getHandoverCompleteness } from '@/handover-completeness-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -77,6 +83,7 @@ type MachineDetailLoadState =
       readonly customers: readonly CustomerRecordApiModel[];
       readonly machineModels: readonly MachineModelRecordApiModel[];
       readonly documents: readonly DocumentMetadataApiModel[];
+      readonly handoverCompleteness: CustomerHandoverCompleteness;
     };
 
 const statusClassNames = {
@@ -86,60 +93,12 @@ const statusClassNames = {
   ARCHIVED: 'border-stone-600 bg-stone-900 text-stone-300',
 } satisfies Record<MachineRecordApiModel['status'], string>;
 
-const documentCategoryLabels = {
-  plc: 'PLC',
-  hmi: 'HMI',
-  'mechanical-drawings': 'Mechanical drawings',
-  'electrical-drawings': 'Electrical drawings',
-  cad: 'CAD',
-  'machine-photos': 'Machine photos',
-  fat: 'FAT',
-  sat: 'SAT',
-  manuals: 'Manuals',
-  'safety-instructions': 'Safety instructions',
-  'supplier-documents': 'Supplier documents',
-  'spare-parts-bom': 'Spare parts BOM',
-  certificates: 'Certificates',
-  'service-notes': 'Service notes',
-  other: 'Other',
-} satisfies Record<DocumentCategory, string>;
-
-const documentVisibilityLabels = {
-  'customer-visible': 'Customer visible',
-  internal: 'Internal',
-  'sensitive-engineering': 'Sensitive engineering',
-  restricted: 'Restricted',
-} satisfies Record<DocumentVisibilityLevel, string>;
-
-const documentLanguageLabels = {
-  en: 'English',
-  cs: 'Czech',
-  sk: 'Slovak',
-  pl: 'Polish',
-  de: 'German',
-  fr: 'French',
-  es: 'Spanish',
-  unknown: 'Unknown',
-} satisfies Record<DocumentLanguageCode, string>;
-
 const documentVisibilityClassNames = {
   'customer-visible': 'border-sky-500/40 bg-sky-950/30 text-sky-200',
   internal: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200',
   'sensitive-engineering': 'border-amber-500/40 bg-amber-950/30 text-amber-200',
   restricted: 'border-red-500/40 bg-red-950/30 text-red-200',
 } satisfies Record<DocumentVisibilityLevel, string>;
-
-const documentClassificationStatusLabels = {
-  unclassified: 'Unclassified',
-  classified: 'Suggested',
-  'needs-review': 'Needs review',
-  'manually-confirmed': 'Manually confirmed',
-} satisfies Record<DocumentClassificationStatus, string>;
-
-const documentClassificationSourceLabels = {
-  'filename-type': 'Filename',
-  manual: 'Manual',
-} satisfies Record<DocumentClassificationSource, string>;
 
 const documentClassificationStatusClassNames = {
   unclassified: 'border-stone-700 bg-stone-950/40 text-stone-300',
@@ -432,11 +391,13 @@ function renderDocumentsSection({
   documents,
   locale,
   copy,
+  labels,
 }: {
   readonly machine: MachineRecordApiModel;
   readonly documents: readonly DocumentMetadataApiModel[];
   readonly locale: string;
   readonly copy: (typeof machineRecordsPageCopy)['en'];
+  readonly labels: DocumentLabels;
 }) {
   const uploadAction = uploadMachineDocumentAction.bind(null, locale, machine.id);
 
@@ -479,7 +440,7 @@ function renderDocumentsSection({
             >
               {documentCategories.map((category) => (
                 <option key={category} value={category}>
-                  {documentCategoryLabels[category]}
+                  {labels.categories[category]}
                 </option>
               ))}
             </select>
@@ -494,7 +455,7 @@ function renderDocumentsSection({
             >
               {documentLanguageCodes.map((language) => (
                 <option key={language} value={language}>
-                  {documentLanguageLabels[language]}
+                  {labels.languages[language]}
                 </option>
               ))}
             </select>
@@ -564,9 +525,9 @@ function renderDocumentsSection({
                 <div>
                   <p className="text-base font-semibold text-white">{document.fileName}</p>
                   <p className="mt-2 text-sm leading-6 text-stone-300">
-                    {documentCategoryLabels[document.category]}
+                    {labels.categories[document.category]}
                     {' - '}
-                    {documentLanguageLabels[document.language]}
+                    {labels.languages[document.language]}
                     {' - uploaded '}
                     {formatDate(document.uploadedAt, locale, copy.records.unavailableLabel)}
                   </p>
@@ -577,7 +538,7 @@ function renderDocumentsSection({
                     documentVisibilityClassNames[document.visibilityLevel]
                   }`}
                 >
-                  {documentVisibilityLabels[document.visibilityLevel]}
+                  {labels.visibilityLevels[document.visibilityLevel]}
                 </span>
               </div>
 
@@ -591,7 +552,7 @@ function renderDocumentsSection({
                       Suggested category:{' '}
                       <span className="font-semibold text-stone-100">
                         {document.suggestedCategory
-                          ? documentCategoryLabels[document.suggestedCategory]
+                          ? labels.categories[document.suggestedCategory]
                           : 'No suggestion'}
                       </span>
                     </p>
@@ -602,7 +563,7 @@ function renderDocumentsSection({
                       documentClassificationStatusClassNames[document.classificationStatus]
                     }`}
                   >
-                    {documentClassificationStatusLabels[document.classificationStatus]}
+                    {labels.classificationStatuses[document.classificationStatus]}
                   </span>
                 </div>
 
@@ -624,7 +585,7 @@ function renderDocumentsSection({
                     </dt>
                     <dd className="mt-1 text-sm text-stone-200">
                       {document.classificationSource
-                        ? documentClassificationSourceLabels[document.classificationSource]
+                        ? labels.classificationSources[document.classificationSource]
                         : 'No source'}
                     </dd>
                   </div>
@@ -673,7 +634,7 @@ function renderDocumentsSection({
                     >
                       {documentCategories.map((category) => (
                         <option key={category} value={category}>
-                          {documentCategoryLabels[category]}
+                          {labels.categories[category]}
                         </option>
                       ))}
                     </select>
@@ -704,7 +665,7 @@ function renderDocumentsSection({
                     >
                       {documentVisibilityLevels.map((visibilityLevel) => (
                         <option key={visibilityLevel} value={visibilityLevel}>
-                          {documentVisibilityLabels[visibilityLevel]}
+                          {labels.visibilityLevels[visibilityLevel]}
                         </option>
                       ))}
                     </select>
@@ -733,6 +694,88 @@ function renderDocumentsSection({
     </section>
   );
 }
+function renderHandoverCompleteness({
+  completeness,
+  copy,
+  labels,
+}: {
+  readonly completeness: CustomerHandoverCompleteness;
+  readonly copy: HandoverCompletenessCopy;
+  readonly labels: DocumentLabels;
+}) {
+  const isComplete = completeness.missingCategories.length === 0;
+
+  return (
+    <section
+      id="handover-readiness"
+      aria-labelledby="machine-handover-readiness-title"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+            {copy.eyebrow}
+          </p>
+          <h2
+            id="machine-handover-readiness-title"
+            className="mt-3 text-2xl font-semibold text-white"
+          >
+            {copy.title}
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-stone-300">{copy.description}</p>
+        </div>
+
+        <p className="text-4xl font-semibold tracking-tight text-white">
+          {completeness.percentage}%
+        </p>
+      </div>
+
+      <div className="mt-6">
+        <p className="text-sm text-stone-300">
+          <span className="font-semibold text-white">{completeness.completedCount}</span>{' '}
+          {copy.completedLabel}
+          {' / '}
+          <span className="font-semibold text-white">{completeness.requiredCount}</span>{' '}
+          {copy.requiredLabel}
+        </p>
+
+        <div
+          role="progressbar"
+          aria-label={copy.title}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={completeness.percentage}
+          className="mt-3 h-2 overflow-hidden rounded-full bg-stone-800"
+        >
+          <div
+            className="h-full rounded-full bg-emerald-400 transition-[width]"
+            style={{ width: String(completeness.percentage) + '%' }}
+          />
+        </div>
+      </div>
+
+      {isComplete ? (
+        <p className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-950/30 p-4 text-sm leading-6 text-emerald-100">
+          {copy.completeMessage}
+        </p>
+      ) : (
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-white">{copy.missingTitle}</h3>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {completeness.missingCategories.map((category) => (
+              <li
+                key={category}
+                className="rounded-md border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-sm text-amber-100"
+              >
+                {labels.categories[category]}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
 function renderMachineDetail({
   machine,
   customers,
@@ -741,6 +784,9 @@ function renderMachineDetail({
   locale,
   copy,
   createCopy,
+  handoverCompleteness,
+  handoverCopy,
+  labels,
   sections,
   sectionsAriaLabel,
 }: {
@@ -751,6 +797,9 @@ function renderMachineDetail({
   readonly locale: string;
   readonly copy: (typeof machineRecordsPageCopy)['en'];
   readonly createCopy: (typeof machineRecordsCreateCopy)['en'];
+  readonly handoverCompleteness: CustomerHandoverCompleteness;
+  readonly handoverCopy: HandoverCompletenessCopy;
+  readonly labels: DocumentLabels;
   readonly sections: readonly {
     readonly id: string;
     readonly titleId: string;
@@ -833,6 +882,12 @@ function renderMachineDetail({
         </dl>
       </section>
 
+      {renderHandoverCompleteness({
+        completeness: handoverCompleteness,
+        copy: handoverCopy,
+        labels,
+      })}
+
       {renderMachineEditForm({
         machine,
         customers,
@@ -846,6 +901,7 @@ function renderMachineDetail({
         documents,
         locale,
         copy,
+        labels,
       })}
 
       <section aria-label={sectionsAriaLabel} className="grid gap-4 md:grid-cols-2">
@@ -885,6 +941,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
   const messages = appMessages[locale].pages.machineDetail;
   const copy = machineRecordsPageCopy[locale];
   const createCopy = machineRecordsCreateCopy[locale];
+  const labels = documentLabels[locale];
+  const handoverCopy = handoverCompletenessCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -929,26 +987,32 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
     };
   } else {
     try {
-      const [machine, customers, machineModels, documents] = await Promise.all([
-        getMachineRecord({
-          organizationId: session.organizationId,
-          machineId,
-          accessToken: session.accessToken,
-        }),
-        listCustomers({
-          organizationId: session.organizationId,
-          accessToken: session.accessToken,
-        }),
-        listMachineModels({
-          organizationId: session.organizationId,
-          accessToken: session.accessToken,
-        }),
-        listDocuments({
-          organizationId: session.organizationId,
-          machineId,
-          accessToken: session.accessToken,
-        }),
-      ]);
+      const [machine, customers, machineModels, documents, handoverCompleteness] =
+        await Promise.all([
+          getMachineRecord({
+            organizationId: session.organizationId,
+            machineId,
+            accessToken: session.accessToken,
+          }),
+          listCustomers({
+            organizationId: session.organizationId,
+            accessToken: session.accessToken,
+          }),
+          listMachineModels({
+            organizationId: session.organizationId,
+            accessToken: session.accessToken,
+          }),
+          listDocuments({
+            organizationId: session.organizationId,
+            machineId,
+            accessToken: session.accessToken,
+          }),
+          getHandoverCompleteness({
+            organizationId: session.organizationId,
+            machineId,
+            accessToken: session.accessToken,
+          }),
+        ]);
 
       loadState = {
         status: 'ready',
@@ -956,6 +1020,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         customers,
         machineModels,
         documents,
+        handoverCompleteness,
       };
     } catch (error) {
       loadState = {
@@ -1098,7 +1163,12 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             locale,
             copy,
             createCopy,
-            sections: sections.filter((section) => section.id !== 'documents'),
+            handoverCompleteness: loadState.handoverCompleteness,
+            handoverCopy,
+            labels,
+            sections: sections.filter(
+              (section) => section.id !== 'documents' && section.id !== 'handover-readiness',
+            ),
             sectionsAriaLabel: messages.sectionsAriaLabel,
           })
         : null}
