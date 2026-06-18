@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx --env-file=../../.env --watch src/main.ts",
     "auth:smoke": "tsx src/auth-smoke-check.ts",
     "tenant:smoke": "tsx src/tenant-access-smoke-check.ts",
     "machine-status:check": "pnpm --filter @buildtrace/db run generate && tsx src/machine-status-drift-check.ts",
