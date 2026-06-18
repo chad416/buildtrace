@@ -68,6 +68,16 @@ enum DocumentClassificationSource {
   MANUAL
 }
 
+enum DataExportAudience {
+  CUSTOMER_HANDOVER
+}
+
+enum DataExportResult {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
 model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -77,6 +87,7 @@ model Organization {
 
   activityLogs  ActivityLog[]
   customers     Customer[]
+  dataExports   DataExport[]
   documents     Document[]
   machineModels MachineModel[]
   machines      Machine[]
@@ -95,6 +106,7 @@ model AppUser {
 
   activityLogs      ActivityLog[]
   memberships       OrganizationMembership[]
+  requestedExports  DataExport[]
   uploadedDocuments Document[]
 
   @@map("app_users")
@@ -186,6 +198,7 @@ model Machine {
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
   customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  dataExports  DataExport[]
   documents    Document[]
   machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -232,4 +245,27 @@ model Document {
   @@index([organizationId, visibilityLevel])
   @@index([uploadedByUserId])
   @@map("documents")
+}
+
+model DataExport {
+  id                String             @id @default(uuid()) @db.Uuid
+  organizationId    String             @map("organization_id") @db.Uuid
+  machineId         String             @map("machine_id") @db.Uuid
+  requestedByUserId String?            @map("requested_by") @db.Uuid
+  audience          DataExportAudience @default(CUSTOMER_HANDOVER)
+  checklistVersion  String             @map("checklist_version")
+  manifest          Json
+  result            DataExportResult   @default(PENDING)
+  completedAt       DateTime?          @map("completed_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  machine         Machine      @relation(fields: [organizationId, machineId], references: [organizationId, id], onDelete: Cascade)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requestedByUser AppUser?     @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, machineId, createdAt])
+  @@index([organizationId, result])
+  @@index([requestedByUserId])
+  @@map("data_exports")
 }

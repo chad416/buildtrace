@@ -80,6 +80,14 @@ export type DocumentClassificationSource = (typeof documentClassificationSources
 
 export const documentClassificationNeedsReviewThreshold = 70 as const;
 
+export const dataExportAudiences = ['customer-handover'] as const;
+
+export type DataExportAudience = (typeof dataExportAudiences)[number];
+
+export const dataExportResults = ['pending', 'succeeded', 'failed'] as const;
+
+export type DataExportResult = (typeof dataExportResults)[number];
+
 export const sensitiveEngineeringDocumentCategories = [
   'plc',
   'hmi',
