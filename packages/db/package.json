@@ -17,7 +17,8 @@
     "build": "pnpm run generate && tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "pnpm run generate && tsc --noEmit",
-    "data-export-schema:drift": "pnpm run generate && tsx src/data-export-schema-drift-check.ts"
+    "data-export-schema:drift": "pnpm run generate && tsx src/data-export-schema-drift-check.ts",
+    "data-export-records:isolation": "pnpm run generate && tsx src/data-export-records-isolation-check.ts"
   },
   "dependencies": {
     "@buildtrace/shared": "workspace:*",
