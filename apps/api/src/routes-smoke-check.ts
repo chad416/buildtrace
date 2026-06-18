@@ -41,6 +41,11 @@ const routeProbes: readonly RouteProbe[] = [
   },
   {
     method: 'GET',
+    url: '/document-records/machines/machine-1/handover-completeness',
+    expectedStatusCode: 400,
+  },
+  {
+    method: 'GET',
     url: '/document-records/machines/machine-1/documents/document-1',
     expectedStatusCode: 400,
   },
