@@ -350,10 +350,16 @@ Delivered scope:
 - classification status, source, confidence, and needs-review threshold
 - suggestion-only classification metadata
 - manual correction and explicit builder confirmation
-- localized category display through existing category labels
+- category values displayed in the machine-detail classification UI
 - security defaults preserved
 - manual override and confirmation logging
 - no AI, OCR, vector search, or worker queue in the lean Phase 5 slice
+
+Mandatory carry-forward correction before Phase 6 UI/export:
+
+- centralize document category, visibility, classification status, and classification source labels in `packages/i18n`
+- provide labels for every supported locale
+- use the centralized labels in machine detail, Phase 6 completeness UI, and localized PDF summaries
 
 Exit condition:
 

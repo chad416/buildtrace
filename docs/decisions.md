@@ -1,4 +1,4 @@
-﻿# BuildTrace Decisions
+# BuildTrace Decisions
 
 ## Current phase
 
@@ -1324,3 +1324,85 @@ Rejected alternatives:
 - English-only keyword matching without documenting the limitation
 - guessing when multiple categories match
 - letting classifier reruns downgrade manual builder decisions
+
+### Phase 6 handover completeness and export boundary
+
+Approved with mandatory preconditions after external plan review.
+
+Decision:
+
+- Phase 6 begins with customer-handover completeness, not export generation.
+- Completeness is computed dynamically from current document metadata and is not persisted.
+- The versioned beta checklist is `customer-handover-beta-v1`.
+- Required categories are:
+  - `manuals`
+  - `safety-instructions`
+  - `spare-parts-bom`
+  - `certificates`
+- Optional categories do not affect the beta-v1 percentage.
+- Each required category counts at most once.
+- Only the builder-controlled effective `category` counts.
+- `suggestedCategory` never satisfies a checklist requirement.
+- The checklist must never be empty.
+- Percentage uses deterministic floor calculation and reaches 100 only when every requirement is satisfied.
+
+Customer-export eligibility:
+
+- A document is eligible only when `visibilityLevel === 'customer-visible'`.
+- `visibleToCustomer` must also be `true` as an invariant guard.
+- Any disagreement between those fields fails closed and excludes the document.
+- `internal`, `sensitive-engineering`, and `restricted` documents are never customer-exportable.
+- Eligibility is enforced server-side through authenticated organization and machine scope.
+- Raw storage paths are never exposed through completeness/export responses.
+
+Localization correction:
+
+- Current document category, visibility, classification status, and classification source labels are hardcoded English in the machine-detail component.
+- Existing docs must not claim these labels are already localized.
+- Before Phase 6 UI work, labels must be centralized in `packages/i18n` for every supported locale.
+- The machine-detail document UI must consume the centralized labels instead of component-local English maps.
+- Phase 6 completeness UI must use the same localized labels.
+- Phase 6 PDF summaries must be generated in an explicitly selected supported locale.
+- Unsupported locales must fail validation or use the project-approved fallback.
+- PDF headings, checklist labels, visibility labels, status labels, and warnings must be localized.
+
+Export time-of-check/time-of-use rule:
+
+- An export manifest is not sufficient authorization by itself.
+- At ZIP/PDF packaging time, every included document must be re-read from current tenant-scoped database state.
+- Category, visibility, customer exposure, storage reference, and checksum must be revalidated.
+- If any document is missing, changed incompatibly, cross-tenant, or no longer eligible, export generation fails closed.
+- No partially authorized customer package may be created.
+
+Export boundary:
+
+- Export artifacts remain private.
+- Download links are temporary signed URLs.
+- ZIP paths and filenames must prevent traversal and collisions.
+- Export history records organization, machine, actor, audience, checklist version, manifest, creation time, and result.
+- Export creation and signed URL issuance use typed activity-log actions.
+- PDF and ZIP generation remain separate implementation slices.
+
+Implementation order:
+
+1. shared checklist constants and pure completeness evaluator
+2. focused completeness/security tests
+3. tenant-scoped DB and API boundary
+4. centralized i18n document labels
+5. machine-detail completeness UI and browser verification
+6. export manifest/history boundary
+7. ZIP export with packaging-time eligibility recheck
+8. localized PDF summary
+9. final browser, ZIP-content, PDF-visual, and docs verification
+
+Rejected alternatives:
+
+- counting suggested categories
+- persisting a percentage that can become stale
+- customer export based only on UI filtering
+- trusting an old manifest without packaging-time revalidation
+- exporting internal or sensitive-engineering documents
+- duplicating English category labels in Phase 6 UI/PDF
+- public export storage
+- permanent download URLs
+- combining ZIP/PDF/export-history work into the first slice
