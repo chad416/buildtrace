@@ -175,3 +175,81 @@ export async function createPendingCustomerHandoverExport({
     });
   });
 }
+
+export type CustomerHandoverExportCompletionResult = 'succeeded' | 'failed';
+
+export type CompleteCustomerHandoverExportInput = {
+  readonly db: DataExportRecordsDatabase;
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly exportId: string;
+  readonly result: CustomerHandoverExportCompletionResult;
+  readonly completedAt?: Date;
+};
+
+const completedResultByResult = {
+  succeeded: DataExportResult.SUCCEEDED,
+  failed: DataExportResult.FAILED,
+} satisfies Record<CustomerHandoverExportCompletionResult, DataExportResult>;
+
+function validCompletionDate(completedAt: Date | undefined): Date {
+  const resolved = completedAt ?? new Date();
+
+  if (Number.isNaN(resolved.getTime())) {
+    throw new Error('completedAt must be a valid date.');
+  }
+
+  return resolved;
+}
+
+export async function completeCustomerHandoverExport({
+  db,
+  organizationId,
+  machineId,
+  exportId,
+  result,
+  completedAt,
+}: CompleteCustomerHandoverExportInput): Promise<DataExport> {
+  const organization = required(organizationId, 'organizationId');
+  const machine = required(machineId, 'machineId');
+  const dataExportId = required(exportId, 'exportId');
+  const completionDate = validCompletionDate(completedAt);
+  const completedResult = completedResultByResult[result];
+
+  return db.$transaction(async (transaction) => {
+    const update = await transaction.dataExport.updateMany({
+      where: {
+        id: dataExportId,
+        organizationId: organization,
+        machineId: machine,
+        audience: DataExportAudience.CUSTOMER_HANDOVER,
+        result: DataExportResult.PENDING,
+        completedAt: null,
+      },
+      data: {
+        result: completedResult,
+        completedAt: completionDate,
+      },
+    });
+
+    if (update.count !== 1) {
+      throw new Error('Pending customer handover export was not found in this tenant scope.');
+    }
+
+    const completed = await transaction.dataExport.findFirst({
+      where: {
+        id: dataExportId,
+        organizationId: organization,
+        machineId: machine,
+        audience: DataExportAudience.CUSTOMER_HANDOVER,
+        result: completedResult,
+      },
+    });
+
+    if (!completed || completed.completedAt === null) {
+      throw new Error('Completed export history row could not be reloaded.');
+    }
+
+    return completed;
+  });
+}

@@ -1,4 +1,7 @@
-import { createPendingCustomerHandoverExport } from './data-export-records';
+import {
+  completeCustomerHandoverExport,
+  createPendingCustomerHandoverExport,
+} from './data-export-records';
 import { createPrismaClient } from './client';
 import {
   DataExportAudience,
@@ -254,6 +257,101 @@ async function run(): Promise<void> {
     });
 
     assert(exportCount === 1, 'Rejected attempts must not persist export rows.');
+    const succeededAt = new Date('2026-06-18T12:00:00.000Z');
+
+    await mustReject(
+      () =>
+        completeCustomerHandoverExport({
+          db,
+          organizationId: organizationB.id,
+          machineId: machineB.id,
+          exportId: created.id,
+          result: 'succeeded',
+          completedAt: succeededAt,
+        }),
+      'A cross-tenant export transition must be rejected.',
+    );
+
+    const stillPending = await db.dataExport.findUnique({
+      where: {
+        id: created.id,
+      },
+    });
+
+    assert(
+      stillPending?.result === DataExportResult.PENDING,
+      'Rejected transition must remain pending.',
+    );
+    assert(stillPending.completedAt === null, 'Rejected transition must not set completedAt.');
+
+    const succeeded = await completeCustomerHandoverExport({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      exportId: created.id,
+      result: 'succeeded',
+      completedAt: succeededAt,
+    });
+
+    assert(succeeded.result === DataExportResult.SUCCEEDED, 'Export must transition to succeeded.');
+    assert(
+      succeeded.completedAt?.getTime() === succeededAt.getTime(),
+      'Succeeded timestamp mismatch.',
+    );
+
+    await mustReject(
+      () =>
+        completeCustomerHandoverExport({
+          db,
+          organizationId: organizationA.id,
+          machineId: machineA.id,
+          exportId: created.id,
+          result: 'failed',
+        }),
+      'A completed export must not transition again.',
+    );
+
+    const afterRepeatAttempt = await db.dataExport.findUnique({
+      where: {
+        id: created.id,
+      },
+    });
+
+    assert(
+      afterRepeatAttempt?.result === DataExportResult.SUCCEEDED,
+      'Repeat transition must preserve result.',
+    );
+    assert(
+      afterRepeatAttempt.completedAt?.getTime() === succeededAt.getTime(),
+      'Repeat transition must preserve completedAt.',
+    );
+
+    const pendingFailure = await createPendingCustomerHandoverExport({
+      ...base,
+      documentIds: [eligibleA.id],
+    });
+
+    const failedAt = new Date('2026-06-18T12:05:00.000Z');
+
+    const failed = await completeCustomerHandoverExport({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      exportId: pendingFailure.id,
+      result: 'failed',
+      completedAt: failedAt,
+    });
+
+    assert(failed.result === DataExportResult.FAILED, 'Export must transition to failed.');
+    assert(failed.completedAt?.getTime() === failedAt.getTime(), 'Failed timestamp mismatch.');
+
+    const finalExportCount = await db.dataExport.count({
+      where: {
+        organizationId: organizationA.id,
+      },
+    });
+
+    assert(finalExportCount === 2, 'Lifecycle checks must persist exactly two export rows.');
   } finally {
     if (organizationIds.length > 0) {
       await db.dataExport.deleteMany({

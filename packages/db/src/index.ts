@@ -1,6 +1,9 @@
 export { createActivityLog } from './activity-log';
 export { createPrismaClient } from './client';
-export { createPendingCustomerHandoverExport } from './data-export-records';
+export {
+  completeCustomerHandoverExport,
+  createPendingCustomerHandoverExport,
+} from './data-export-records';
 export {
   applyDocumentClassificationSuggestion,
   confirmDocumentClassificationSuggestion,
@@ -26,7 +29,9 @@ export {
 } from './machine-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
+  CompleteCustomerHandoverExportInput,
   CreatePendingCustomerHandoverExportInput,
+  CustomerHandoverExportCompletionResult,
   DataExportRecordsDatabase,
 } from './data-export-records';
 export type {
@@ -44,4 +49,4 @@ export type {
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 
-export const dbPackageStatus = 'phase-6-export-history-create-ready';
+export const dbPackageStatus = 'phase-6-export-history-lifecycle-ready';
