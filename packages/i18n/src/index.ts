@@ -10,6 +10,8 @@ import skMessages from '../messages/sk.json';
 
 export { documentLabels } from './document-labels';
 export type { DocumentLabels } from './document-labels';
+export { handoverCompletenessCopy } from './handover-completeness-copy';
+export type { HandoverCompletenessCopy } from './handover-completeness-copy';
 
 export const locales = supportedLocales;
 

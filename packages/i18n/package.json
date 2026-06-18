@@ -9,7 +9,8 @@
     "build": "tsc --noEmit",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "document-labels:smoke": "tsx src/document-labels-smoke-check.ts"
+    "document-labels:smoke": "tsx src/document-labels-smoke-check.ts",
+    "handover-completeness-copy:smoke": "tsx src/handover-completeness-copy-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/shared": "workspace:*"
