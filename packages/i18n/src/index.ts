@@ -8,6 +8,9 @@ import frMessages from '../messages/fr.json';
 import plMessages from '../messages/pl.json';
 import skMessages from '../messages/sk.json';
 
+export { documentLabels } from './document-labels';
+export type { DocumentLabels } from './document-labels';
+
 export const locales = supportedLocales;
 
 export type Locale = (typeof locales)[number];
