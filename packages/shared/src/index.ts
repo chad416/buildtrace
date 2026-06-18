@@ -3,6 +3,13 @@ export type {
   ClassifyDocumentFromFilenameInput,
   DocumentClassificationSuggestion,
 } from './document-classifier';
+export {
+  customerHandoverChecklistVersion,
+  customerHandoverRequiredCategories,
+  evaluateCustomerHandoverCompleteness,
+  isCustomerExportEligibleDocument,
+} from './customer-handover';
+export type { CustomerHandoverCompleteness, CustomerHandoverDocument } from './customer-handover';
 export const supportedLocales = ['en', 'cs', 'sk', 'pl', 'de', 'fr', 'es'] as const;
 
 export type SupportedLocale = (typeof supportedLocales)[number];
