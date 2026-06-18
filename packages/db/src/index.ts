@@ -4,6 +4,7 @@ export {
   completeCustomerHandoverExport,
   createPendingCustomerHandoverExport,
 } from './data-export-records';
+export { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 export {
   applyDocumentClassificationSuggestion,
   confirmDocumentClassificationSuggestion,
@@ -35,6 +36,12 @@ export type {
   DataExportRecordsDatabase,
 } from './data-export-records';
 export type {
+  DataExportRevalidationDatabase,
+  RevalidatePendingCustomerHandoverExportInput,
+  RevalidatedCustomerHandoverExport,
+  RevalidatedCustomerHandoverExportDocument,
+} from './data-export-revalidation';
+export type {
   ApplyDocumentClassificationSuggestionInput,
   ConfirmDocumentClassificationSuggestionInput,
   CreateDocumentRecordInput,
@@ -49,4 +56,4 @@ export type {
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 
-export const dbPackageStatus = 'phase-6-export-history-lifecycle-ready';
+export const dbPackageStatus = 'phase-6-export-revalidation-ready';

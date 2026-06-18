@@ -2,7 +2,9 @@ import {
   completeCustomerHandoverExport,
   createPendingCustomerHandoverExport,
 } from './data-export-records';
+import { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 import { createPrismaClient } from './client';
+import type { Prisma } from './generated/prisma/client';
 import {
   DataExportAudience,
   DataExportResult,
@@ -145,7 +147,12 @@ async function run(): Promise<void> {
           organizationId: organizationA.id,
           machineId: machineA.id,
           fileName: 'manual-a.pdf',
-          storagePath: 'exports/' + suffix + '/manual-a.pdf',
+          storagePath:
+            'organizations/' +
+            organizationA.id +
+            '/machines/' +
+            machineA.id +
+            '/documents/manual-a/manual-a.pdf',
           fileType: 'application/pdf',
           category: DocumentCategory.MANUALS,
           visibilityLevel: DocumentVisibilityLevel.CUSTOMER_VISIBLE,
@@ -158,7 +165,12 @@ async function run(): Promise<void> {
           organizationId: organizationA.id,
           machineId: machineA.id,
           fileName: 'private-a.pdf',
-          storagePath: 'exports/' + suffix + '/private-a.pdf',
+          storagePath:
+            'organizations/' +
+            organizationA.id +
+            '/machines/' +
+            machineA.id +
+            '/documents/private-a/private-a.pdf',
           fileType: 'application/pdf',
           category: DocumentCategory.CERTIFICATES,
           visibilityLevel: DocumentVisibilityLevel.INTERNAL,
@@ -171,7 +183,12 @@ async function run(): Promise<void> {
           organizationId: organizationB.id,
           machineId: machineB.id,
           fileName: 'manual-b.pdf',
-          storagePath: 'exports/' + suffix + '/manual-b.pdf',
+          storagePath:
+            'organizations/' +
+            organizationB.id +
+            '/machines/' +
+            machineB.id +
+            '/documents/manual-b/manual-b.pdf',
           fileType: 'application/pdf',
           category: DocumentCategory.MANUALS,
           visibilityLevel: DocumentVisibilityLevel.CUSTOMER_VISIBLE,
@@ -257,6 +274,214 @@ async function run(): Promise<void> {
     });
 
     assert(exportCount === 1, 'Rejected attempts must not persist export rows.');
+    const revalidated = await revalidatePendingCustomerHandoverExport({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      exportId: created.id,
+    });
+
+    assert(revalidated.documents.length === 1, 'Revalidation must return one document.');
+    assert(
+      revalidated.documents[0]?.documentId === eligibleA.id,
+      'Revalidation returned the wrong document.',
+    );
+
+    await mustReject(
+      () =>
+        revalidatePendingCustomerHandoverExport({
+          db,
+          organizationId: organizationB.id,
+          machineId: machineB.id,
+          exportId: created.id,
+        }),
+      'Cross-tenant revalidation must be rejected.',
+    );
+
+    const revalidationInput = {
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      exportId: created.id,
+    };
+
+    const restoreEligibleDocument = {
+      fileName: eligibleA.fileName,
+      storagePath: eligibleA.storagePath,
+      checksum: eligibleA.checksum,
+      category: eligibleA.category,
+      visibilityLevel: eligibleA.visibilityLevel,
+      visibleToCustomer: eligibleA.visibleToCustomer,
+    };
+
+    const expectDocumentDrift = async (
+      data: Prisma.DocumentUpdateInput,
+      message: string,
+    ): Promise<void> => {
+      await db.document.update({
+        where: { id: eligibleA.id },
+        data,
+      });
+
+      try {
+        await mustReject(() => revalidatePendingCustomerHandoverExport(revalidationInput), message);
+      } finally {
+        await db.document.update({
+          where: { id: eligibleA.id },
+          data: restoreEligibleDocument,
+        });
+      }
+    };
+
+    await expectDocumentDrift(
+      { fileName: 'changed-manual.pdf' },
+      'File-name drift must fail revalidation.',
+    );
+
+    await expectDocumentDrift(
+      { storagePath: eligibleA.storagePath + '.moved' },
+      'Storage-path drift must fail revalidation.',
+    );
+
+    await expectDocumentDrift(
+      { checksum: eligibleA.checksum + '-changed' },
+      'Checksum drift must fail revalidation.',
+    );
+
+    await expectDocumentDrift(
+      { category: DocumentCategory.OTHER },
+      'Category drift must fail revalidation.',
+    );
+
+    await expectDocumentDrift(
+      {
+        visibilityLevel: DocumentVisibilityLevel.INTERNAL,
+      },
+      'Visibility drift must fail revalidation.',
+    );
+
+    await expectDocumentDrift(
+      { visibleToCustomer: false },
+      'Customer-exposure drift must fail revalidation.',
+    );
+    assert(typeof manifest.manifestVersion === 'string', 'Manifest version must be a string.');
+    assert(typeof manifest.checklistVersion === 'string', 'Checklist version must be a string.');
+
+    const originalManifestDocument = {
+      documentId: eligibleA.id,
+      fileName: eligibleA.fileName,
+      storagePath: eligibleA.storagePath,
+      checksum: eligibleA.checksum,
+      category: 'manuals',
+      visibilityLevel: 'customer-visible',
+      visibleToCustomer: true,
+    } as const;
+
+    const originalManifest = {
+      manifestVersion: manifest.manifestVersion,
+      checklistVersion: manifest.checklistVersion,
+      documents: [originalManifestDocument],
+    } satisfies Prisma.InputJsonObject;
+
+    const expectManifestRejection = async (
+      changedManifest: Prisma.InputJsonObject,
+      message: string,
+    ): Promise<void> => {
+      await db.dataExport.update({
+        where: {
+          id: created.id,
+        },
+        data: {
+          manifest: changedManifest,
+        },
+      });
+
+      try {
+        await mustReject(() => revalidatePendingCustomerHandoverExport(revalidationInput), message);
+      } finally {
+        await db.dataExport.update({
+          where: {
+            id: created.id,
+          },
+          data: {
+            manifest: originalManifest,
+          },
+        });
+      }
+    };
+
+    await expectManifestRejection(
+      {
+        ...originalManifest,
+        manifestVersion: 'unsupported-manifest',
+      },
+      'Unsupported manifest version must fail revalidation.',
+    );
+
+    await expectManifestRejection(
+      {
+        ...originalManifest,
+        documents: [originalManifestDocument, originalManifestDocument],
+      },
+      'Duplicate manifest document IDs must fail revalidation.',
+    );
+
+    await expectManifestRejection(
+      {
+        ...originalManifest,
+        documents: [
+          {
+            ...originalManifestDocument,
+            documentId: crypto.randomUUID(),
+          },
+        ],
+      },
+      'Missing manifest document must fail revalidation.',
+    );
+
+    const forgedStoragePath =
+      'organizations/' +
+      organizationB.id +
+      '/machines/' +
+      machineB.id +
+      '/documents/forged/manual-a.pdf';
+
+    await db.document.update({
+      where: { id: eligibleA.id },
+      data: { storagePath: forgedStoragePath },
+    });
+
+    await db.dataExport.update({
+      where: { id: created.id },
+      data: {
+        manifest: {
+          ...originalManifest,
+          documents: [
+            {
+              ...originalManifestDocument,
+              storagePath: forgedStoragePath,
+            },
+          ],
+        },
+      },
+    });
+
+    try {
+      await mustReject(
+        () => revalidatePendingCustomerHandoverExport(revalidationInput),
+        'Forged cross-tenant storage scope must fail revalidation.',
+      );
+    } finally {
+      await db.document.update({
+        where: { id: eligibleA.id },
+        data: restoreEligibleDocument,
+      });
+
+      await db.dataExport.update({
+        where: { id: created.id },
+        data: { manifest: originalManifest },
+      });
+    }
     const succeededAt = new Date('2026-06-18T12:00:00.000Z');
 
     await mustReject(
@@ -297,6 +522,17 @@ async function run(): Promise<void> {
     assert(
       succeeded.completedAt?.getTime() === succeededAt.getTime(),
       'Succeeded timestamp mismatch.',
+    );
+
+    await mustReject(
+      () =>
+        revalidatePendingCustomerHandoverExport({
+          db,
+          organizationId: organizationA.id,
+          machineId: machineA.id,
+          exportId: created.id,
+        }),
+      'Completed export revalidation must be rejected.',
     );
 
     await mustReject(
