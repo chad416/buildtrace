@@ -1,14 +1,13 @@
+import {
+  buildPrivateCustomerHandoverExportStoragePath,
+  type CustomerHandoverExportStorageScope,
+} from '@buildtrace/shared';
+
 import type {
   DocumentStorageAdapter,
   DocumentStorageConfig,
   DocumentStorageSignedUrlResult,
 } from './document-storage.js';
-
-export type CustomerHandoverExportStorageScope = {
-  readonly organizationId: string;
-  readonly machineId: string;
-  readonly exportId: string;
-};
 
 export type UploadCustomerHandoverExportInput = CustomerHandoverExportStorageScope & {
   readonly config: DocumentStorageConfig;
@@ -26,42 +25,7 @@ export type CreateCustomerHandoverExportSignedUrlInput = CustomerHandoverExportS
   readonly storage: DocumentStorageAdapter;
 };
 
-function safePathSegment(value: string, fieldName: string): string {
-  const normalized = value.trim();
-
-  if (
-    !normalized ||
-    normalized === '.' ||
-    normalized === '..' ||
-    normalized.includes('/') ||
-    normalized.includes('\\') ||
-    Array.from(normalized).some((character) => {
-      const code = character.charCodeAt(0);
-
-      return code <= 31 || code === 127;
-    })
-  ) {
-    throw new Error(fieldName + ' is not a safe export storage path segment.');
-  }
-
-  return normalized;
-}
-
-export function buildCustomerHandoverExportStoragePath({
-  organizationId,
-  machineId,
-  exportId,
-}: CustomerHandoverExportStorageScope): string {
-  return [
-    'organizations',
-    safePathSegment(organizationId, 'organizationId'),
-    'machines',
-    safePathSegment(machineId, 'machineId'),
-    'exports',
-    safePathSegment(exportId, 'exportId'),
-    'customer-handover.zip',
-  ].join('/');
-}
+export const buildCustomerHandoverExportStoragePath = buildPrivateCustomerHandoverExportStoragePath;
 
 export async function uploadCustomerHandoverExport({
   config,

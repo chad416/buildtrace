@@ -5,7 +5,7 @@ import {
   type DocumentCategory,
 } from '@buildtrace/shared';
 
-import type { Prisma, PrismaClient } from './generated/prisma/client';
+import { Prisma, type PrismaClient } from './generated/prisma/client';
 import {
   DataExportAudience,
   DataExportResult,
@@ -14,6 +14,11 @@ import {
 } from './generated/prisma/enums';
 
 export type DataExportRevalidationDatabase = Pick<PrismaClient, '$transaction'>;
+
+export type DataExportRevalidationTransaction = Pick<
+  Prisma.TransactionClient,
+  '$queryRaw' | 'dataExport' | 'document'
+>;
 
 export type RevalidatedCustomerHandoverExportDocument = {
   readonly documentId: string;
@@ -39,6 +44,14 @@ export type RevalidatePendingCustomerHandoverExportInput = {
   readonly machineId: string;
   readonly exportId: string;
 };
+
+export type RevalidatePendingCustomerHandoverExportInTransactionInput = Omit<
+  RevalidatePendingCustomerHandoverExportInput,
+  'db'
+> & {
+  readonly transaction: DataExportRevalidationTransaction;
+};
+
 const categories = {
   [PrismaDocumentCategory.PLC]: 'plc',
   [PrismaDocumentCategory.HMI]: 'hmi',
@@ -59,6 +72,7 @@ const categories = {
   (typeof PrismaDocumentCategory)[keyof typeof PrismaDocumentCategory],
   DocumentCategory
 >;
+
 function required(value: string, fieldName: string): string {
   const normalized = value.trim();
 
@@ -92,6 +106,7 @@ function categoryValue(value: unknown): DocumentCategory {
 
   return value as DocumentCategory;
 }
+
 function parseManifest(
   value: Prisma.JsonValue,
 ): readonly RevalidatedCustomerHandoverExportDocument[] {
@@ -137,6 +152,7 @@ function parseManifest(
     };
   });
 }
+
 function storagePathMatchesScope(
   organizationId: string,
   machineId: string,
@@ -147,90 +163,149 @@ function storagePathMatchesScope(
 
   return storagePath.startsWith(requiredPrefix) && storagePath.length > requiredPrefix.length;
 }
+
+export async function revalidatePendingCustomerHandoverExportInTransaction({
+  transaction,
+  organizationId,
+  machineId,
+  exportId,
+}: RevalidatePendingCustomerHandoverExportInTransactionInput): Promise<RevalidatedCustomerHandoverExport> {
+  const organization = required(organizationId, 'organizationId');
+  const machine = required(machineId, 'machineId');
+  const dataExportId = required(exportId, 'exportId');
+
+  const lockedExports = await transaction.$queryRaw<readonly { readonly id: string }[]>(
+    Prisma.sql`
+        SELECT "id"::text AS "id"
+        FROM "data_exports"
+        WHERE "id" = ${dataExportId}::uuid
+          AND "organization_id" = ${organization}::uuid
+          AND "machine_id" = ${machine}::uuid
+          AND "audience" = 'CUSTOMER_HANDOVER'
+          AND "result" = 'PENDING'
+          AND "completed_at" IS NULL
+        FOR UPDATE
+      `,
+  );
+
+  if (lockedExports.length !== 1) {
+    throw new Error('Pending customer handover export was not found in this tenant scope.');
+  }
+
+  const dataExport = await transaction.dataExport.findFirst({
+    where: {
+      id: dataExportId,
+      organizationId: organization,
+      machineId: machine,
+      audience: DataExportAudience.CUSTOMER_HANDOVER,
+      result: DataExportResult.PENDING,
+      completedAt: null,
+    },
+  });
+
+  if (!dataExport) {
+    throw new Error('Locked customer handover export could not be reloaded.');
+  }
+
+  if (dataExport.checklistVersion !== customerHandoverChecklistVersion) {
+    throw new Error('Export history checklist version is unsupported.');
+  }
+
+  const manifestDocuments = parseManifest(dataExport.manifest);
+
+  const manifestDocumentIds = manifestDocuments.map((document) => document.documentId);
+
+  const documentIdParameters = manifestDocumentIds.map(
+    (documentId) => Prisma.sql`${documentId}::uuid`,
+  );
+
+  const lockedDocuments = await transaction.$queryRaw<readonly { readonly id: string }[]>(
+    Prisma.sql`
+        SELECT "id"::text AS "id"
+        FROM "documents"
+        WHERE "organization_id" = ${organization}::uuid
+          AND "machine_id" = ${machine}::uuid
+          AND "id" IN (
+            ${Prisma.join(documentIdParameters)}
+          )
+        ORDER BY "id"
+        FOR SHARE
+      `,
+  );
+
+  if (lockedDocuments.length !== manifestDocuments.length) {
+    throw new Error(
+      'One or more export documents no longer belong to this organization and machine.',
+    );
+  }
+
+  const documents = await transaction.document.findMany({
+    where: {
+      id: {
+        in: manifestDocumentIds,
+      },
+      organizationId: organization,
+      machineId: machine,
+    },
+    select: {
+      id: true,
+      fileName: true,
+      storagePath: true,
+      checksum: true,
+      category: true,
+      visibilityLevel: true,
+      visibleToCustomer: true,
+    },
+  });
+
+  if (documents.length !== manifestDocuments.length) {
+    throw new Error(
+      'One or more export documents no longer belong to this organization and machine.',
+    );
+  }
+
+  const currentById = new Map(documents.map((document) => [document.id, document]));
+
+  for (const manifestDocument of manifestDocuments) {
+    const current = currentById.get(manifestDocument.documentId);
+
+    if (
+      !current ||
+      !storagePathMatchesScope(organization, machine, current.storagePath) ||
+      current.fileName !== manifestDocument.fileName ||
+      current.storagePath !== manifestDocument.storagePath ||
+      current.checksum !== manifestDocument.checksum ||
+      categories[current.category] !== manifestDocument.category ||
+      current.visibilityLevel !== DocumentVisibilityLevel.CUSTOMER_VISIBLE ||
+      current.visibleToCustomer !== true
+    ) {
+      throw new Error(
+        'Document ' + manifestDocument.documentId + ' changed after export creation.',
+      );
+    }
+  }
+
+  return {
+    exportId: dataExport.id,
+    organizationId: dataExport.organizationId,
+    machineId: dataExport.machineId,
+    checklistVersion: customerHandoverChecklistVersion,
+    documents: manifestDocuments,
+  };
+}
+
 export async function revalidatePendingCustomerHandoverExport({
   db,
   organizationId,
   machineId,
   exportId,
 }: RevalidatePendingCustomerHandoverExportInput): Promise<RevalidatedCustomerHandoverExport> {
-  const organization = required(organizationId, 'organizationId');
-  const machine = required(machineId, 'machineId');
-  const dataExportId = required(exportId, 'exportId');
-
-  return db.$transaction(async (transaction) => {
-    const dataExport = await transaction.dataExport.findFirst({
-      where: {
-        id: dataExportId,
-        organizationId: organization,
-        machineId: machine,
-        audience: DataExportAudience.CUSTOMER_HANDOVER,
-        result: DataExportResult.PENDING,
-        completedAt: null,
-      },
-    });
-
-    if (!dataExport) {
-      throw new Error('Pending customer handover export was not found in this tenant scope.');
-    }
-
-    if (dataExport.checklistVersion !== customerHandoverChecklistVersion) {
-      throw new Error('Export history checklist version is unsupported.');
-    }
-
-    const manifestDocuments = parseManifest(dataExport.manifest);
-
-    const documents = await transaction.document.findMany({
-      where: {
-        id: {
-          in: manifestDocuments.map((document) => document.documentId),
-        },
-        organizationId: organization,
-        machineId: machine,
-      },
-      select: {
-        id: true,
-        fileName: true,
-        storagePath: true,
-        checksum: true,
-        category: true,
-        visibilityLevel: true,
-        visibleToCustomer: true,
-      },
-    });
-
-    if (documents.length !== manifestDocuments.length) {
-      throw new Error(
-        'One or more export documents no longer belong to this organization and machine.',
-      );
-    }
-
-    const currentById = new Map(documents.map((document) => [document.id, document]));
-
-    for (const manifestDocument of manifestDocuments) {
-      const current = currentById.get(manifestDocument.documentId);
-
-      if (
-        !current ||
-        !storagePathMatchesScope(organization, machine, current.storagePath) ||
-        current.fileName !== manifestDocument.fileName ||
-        current.storagePath !== manifestDocument.storagePath ||
-        current.checksum !== manifestDocument.checksum ||
-        categories[current.category] !== manifestDocument.category ||
-        current.visibilityLevel !== DocumentVisibilityLevel.CUSTOMER_VISIBLE ||
-        current.visibleToCustomer !== true
-      ) {
-        throw new Error(
-          'Document ' + manifestDocument.documentId + ' changed after export creation.',
-        );
-      }
-    }
-
-    return {
-      exportId: dataExport.id,
-      organizationId: dataExport.organizationId,
-      machineId: dataExport.machineId,
-      checklistVersion: customerHandoverChecklistVersion,
-      documents: manifestDocuments,
-    };
-  });
+  return db.$transaction((transaction) =>
+    revalidatePendingCustomerHandoverExportInTransaction({
+      transaction,
+      organizationId,
+      machineId,
+      exportId,
+    }),
+  );
 }

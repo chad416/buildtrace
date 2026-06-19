@@ -4,6 +4,7 @@ import {
   Controller,
   Headers,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   Param,
   Post,
@@ -14,29 +15,32 @@ import type {
   RevalidatedCustomerHandoverExport,
 } from '@buildtrace/db';
 import {
-  completeCustomerHandoverExport,
-  completeCustomerHandoverExportSuccess,
+  failCustomerHandoverExport,
   createActivityLog,
   createPendingCustomerHandoverExport,
   createPrismaClient,
-  getSucceededCustomerHandoverExport,
+  finalizeCustomerHandoverExportSuccess,
+  getSucceededCustomerHandoverExportArtifact,
   revalidatePendingCustomerHandoverExport,
 } from '@buildtrace/db';
-import { activityLogActions } from '@buildtrace/shared';
+import {
+  activityLogActions,
+  buildPrivateCustomerHandoverExportStoragePath,
+} from '@buildtrace/shared';
 
 import {
   resolveAuthenticatedTenantContext,
   type AuthenticatedTenantContext,
 } from './authenticated-tenant-context.js';
 import {
-  buildCustomerHandoverZipArchive,
-  type CustomerHandoverZipArchive,
-} from './customer-handover-zip-archive.js';
-import {
   createCustomerHandoverExportSignedUrl,
   removeCustomerHandoverExport,
   uploadCustomerHandoverExport,
 } from './customer-handover-export-storage.js';
+import {
+  buildCustomerHandoverZipArchive,
+  type CustomerHandoverZipArchive,
+} from './customer-handover-zip-archive.js';
 import {
   createSupabaseDocumentStorageAdapter,
   downloadDocumentFromStorage,
@@ -89,14 +93,38 @@ type ResolveAuthenticatedTenantContextDependency = (input: {
 
 type CustomerHandoverStorageAdapter = DocumentStorageAdapter & DocumentStorageDownloadAdapter;
 
+type FinalizeCustomerHandoverExportDependency = (
+  input: Parameters<typeof finalizeCustomerHandoverExportSuccess>[0],
+) => Promise<
+  Pick<
+    Awaited<ReturnType<typeof finalizeCustomerHandoverExportSuccess>>,
+    'id' | 'checklistVersion' | 'createdAt' | 'completedAt'
+  >
+>;
+
+type GetSucceededCustomerHandoverExportArtifactDependency = (
+  input: Parameters<typeof getSucceededCustomerHandoverExportArtifact>[0],
+) => Promise<Pick<
+  NonNullable<Awaited<ReturnType<typeof getSucceededCustomerHandoverExportArtifact>>>,
+  'id'
+> | null>;
+
+export type CustomerHandoverRecoveryFailure = {
+  readonly operation: 'mark-export-failed' | 'remove-export-artifact';
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly exportId: string;
+  readonly reason: unknown;
+};
+
 export type CustomerHandoverExportEndpointDependencies = {
   readonly db: PrismaClient;
   readonly resolveAuthenticatedTenantContext: ResolveAuthenticatedTenantContextDependency;
   readonly createPendingCustomerHandoverExport: typeof createPendingCustomerHandoverExport;
   readonly revalidatePendingCustomerHandoverExport: typeof revalidatePendingCustomerHandoverExport;
-  readonly completeCustomerHandoverExport: typeof completeCustomerHandoverExport;
-  readonly completeCustomerHandoverExportSuccess: typeof completeCustomerHandoverExportSuccess;
-  readonly getSucceededCustomerHandoverExport: typeof getSucceededCustomerHandoverExport;
+  readonly failCustomerHandoverExport: typeof failCustomerHandoverExport;
+  readonly finalizeCustomerHandoverExportSuccess: FinalizeCustomerHandoverExportDependency;
+  readonly getSucceededCustomerHandoverExportArtifact: GetSucceededCustomerHandoverExportArtifactDependency;
   readonly createActivityLog: typeof createActivityLog;
   readonly readDocumentStorageConfig: () => DocumentStorageConfig;
   readonly createDocumentStorageAdapter: (
@@ -107,6 +135,7 @@ export type CustomerHandoverExportEndpointDependencies = {
   readonly uploadCustomerHandoverExport: typeof uploadCustomerHandoverExport;
   readonly removeCustomerHandoverExport: typeof removeCustomerHandoverExport;
   readonly createCustomerHandoverExportSignedUrl: typeof createCustomerHandoverExportSignedUrl;
+  readonly reportRecoveryFailure?: (failure: CustomerHandoverRecoveryFailure) => void;
 };
 
 type CreateCustomerHandoverExportFromRequestInput = {
@@ -125,7 +154,10 @@ type CreateCustomerHandoverExportDownloadUrlFromRequestInput = {
 };
 
 const exportRoles: readonly OrganizationRole[] = ['OWNER', 'ADMIN'];
+
 const db = createPrismaClient();
+
+const logger = new Logger('CustomerHandoverExportController');
 
 function requiredString(name: string, value: unknown): string {
   if (typeof value !== 'string') {
@@ -163,15 +195,33 @@ function documentIds(value: unknown): readonly string[] {
   return normalized;
 }
 
+function reportRecoveryFailure(failure: CustomerHandoverRecoveryFailure): void {
+  const reason =
+    failure.reason instanceof Error
+      ? (failure.reason.stack ?? failure.reason.message)
+      : String(failure.reason);
+
+  logger.error(
+    [
+      'Customer handover export recovery failed.',
+      'operation=' + failure.operation,
+      'organizationId=' + failure.organizationId,
+      'machineId=' + failure.machineId,
+      'exportId=' + failure.exportId,
+      reason,
+    ].join(' '),
+  );
+}
+
 function createRealDependencies(): CustomerHandoverExportEndpointDependencies {
   return {
     db,
     resolveAuthenticatedTenantContext,
     createPendingCustomerHandoverExport,
     revalidatePendingCustomerHandoverExport,
-    completeCustomerHandoverExport,
-    completeCustomerHandoverExportSuccess,
-    getSucceededCustomerHandoverExport,
+    failCustomerHandoverExport,
+    finalizeCustomerHandoverExportSuccess,
+    getSucceededCustomerHandoverExportArtifact,
     createActivityLog,
     readDocumentStorageConfig,
     createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
@@ -180,6 +230,7 @@ function createRealDependencies(): CustomerHandoverExportEndpointDependencies {
     uploadCustomerHandoverExport,
     removeCustomerHandoverExport,
     createCustomerHandoverExportSignedUrl,
+    reportRecoveryFailure,
   };
 }
 
@@ -218,6 +269,7 @@ async function downloadExportDocuments(
     });
 
     totalBytes += result.byteLength;
+
     downloaded.push({
       manifestEntry,
       fileBody: result.fileBody,
@@ -233,32 +285,53 @@ async function recoverFailedExport(
   exportId: string,
   config: DocumentStorageConfig | undefined,
   storage: CustomerHandoverStorageAdapter | undefined,
-  artifactUploaded: boolean,
+  uploadAttempted: boolean,
   dependencies: CustomerHandoverExportEndpointDependencies,
 ): Promise<void> {
-  const recoveryOperations: Promise<unknown>[] = [
-    dependencies.completeCustomerHandoverExport({
-      db: dependencies.db,
-      organizationId,
-      machineId,
-      exportId,
-      result: 'failed',
-    }),
-  ];
-
-  if (artifactUploaded && config && storage) {
-    recoveryOperations.push(
-      dependencies.removeCustomerHandoverExport({
-        config,
-        storage,
+  const operations: readonly {
+    readonly operation: CustomerHandoverRecoveryFailure['operation'];
+    readonly promise: Promise<unknown>;
+  }[] = [
+    {
+      operation: 'mark-export-failed',
+      promise: dependencies.failCustomerHandoverExport({
+        db: dependencies.db,
         organizationId,
         machineId,
         exportId,
       }),
-    );
-  }
+    },
+    ...(uploadAttempted && config && storage
+      ? [
+          {
+            operation: 'remove-export-artifact' as const,
+            promise: dependencies.removeCustomerHandoverExport({
+              config,
+              storage,
+              organizationId,
+              machineId,
+              exportId,
+            }),
+          },
+        ]
+      : []),
+  ];
 
-  await Promise.allSettled(recoveryOperations);
+  const results = await Promise.allSettled(operations.map((operation) => operation.promise));
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      return;
+    }
+
+    dependencies.reportRecoveryFailure?.({
+      operation: operations[index]?.operation ?? 'mark-export-failed',
+      organizationId,
+      machineId,
+      exportId,
+      reason: result.reason,
+    });
+  });
 }
 
 export async function createCustomerHandoverExportFromRequest({
@@ -268,8 +341,11 @@ export async function createCustomerHandoverExportFromRequest({
   dependencies,
 }: CreateCustomerHandoverExportFromRequestInput): Promise<CreateCustomerHandoverExportResponse> {
   const requestBody = body ?? {};
+
   const organizationId = requiredString('organizationId', requestBody.organizationId);
+
   const normalizedMachineId = requiredString('machineId', machineId);
+
   const selectedDocumentIds = documentIds(requestBody.documentIds);
 
   const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
@@ -297,7 +373,7 @@ export async function createCustomerHandoverExportFromRequest({
 
   let config: DocumentStorageConfig | undefined;
   let storage: CustomerHandoverStorageAdapter | undefined;
-  let artifactUploaded = false;
+  let uploadAttempted = false;
 
   try {
     const initialRevalidation = await dependencies.revalidatePendingCustomerHandoverExport({
@@ -308,6 +384,7 @@ export async function createCustomerHandoverExportFromRequest({
     });
 
     config = dependencies.readDocumentStorageConfig();
+
     storage = dependencies.createDocumentStorageAdapter(config);
 
     const downloadedDocuments = await downloadExportDocuments(
@@ -323,12 +400,7 @@ export async function createCustomerHandoverExportFromRequest({
       maximumArchiveBytes: maximumCustomerHandoverArchiveBytes,
     });
 
-    await dependencies.revalidatePendingCustomerHandoverExport({
-      db: dependencies.db,
-      organizationId,
-      machineId: normalizedMachineId,
-      exportId: pendingExport.id,
-    });
+    uploadAttempted = true;
 
     await dependencies.uploadCustomerHandoverExport({
       config,
@@ -339,14 +411,23 @@ export async function createCustomerHandoverExportFromRequest({
       archiveBody: archive.archiveBody,
     });
 
-    artifactUploaded = true;
+    const artifactStoragePath = buildPrivateCustomerHandoverExportStoragePath({
+      organizationId,
+      machineId: normalizedMachineId,
+      exportId: pendingExport.id,
+    });
 
-    const completed = await dependencies.completeCustomerHandoverExportSuccess({
+    const completed = await dependencies.finalizeCustomerHandoverExportSuccess({
       db: dependencies.db,
       organizationId,
       machineId: normalizedMachineId,
       exportId: pendingExport.id,
       actorUserId: tenantContext.currentUser.appUserId,
+      artifactStoragePath,
+      archiveChecksum: archive.archiveChecksum,
+      archiveByteLength: archive.archiveByteLength,
+      documentCount: archive.documentCount,
+      totalDocumentBytes: archive.totalDocumentBytes,
     });
 
     return {
@@ -368,7 +449,7 @@ export async function createCustomerHandoverExportFromRequest({
       pendingExport.id,
       config,
       storage,
-      artifactUploaded,
+      uploadAttempted,
       dependencies,
     );
 
@@ -384,8 +465,11 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
   dependencies,
 }: CreateCustomerHandoverExportDownloadUrlFromRequestInput): Promise<CreateCustomerHandoverExportDownloadUrlResponse> {
   const requestBody = body ?? {};
+
   const organizationId = requiredString('organizationId', requestBody.organizationId);
+
   const normalizedMachineId = requiredString('machineId', machineId);
+
   const normalizedExportId = requiredString('exportId', exportId);
 
   const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
@@ -395,7 +479,7 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
     allowedRoles: exportRoles,
   });
 
-  const completed = await dependencies.getSucceededCustomerHandoverExport({
+  const completed = await dependencies.getSucceededCustomerHandoverExportArtifact({
     db: dependencies.db,
     organizationId,
     machineId: normalizedMachineId,
@@ -410,6 +494,7 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
 
   try {
     const config = dependencies.readDocumentStorageConfig();
+
     const storage = dependencies.createDocumentStorageAdapter(config);
 
     signedUrl = await dependencies.createCustomerHandoverExportSignedUrl({
@@ -435,7 +520,7 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
   }
 
   return {
-    exportId: normalizedExportId,
+    exportId: completed.id,
     downloadUrl: signedUrl.signedUrl,
     expiresInSeconds: signedUrl.expiresInSeconds,
   };
@@ -445,9 +530,12 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
 export class CustomerHandoverExportController {
   @Post('machines/:machineId/customer-handover-exports')
   async createCustomerHandoverExport(
-    @Headers('authorization') authorizationHeader: string | undefined,
-    @Param('machineId') machineId: string | undefined,
-    @Body() body: CreateCustomerHandoverExportRequestBody | undefined,
+    @Headers('authorization')
+    authorizationHeader: string | undefined,
+    @Param('machineId')
+    machineId: string | undefined,
+    @Body()
+    body: CreateCustomerHandoverExportRequestBody | undefined,
   ): Promise<CreateCustomerHandoverExportResponse> {
     return createCustomerHandoverExportFromRequest({
       authorizationHeader,
@@ -459,10 +547,14 @@ export class CustomerHandoverExportController {
 
   @Post('machines/:machineId/customer-handover-exports/:exportId/download-url')
   async createCustomerHandoverExportDownloadUrl(
-    @Headers('authorization') authorizationHeader: string | undefined,
-    @Param('machineId') machineId: string | undefined,
-    @Param('exportId') exportId: string | undefined,
-    @Body() body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined,
+    @Headers('authorization')
+    authorizationHeader: string | undefined,
+    @Param('machineId')
+    machineId: string | undefined,
+    @Param('exportId')
+    exportId: string | undefined,
+    @Body()
+    body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined,
   ): Promise<CreateCustomerHandoverExportDownloadUrlResponse> {
     return createCustomerHandoverExportDownloadUrlFromRequest({
       authorizationHeader,

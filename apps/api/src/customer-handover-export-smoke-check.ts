@@ -30,7 +30,7 @@ type PendingExport = Awaited<
   ReturnType<CustomerHandoverExportEndpointDependencies['createPendingCustomerHandoverExport']>
 >;
 type CompletedExport = Awaited<
-  ReturnType<CustomerHandoverExportEndpointDependencies['completeCustomerHandoverExportSuccess']>
+  ReturnType<CustomerHandoverExportEndpointDependencies['finalizeCustomerHandoverExportSuccess']>
 >;
 type RevalidatedExport = Awaited<
   ReturnType<CustomerHandoverExportEndpointDependencies['revalidatePendingCustomerHandoverExport']>
@@ -292,23 +292,21 @@ function createDependencies(
 
       return revalidated;
     },
-    completeCustomerHandoverExport: async (input) => {
-      if (input.result === 'failed') {
-        calls.failureCompletionIds.push(input.exportId);
-      }
+    failCustomerHandoverExport: async (input) => {
+      calls.failureCompletionIds.push(input.exportId);
 
       return {
         ...pendingExport,
-        result: input.result === 'failed' ? 'FAILED' : 'SUCCEEDED',
+        result: 'FAILED',
         completedAt,
       } as PendingExport;
     },
-    completeCustomerHandoverExportSuccess: async (input) => {
+    finalizeCustomerHandoverExportSuccess: async (input) => {
       calls.successfulCompletionIds.push(input.exportId);
 
       return completedExport;
     },
-    getSucceededCustomerHandoverExport: async (input) => {
+    getSucceededCustomerHandoverExportArtifact: async (input) => {
       calls.succeededLookupIds.push(input.exportId);
 
       return completedExport;
@@ -467,7 +465,10 @@ async function runSuccessfulCreationCheck(): Promise<void> {
     calls.pendingInputs[0]?.documentIds.join('|') === 'document-1|document-2',
     'Selected document IDs were not normalized.',
   );
-  assert(calls.revalidationInputs.length === 2, 'Export must be revalidated twice.');
+  assert(
+    calls.revalidationInputs.length === 1,
+    'Export must perform one initial pre-download revalidation.',
+  );
   assert(calls.downloadPaths.length === 2, 'Every export document must be downloaded.');
   assert(calls.archiveInputs.length === 1, 'ZIP archive must be generated exactly once.');
   assert(calls.uploadExportIds.join('|') === 'export-1', 'ZIP artifact was not uploaded.');
@@ -479,36 +480,42 @@ async function runSuccessfulCreationCheck(): Promise<void> {
 }
 
 async function runCreationFailureChecks(): Promise<void> {
-  const secondRevalidationCalls = createCapturedCalls();
-  let revalidationCount = 0;
+  const finalizationCalls = createCapturedCalls();
 
-  await expectException('TOCTOU revalidation failure', InternalServerErrorException, () =>
-    createCustomerHandoverExportFromRequest({
-      authorizationHeader: 'Bearer token-1',
-      machineId: 'machine-1',
-      body: {
-        organizationId: 'organization-1',
-        documentIds: ['document-1', 'document-2'],
-      },
-      dependencies: createDependencies(secondRevalidationCalls, {
-        revalidatePendingCustomerHandoverExport: async (input) => {
-          secondRevalidationCalls.revalidationInputs.push(input);
-          revalidationCount += 1;
-
-          if (revalidationCount === 2) {
-            throw new Error('visibility changed');
-          }
-
-          return revalidated;
+  await expectException(
+    'atomic finalization revalidation failure',
+    InternalServerErrorException,
+    () =>
+      createCustomerHandoverExportFromRequest({
+        authorizationHeader: 'Bearer token-1',
+        machineId: 'machine-1',
+        body: {
+          organizationId: 'organization-1',
+          documentIds: ['document-1', 'document-2'],
         },
+        dependencies: createDependencies(finalizationCalls, {
+          finalizeCustomerHandoverExportSuccess: async (input) => {
+            finalizationCalls.successfulCompletionIds.push(input.exportId);
+
+            throw new Error('visibility changed during atomic finalization');
+          },
+        }),
       }),
-    }),
   );
 
-  assert(secondRevalidationCalls.uploadExportIds.length === 0, 'TOCTOU failure uploaded a ZIP.');
   assert(
-    secondRevalidationCalls.failureCompletionIds.join('|') === 'export-1',
-    'TOCTOU failure was not recorded.',
+    finalizationCalls.uploadExportIds.join('|') === 'export-1',
+    'Atomic finalization failure must happen after private upload.',
+  );
+
+  assert(
+    finalizationCalls.removeExportIds.join('|') === 'export-1',
+    'Atomic finalization failure must remove the uploaded artifact.',
+  );
+
+  assert(
+    finalizationCalls.failureCompletionIds.join('|') === 'export-1',
+    'Atomic finalization failure must record a failed export.',
   );
 
   const checksumCalls = createCapturedCalls();
@@ -555,7 +562,7 @@ async function runCreationFailureChecks(): Promise<void> {
         documentIds: ['document-1', 'document-2'],
       },
       dependencies: createDependencies(completionCalls, {
-        completeCustomerHandoverExportSuccess: async (input) => {
+        finalizeCustomerHandoverExportSuccess: async (input) => {
           completionCalls.successfulCompletionIds.push(input.exportId);
           throw new Error('transaction failed');
         },
@@ -574,6 +581,86 @@ async function runCreationFailureChecks(): Promise<void> {
   assert(
     completionCalls.failureCompletionIds.join('|') === 'export-1',
     'Completion failure must record a failed export.',
+  );
+
+  const ambiguousUploadCalls = createCapturedCalls();
+
+  await expectException('ambiguous upload failure', InternalServerErrorException, () =>
+    createCustomerHandoverExportFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      body: {
+        organizationId: 'organization-1',
+        documentIds: ['document-1', 'document-2'],
+      },
+      dependencies: createDependencies(ambiguousUploadCalls, {
+        uploadCustomerHandoverExport: async (input) => {
+          ambiguousUploadCalls.uploadExportIds.push(input.exportId);
+
+          throw new Error('Storage response was lost after upload.');
+        },
+      }),
+    }),
+  );
+
+  assert(
+    ambiguousUploadCalls.uploadExportIds.join('|') === 'export-1',
+    'Ambiguous upload was not attempted.',
+  );
+
+  assert(
+    ambiguousUploadCalls.removeExportIds.join('|') === 'export-1',
+    'Ambiguous upload failure must attempt artifact removal.',
+  );
+
+  assert(
+    ambiguousUploadCalls.failureCompletionIds.join('|') === 'export-1',
+    'Ambiguous upload failure must mark the export failed.',
+  );
+
+  const recoveryFailureCalls = createCapturedCalls();
+  const reportedRecoveryFailures: string[] = [];
+
+  await expectException('observable recovery failure', InternalServerErrorException, () =>
+    createCustomerHandoverExportFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      body: {
+        organizationId: 'organization-1',
+        documentIds: ['document-1', 'document-2'],
+      },
+      dependencies: createDependencies(recoveryFailureCalls, {
+        uploadCustomerHandoverExport: async (input) => {
+          recoveryFailureCalls.uploadExportIds.push(input.exportId);
+
+          throw new Error('Ambiguous storage failure.');
+        },
+        failCustomerHandoverExport: async (input) => {
+          recoveryFailureCalls.failureCompletionIds.push(input.exportId);
+
+          throw new Error('Failure transition unavailable.');
+        },
+        removeCustomerHandoverExport: async (input) => {
+          recoveryFailureCalls.removeExportIds.push(input.exportId);
+
+          throw new Error('Artifact cleanup unavailable.');
+        },
+        reportRecoveryFailure: (failure) => {
+          reportedRecoveryFailures.push(
+            [failure.operation, failure.organizationId, failure.machineId, failure.exportId].join(
+              ':',
+            ),
+          );
+        },
+      }),
+    }),
+  );
+
+  assert(
+    reportedRecoveryFailures.join('|') ===
+      'mark-export-failed:organization-1:machine-1:export-1|' +
+        'remove-export-artifact:organization-1:machine-1:export-1',
+    'Every failed recovery operation must be observable with tenant scope.',
   );
 
   const authCalls = createCapturedCalls();
@@ -671,7 +758,7 @@ async function runDownloadUrlChecks(): Promise<void> {
         organizationId: 'organization-2',
       },
       dependencies: createDependencies(missingCalls, {
-        getSucceededCustomerHandoverExport: async (input) => {
+        getSucceededCustomerHandoverExportArtifact: async (input) => {
           missingCalls.succeededLookupIds.push(input.exportId);
 
           return null;

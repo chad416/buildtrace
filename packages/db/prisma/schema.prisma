@@ -248,17 +248,22 @@ model Document {
 }
 
 model DataExport {
-  id                String             @id @default(uuid()) @db.Uuid
-  organizationId    String             @map("organization_id") @db.Uuid
-  machineId         String             @map("machine_id") @db.Uuid
-  requestedByUserId String?            @map("requested_by") @db.Uuid
-  audience          DataExportAudience @default(CUSTOMER_HANDOVER)
-  checklistVersion  String             @map("checklist_version")
-  manifest          Json
-  result            DataExportResult   @default(PENDING)
-  completedAt       DateTime?          @map("completed_at")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id                  String             @id @default(uuid()) @db.Uuid
+  organizationId      String             @map("organization_id") @db.Uuid
+  machineId           String             @map("machine_id") @db.Uuid
+  requestedByUserId   String?            @map("requested_by") @db.Uuid
+  audience            DataExportAudience @default(CUSTOMER_HANDOVER)
+  checklistVersion    String             @map("checklist_version")
+  manifest            Json
+  result              DataExportResult   @default(PENDING)
+  artifactStoragePath String?            @map("artifact_storage_path")
+  archiveChecksum     String?            @map("archive_checksum")
+  archiveByteLength   Int?               @map("archive_byte_length")
+  documentCount       Int?               @map("document_count")
+  totalDocumentBytes  Int?               @map("total_document_bytes")
+  completedAt         DateTime?          @map("completed_at")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
 
   machine         Machine      @relation(fields: [organizationId, machineId], references: [organizationId, id], onDelete: Cascade)
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

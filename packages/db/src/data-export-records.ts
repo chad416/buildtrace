@@ -1,5 +1,4 @@
 import {
-  activityLogActions,
   createPrivateCustomerHandoverExportManifest,
   type DocumentCategory,
   type DocumentVisibilityLevel,
@@ -177,25 +176,13 @@ export async function createPendingCustomerHandoverExport({
   });
 }
 
-export type CustomerHandoverExportCompletionResult = 'succeeded' | 'failed';
-
-export type CompletedCustomerHandoverExport = Omit<DataExport, 'completedAt'> & {
-  readonly completedAt: Date;
-};
-
-export type CompleteCustomerHandoverExportInput = {
+export type FailCustomerHandoverExportInput = {
   readonly db: DataExportRecordsDatabase;
   readonly organizationId: string;
   readonly machineId: string;
   readonly exportId: string;
-  readonly result: CustomerHandoverExportCompletionResult;
   readonly completedAt?: Date;
 };
-
-const completedResultByResult = {
-  succeeded: DataExportResult.SUCCEEDED,
-  failed: DataExportResult.FAILED,
-} satisfies Record<CustomerHandoverExportCompletionResult, DataExportResult>;
 
 function validCompletionDate(completedAt: Date | undefined): Date {
   const resolved = completedAt ?? new Date();
@@ -207,79 +194,16 @@ function validCompletionDate(completedAt: Date | undefined): Date {
   return resolved;
 }
 
-export async function completeCustomerHandoverExport({
+export async function failCustomerHandoverExport({
   db,
   organizationId,
   machineId,
   exportId,
-  result,
   completedAt,
-}: CompleteCustomerHandoverExportInput): Promise<DataExport> {
+}: FailCustomerHandoverExportInput): Promise<DataExport> {
   const organization = required(organizationId, 'organizationId');
   const machine = required(machineId, 'machineId');
   const dataExportId = required(exportId, 'exportId');
-  const completionDate = validCompletionDate(completedAt);
-  const completedResult = completedResultByResult[result];
-
-  return db.$transaction(async (transaction) => {
-    const update = await transaction.dataExport.updateMany({
-      where: {
-        id: dataExportId,
-        organizationId: organization,
-        machineId: machine,
-        audience: DataExportAudience.CUSTOMER_HANDOVER,
-        result: DataExportResult.PENDING,
-        completedAt: null,
-      },
-      data: {
-        result: completedResult,
-        completedAt: completionDate,
-      },
-    });
-
-    if (update.count !== 1) {
-      throw new Error('Pending customer handover export was not found in this tenant scope.');
-    }
-
-    const completed = await transaction.dataExport.findFirst({
-      where: {
-        id: dataExportId,
-        organizationId: organization,
-        machineId: machine,
-        audience: DataExportAudience.CUSTOMER_HANDOVER,
-        result: completedResult,
-      },
-    });
-
-    if (!completed || completed.completedAt === null) {
-      throw new Error('Completed export history row could not be reloaded.');
-    }
-
-    return completed;
-  });
-}
-
-export type CompleteCustomerHandoverExportSuccessInput = {
-  readonly db: DataExportRecordsDatabase;
-  readonly organizationId: string;
-  readonly machineId: string;
-  readonly exportId: string;
-  readonly actorUserId: string;
-  readonly completedAt?: Date;
-};
-
-export async function completeCustomerHandoverExportSuccess({
-  db,
-  organizationId,
-  machineId,
-  exportId,
-  actorUserId,
-  completedAt,
-}: CompleteCustomerHandoverExportSuccessInput): Promise<CompletedCustomerHandoverExport> {
-  const organization = required(organizationId, 'organizationId');
-  const machine = required(machineId, 'machineId');
-  const dataExportId = required(exportId, 'exportId');
-  const actor = required(actorUserId, 'actorUserId');
   const completionDate = validCompletionDate(completedAt);
 
   return db.$transaction(async (transaction) => {
@@ -293,7 +217,7 @@ export async function completeCustomerHandoverExportSuccess({
         completedAt: null,
       },
       data: {
-        result: DataExportResult.SUCCEEDED,
+        result: DataExportResult.FAILED,
         completedAt: completionDate,
       },
     });
@@ -302,72 +226,20 @@ export async function completeCustomerHandoverExportSuccess({
       throw new Error('Pending customer handover export was not found in this tenant scope.');
     }
 
-    await transaction.activityLog.create({
-      data: {
-        organizationId: organization,
-        actorUserId: actor,
-        action: activityLogActions.customerHandoverExportCreated,
-        targetType: 'data-export',
-        targetId: dataExportId,
-      },
-    });
-
-    const completed = await transaction.dataExport.findFirst({
+    const failed = await transaction.dataExport.findFirst({
       where: {
         id: dataExportId,
         organizationId: organization,
         machineId: machine,
         audience: DataExportAudience.CUSTOMER_HANDOVER,
-        result: DataExportResult.SUCCEEDED,
+        result: DataExportResult.FAILED,
       },
     });
 
-    if (!completed || completed.completedAt === null) {
-      throw new Error('Completed export history row could not be reloaded.');
+    if (!failed || failed.completedAt === null) {
+      throw new Error('Failed export history row could not be reloaded.');
     }
 
-    return {
-      ...completed,
-      completedAt: completed.completedAt,
-    };
-  });
-}
-
-export type GetSucceededCustomerHandoverExportInput = {
-  readonly db: DataExportRecordsDatabase;
-  readonly organizationId: string;
-  readonly machineId: string;
-  readonly exportId: string;
-};
-
-export async function getSucceededCustomerHandoverExport({
-  db,
-  organizationId,
-  machineId,
-  exportId,
-}: GetSucceededCustomerHandoverExportInput): Promise<CompletedCustomerHandoverExport | null> {
-  const organization = required(organizationId, 'organizationId');
-  const machine = required(machineId, 'machineId');
-  const dataExportId = required(exportId, 'exportId');
-
-  return db.$transaction(async (transaction) => {
-    const completed = await transaction.dataExport.findFirst({
-      where: {
-        id: dataExportId,
-        organizationId: organization,
-        machineId: machine,
-        audience: DataExportAudience.CUSTOMER_HANDOVER,
-        result: DataExportResult.SUCCEEDED,
-      },
-    });
-
-    if (!completed || completed.completedAt === null) {
-      return null;
-    }
-
-    return {
-      ...completed,
-      completedAt: completed.completedAt,
-    };
+    return failed;
   });
 }

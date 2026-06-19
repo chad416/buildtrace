@@ -1,5 +1,6 @@
 import { dataExportAudiences, dataExportResults } from '@buildtrace/shared';
 
+import { Prisma } from './generated/prisma/client';
 import { DataExportAudience, DataExportResult } from './generated/prisma/enums';
 
 function toKebabCase(value: string): string {
@@ -42,6 +43,22 @@ function runDataExportSchemaDriftCheck(): void {
     dataExportResults,
     Object.values(DataExportResult).map(toLowerCase),
   );
+
+  const fieldNames = new Set(Object.values(Prisma.DataExportScalarFieldEnum));
+
+  const requiredArtifactFields = [
+    'artifactStoragePath',
+    'archiveChecksum',
+    'archiveByteLength',
+    'documentCount',
+    'totalDocumentBytes',
+  ] as const;
+
+  for (const fieldName of requiredArtifactFields) {
+    if (!fieldNames.has(fieldName)) {
+      throw new Error('DataExport artifact field is missing: ' + fieldName + '.');
+    }
+  }
 }
 
 runDataExportSchemaDriftCheck();

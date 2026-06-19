@@ -11,6 +11,7 @@ export {
 } from './customer-handover';
 export type { CustomerHandoverCompleteness, CustomerHandoverDocument } from './customer-handover';
 export {
+  buildPrivateCustomerHandoverExportStoragePath,
   createPrivateCustomerHandoverExportManifest,
   customerHandoverExportManifestVersion,
 } from './customer-handover-export';
@@ -18,6 +19,7 @@ export { createCustomerHandoverZipEntries } from './customer-handover-zip';
 export type { CustomerHandoverZipEntry } from './customer-handover-zip';
 export type {
   CustomerHandoverExportCandidateDocument,
+  CustomerHandoverExportStorageScope,
   PrivateCustomerHandoverExportManifest,
   PrivateCustomerHandoverExportManifestEntry,
 } from './customer-handover-export';

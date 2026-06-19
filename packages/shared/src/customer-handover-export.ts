@@ -33,6 +33,12 @@ export type PrivateCustomerHandoverExportManifest = {
   readonly documents: readonly PrivateCustomerHandoverExportManifestEntry[];
 };
 
+export type CustomerHandoverExportStorageScope = {
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly exportId: string;
+};
+
 function requireNonEmptyText(value: string, fieldName: string): string {
   const normalizedValue = value.trim();
 
@@ -41,6 +47,42 @@ function requireNonEmptyText(value: string, fieldName: string): string {
   }
 
   return normalizedValue;
+}
+
+function safeStoragePathSegment(value: string, fieldName: string): string {
+  const normalized = requireNonEmptyText(value, fieldName);
+
+  if (
+    normalized === '.' ||
+    normalized === '..' ||
+    normalized.includes('/') ||
+    normalized.includes('\\') ||
+    Array.from(normalized).some((character) => {
+      const code = character.charCodeAt(0);
+
+      return code <= 31 || code === 127;
+    })
+  ) {
+    throw new Error(fieldName + ' is not a safe export storage path segment.');
+  }
+
+  return normalized;
+}
+
+export function buildPrivateCustomerHandoverExportStoragePath({
+  organizationId,
+  machineId,
+  exportId,
+}: CustomerHandoverExportStorageScope): string {
+  return [
+    'organizations',
+    safeStoragePathSegment(organizationId, 'organizationId'),
+    'machines',
+    safeStoragePathSegment(machineId, 'machineId'),
+    'exports',
+    safeStoragePathSegment(exportId, 'exportId'),
+    'customer-handover.zip',
+  ].join('/');
 }
 
 export function createPrivateCustomerHandoverExportManifest(

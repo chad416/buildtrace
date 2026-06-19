@@ -1,10 +1,12 @@
 export { createActivityLog } from './activity-log';
+export {
+  finalizeCustomerHandoverExportSuccess,
+  getSucceededCustomerHandoverExportArtifact,
+} from './data-export-finalization';
 export { createPrismaClient } from './client';
 export {
-  completeCustomerHandoverExport,
-  completeCustomerHandoverExportSuccess,
   createPendingCustomerHandoverExport,
-  getSucceededCustomerHandoverExport,
+  failCustomerHandoverExport,
 } from './data-export-records';
 export { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 export {
@@ -32,17 +34,21 @@ export {
 } from './machine-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
-  CompletedCustomerHandoverExport,
-  CompleteCustomerHandoverExportInput,
-  CompleteCustomerHandoverExportSuccessInput,
+  CompletedCustomerHandoverExportArtifact,
+  DataExportFinalizationDatabase,
+  FinalizeCustomerHandoverExportSuccessInput,
+  GetSucceededCustomerHandoverExportArtifactInput,
+} from './data-export-finalization';
+export type {
   CreatePendingCustomerHandoverExportInput,
-  CustomerHandoverExportCompletionResult,
   DataExportRecordsDatabase,
-  GetSucceededCustomerHandoverExportInput,
+  FailCustomerHandoverExportInput,
 } from './data-export-records';
 export type {
   DataExportRevalidationDatabase,
+  DataExportRevalidationTransaction,
   RevalidatePendingCustomerHandoverExportInput,
+  RevalidatePendingCustomerHandoverExportInTransactionInput,
   RevalidatedCustomerHandoverExport,
   RevalidatedCustomerHandoverExportDocument,
 } from './data-export-revalidation';

@@ -1,9 +1,11 @@
 import {
-  completeCustomerHandoverExport,
-  completeCustomerHandoverExportSuccess,
+  failCustomerHandoverExport,
   createPendingCustomerHandoverExport,
-  getSucceededCustomerHandoverExport,
 } from './data-export-records';
+import {
+  finalizeCustomerHandoverExportSuccess,
+  getSucceededCustomerHandoverExportArtifact,
+} from './data-export-finalization';
 import { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 import { createPrismaClient } from './client';
 import type { Prisma } from './generated/prisma/client';
@@ -501,12 +503,24 @@ async function run(): Promise<void> {
 
     await mustReject(
       () =>
-        completeCustomerHandoverExport({
+        finalizeCustomerHandoverExportSuccess({
           db,
           organizationId: organizationB.id,
           machineId: machineB.id,
           exportId: created.id,
-          result: 'succeeded',
+          actorUserId: userB.id,
+          artifactStoragePath:
+            'organizations/' +
+            organizationB.id +
+            '/machines/' +
+            machineB.id +
+            '/exports/' +
+            created.id +
+            '/customer-handover.zip',
+          archiveChecksum: 'b'.repeat(64),
+          archiveByteLength: 1024,
+          documentCount: 1,
+          totalDocumentBytes: 512,
           completedAt: succeededAt,
         }),
       'A cross-tenant export transition must be rejected.',
@@ -524,16 +538,32 @@ async function run(): Promise<void> {
     );
     assert(stillPending.completedAt === null, 'Rejected transition must not set completedAt.');
 
-    const succeeded = await completeCustomerHandoverExportSuccess({
+    const succeeded = await finalizeCustomerHandoverExportSuccess({
       db,
       organizationId: organizationA.id,
       machineId: machineA.id,
       exportId: created.id,
       actorUserId: userA.id,
+      artifactStoragePath:
+        'organizations/' +
+        organizationA.id +
+        '/machines/' +
+        machineA.id +
+        '/exports/' +
+        created.id +
+        '/customer-handover.zip',
+      archiveChecksum: 'a'.repeat(64),
+      archiveByteLength: 1024,
+      documentCount: 1,
+      totalDocumentBytes: 512,
       completedAt: succeededAt,
     });
 
     assert(succeeded.result === DataExportResult.SUCCEEDED, 'Export must transition to succeeded.');
+    assert(succeeded.archiveChecksum === 'a'.repeat(64), 'Succeeded export checksum mismatch.');
+    assert(succeeded.archiveByteLength === 1024, 'Succeeded export archive size mismatch.');
+    assert(succeeded.documentCount === 1, 'Succeeded export document count mismatch.');
+    assert(succeeded.totalDocumentBytes === 512, 'Succeeded export document byte count mismatch.');
     assert(
       succeeded.completedAt?.getTime() === succeededAt.getTime(),
       'Succeeded timestamp mismatch.',
@@ -551,7 +581,7 @@ async function run(): Promise<void> {
 
     assert(creationActivity !== null, 'Successful export completion must be activity-logged.');
 
-    const scopedSucceeded = await getSucceededCustomerHandoverExport({
+    const scopedSucceeded = await getSucceededCustomerHandoverExportArtifact({
       db,
       organizationId: organizationA.id,
       machineId: machineA.id,
@@ -560,7 +590,7 @@ async function run(): Promise<void> {
 
     assert(scopedSucceeded?.id === created.id, 'Succeeded export lookup returned the wrong row.');
 
-    const crossTenantSucceeded = await getSucceededCustomerHandoverExport({
+    const crossTenantSucceeded = await getSucceededCustomerHandoverExportArtifact({
       db,
       organizationId: organizationB.id,
       machineId: machineB.id,
@@ -582,12 +612,11 @@ async function run(): Promise<void> {
 
     await mustReject(
       () =>
-        completeCustomerHandoverExport({
+        failCustomerHandoverExport({
           db,
           organizationId: organizationA.id,
           machineId: machineA.id,
           exportId: created.id,
-          result: 'failed',
         }),
       'A completed export must not transition again.',
     );
@@ -614,12 +643,11 @@ async function run(): Promise<void> {
 
     const failedAt = new Date('2026-06-18T12:05:00.000Z');
 
-    const failed = await completeCustomerHandoverExport({
+    const failed = await failCustomerHandoverExport({
       db,
       organizationId: organizationA.id,
       machineId: machineA.id,
       exportId: pendingFailure.id,
-      result: 'failed',
       completedAt: failedAt,
     });
 
