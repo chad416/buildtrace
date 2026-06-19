@@ -19,7 +19,9 @@
     "document-upload:smoke": "tsx src/document-upload-smoke-check.ts",
     "document-upload-endpoint:smoke": "tsx src/document-upload-endpoint-smoke-check.ts",
     "dev:preflight": "tsx src/dev-preflight.ts",
-    "dev:browser-session": "tsx src/dev-browser-session.ts"
+    "dev:browser-session": "tsx src/dev-browser-session.ts",
+    "customer-handover-zip-archive:smoke": "tsx src/customer-handover-zip-archive-smoke-check.ts",
+    "customer-handover-export:smoke": "tsx src/customer-handover-export-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
@@ -29,6 +31,7 @@
     "@nestjs/core": "^11.1.25",
     "@nestjs/platform-fastify": "^11.1.25",
     "@supabase/supabase-js": "^2.108.1",
+    "fflate": "0.8.3",
     "pino": "^10.3.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"

@@ -1,6 +1,8 @@
 import {
   completeCustomerHandoverExport,
+  completeCustomerHandoverExportSuccess,
   createPendingCustomerHandoverExport,
+  getSucceededCustomerHandoverExport,
 } from './data-export-records';
 import { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 import { createPrismaClient } from './client';
@@ -522,12 +524,12 @@ async function run(): Promise<void> {
     );
     assert(stillPending.completedAt === null, 'Rejected transition must not set completedAt.');
 
-    const succeeded = await completeCustomerHandoverExport({
+    const succeeded = await completeCustomerHandoverExportSuccess({
       db,
       organizationId: organizationA.id,
       machineId: machineA.id,
       exportId: created.id,
-      result: 'succeeded',
+      actorUserId: userA.id,
       completedAt: succeededAt,
     });
 
@@ -536,6 +538,36 @@ async function run(): Promise<void> {
       succeeded.completedAt?.getTime() === succeededAt.getTime(),
       'Succeeded timestamp mismatch.',
     );
+
+    const creationActivity = await db.activityLog.findFirst({
+      where: {
+        organizationId: organizationA.id,
+        actorUserId: userA.id,
+        action: 'customer_handover_export.created',
+        targetType: 'data-export',
+        targetId: created.id,
+      },
+    });
+
+    assert(creationActivity !== null, 'Successful export completion must be activity-logged.');
+
+    const scopedSucceeded = await getSucceededCustomerHandoverExport({
+      db,
+      organizationId: organizationA.id,
+      machineId: machineA.id,
+      exportId: created.id,
+    });
+
+    assert(scopedSucceeded?.id === created.id, 'Succeeded export lookup returned the wrong row.');
+
+    const crossTenantSucceeded = await getSucceededCustomerHandoverExport({
+      db,
+      organizationId: organizationB.id,
+      machineId: machineB.id,
+      exportId: created.id,
+    });
+
+    assert(crossTenantSucceeded === null, 'Cross-tenant succeeded export lookup must fail closed.');
 
     await mustReject(
       () =>

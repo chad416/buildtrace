@@ -117,6 +117,8 @@ export const activityLogActions = {
   documentVisibilityChanged: 'document.visibility_changed',
   documentDownloadUrlIssued: 'document.download_url_issued',
   documentClassificationConfirmed: 'document.classification_confirmed',
+  customerHandoverExportCreated: 'customer_handover_export.created',
+  customerHandoverExportDownloadUrlIssued: 'customer_handover_export.download_url_issued',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];

@@ -2,7 +2,9 @@ export { createActivityLog } from './activity-log';
 export { createPrismaClient } from './client';
 export {
   completeCustomerHandoverExport,
+  completeCustomerHandoverExportSuccess,
   createPendingCustomerHandoverExport,
+  getSucceededCustomerHandoverExport,
 } from './data-export-records';
 export { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 export {
@@ -30,10 +32,13 @@ export {
 } from './machine-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
+  CompletedCustomerHandoverExport,
   CompleteCustomerHandoverExportInput,
+  CompleteCustomerHandoverExportSuccessInput,
   CreatePendingCustomerHandoverExportInput,
   CustomerHandoverExportCompletionResult,
   DataExportRecordsDatabase,
+  GetSucceededCustomerHandoverExportInput,
 } from './data-export-records';
 export type {
   DataExportRevalidationDatabase,
@@ -56,4 +61,4 @@ export type {
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 
-export const dbPackageStatus = 'phase-6-export-revalidation-ready';
+export const dbPackageStatus = 'phase-6-zip-export-lifecycle-ready';
