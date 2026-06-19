@@ -31,6 +31,12 @@ export type DocumentStorageUploadResult = {
   readonly storagePath: string;
 };
 
+export type DocumentStorageDownloadResult = {
+  readonly fileBody: ArrayBuffer;
+  readonly byteLength: number;
+  readonly contentType: string | null;
+};
+
 type SignedUrlResponse = {
   readonly data: {
     readonly signedUrl: string;
@@ -56,6 +62,13 @@ type RemoveResponse = {
   } | null;
 };
 
+type DownloadResponse = {
+  readonly data: Blob | null;
+  readonly error: {
+    readonly message: string;
+  } | null;
+};
+
 export type DocumentStorageBucketClient = {
   readonly createSignedUrl: (
     storagePath: string,
@@ -75,6 +88,13 @@ export type DocumentStorageBucketClient = {
 export type DocumentStorageAdapter = {
   readonly from: (bucketName: string) => DocumentStorageBucketClient;
 };
+export type DocumentStorageDownloadBucketClient = {
+  readonly download: (storagePath: string) => Promise<DownloadResponse>;
+};
+
+export type DocumentStorageDownloadAdapter = {
+  readonly from: (bucketName: string) => DocumentStorageDownloadBucketClient;
+};
 
 export type CreateSignedDocumentDownloadUrlInput = DocumentStorageTenantScopeInput & {
   readonly config: DocumentStorageConfig;
@@ -86,6 +106,12 @@ export type UploadDocumentToStorageInput = DocumentStorageTenantScopeInput & {
   readonly storage: DocumentStorageAdapter;
   readonly fileBody: ArrayBuffer;
   readonly fileType: string;
+};
+
+export type DownloadDocumentFromStorageInput = DocumentStorageTenantScopeInput & {
+  readonly config: DocumentStorageConfig;
+  readonly storage: DocumentStorageDownloadAdapter;
+  readonly maximumBytes: number;
 };
 
 export type RemoveDocumentFromStorageInput = DocumentStorageTenantScopeInput & {
@@ -235,7 +261,7 @@ export function assertDocumentStoragePathMatchesTenant({
 
 export function createSupabaseDocumentStorageAdapter(
   config: DocumentStorageConfig = readDocumentStorageConfig(),
-): DocumentStorageAdapter {
+): DocumentStorageAdapter & DocumentStorageDownloadAdapter {
   const supabase = createClient(config.supabaseUrl, config.serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
@@ -253,6 +279,9 @@ export function createSupabaseDocumentStorageAdapter(
         },
         upload(storagePath, fileBody, options) {
           return bucket.upload(storagePath, fileBody, options);
+        },
+        download(storagePath) {
+          return bucket.download(storagePath);
         },
         remove(storagePaths) {
           return bucket.remove([...storagePaths]);
@@ -345,4 +374,52 @@ export async function removeDocumentFromStorage({
   if (response.error) {
     throw new Error(response.error.message);
   }
+}
+export async function downloadDocumentFromStorage({
+  config,
+  storage,
+  organizationId,
+  machineId,
+  storagePath,
+  maximumBytes,
+}: DownloadDocumentFromStorageInput): Promise<DocumentStorageDownloadResult> {
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes <= 0) {
+    throw new Error('maximumBytes must be a positive safe integer.');
+  }
+
+  assertDocumentStoragePathMatchesTenant({
+    organizationId,
+    machineId,
+    storagePath,
+  });
+
+  const bucket = storage.from(config.bucketName);
+
+  const response = await bucket.download(storagePath);
+
+  if (response.error || !response.data) {
+    throw new Error(response.error?.message ?? 'Document could not be downloaded from storage.');
+  }
+
+  if (response.data.size === 0) {
+    throw new Error('Downloaded document must not be empty.');
+  }
+
+  if (response.data.size > maximumBytes) {
+    throw new Error('Downloaded document exceeds the allowed packaging size.');
+  }
+
+  const fileBody = await response.data.arrayBuffer();
+
+  if (fileBody.byteLength !== response.data.size) {
+    throw new Error('Downloaded document byte length changed while reading.');
+  }
+
+  const contentType = response.data.type.trim();
+
+  return {
+    fileBody,
+    byteLength: fileBody.byteLength,
+    contentType: contentType || null,
+  };
 }

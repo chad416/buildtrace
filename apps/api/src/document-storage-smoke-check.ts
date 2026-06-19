@@ -2,8 +2,10 @@ import {
   assertDocumentStoragePathMatchesTenant,
   buildDocumentStoragePath,
   createSignedDocumentDownloadUrl,
+  downloadDocumentFromStorage,
   readDocumentStorageConfig,
   type DocumentStorageAdapter,
+  type DocumentStorageDownloadAdapter,
 } from './document-storage.js';
 
 type CapturedStorageCall = {
@@ -79,6 +81,32 @@ function createCapturedStorageAdapter(calls: CapturedStorageCall[]): DocumentSto
   };
 }
 
+type DownloadResponse = {
+  readonly data: Blob | null;
+  readonly error: {
+    readonly message: string;
+  } | null;
+};
+
+function createDownloadStorageAdapter(
+  response: DownloadResponse,
+  calls: string[] = [],
+): DocumentStorageDownloadAdapter {
+  const baseStorage = createCapturedStorageAdapter([]);
+
+  return {
+    from(bucketName) {
+      return {
+        ...baseStorage.from(bucketName),
+        async download(storagePath) {
+          calls.push(bucketName + ':' + storagePath);
+
+          return response;
+        },
+      };
+    },
+  };
+}
 function createFailingStorageAdapter(): DocumentStorageAdapter {
   return {
     from() {
@@ -255,10 +283,114 @@ async function runSignedUrlSmokeCheck(storagePath: string): Promise<void> {
   );
 }
 
+async function runPrivateDownloadSmokeCheck(storagePath: string): Promise<void> {
+  const config = readDocumentStorageConfig(validEnv);
+  const calls: string[] = [];
+  const fileBytes = Uint8Array.from([1, 2, 3, 4]);
+
+  const storage = createDownloadStorageAdapter(
+    {
+      data: new Blob([fileBytes], {
+        type: 'application/pdf',
+      }),
+      error: null,
+    },
+    calls,
+  );
+
+  const result = await downloadDocumentFromStorage({
+    config,
+    storage,
+    organizationId: 'organization-1',
+    machineId: 'machine-1',
+    storagePath,
+    maximumBytes: fileBytes.byteLength,
+  });
+
+  if (
+    result.byteLength !== fileBytes.byteLength ||
+    result.contentType !== 'application/pdf' ||
+    Buffer.compare(Buffer.from(result.fileBody), Buffer.from(fileBytes)) !== 0
+  ) {
+    throw new Error('Private document download returned unexpected bytes or metadata.');
+  }
+
+  if (calls[0] !== 'buildtrace-documents:' + storagePath) {
+    throw new Error('Private document download used the wrong bucket or path.');
+  }
+
+  await expectAsyncThrow('cross-tenant private download rejection', () =>
+    downloadDocumentFromStorage({
+      config,
+      storage,
+      organizationId: 'organization-2',
+      machineId: 'machine-1',
+      storagePath,
+      maximumBytes: fileBytes.byteLength,
+    }),
+  );
+
+  if (calls.length !== 1) {
+    throw new Error('Cross-tenant private download reached storage.');
+  }
+
+  await expectAsyncThrow('empty private download rejection', () =>
+    downloadDocumentFromStorage({
+      config,
+      storage: createDownloadStorageAdapter({
+        data: new Blob([]),
+        error: null,
+      }),
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      storagePath,
+      maximumBytes: 1,
+    }),
+  );
+
+  await expectAsyncThrow('oversized private download rejection', () =>
+    downloadDocumentFromStorage({
+      config,
+      storage,
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      storagePath,
+      maximumBytes: fileBytes.byteLength - 1,
+    }),
+  );
+
+  await expectAsyncThrow('private download storage failure propagation', () =>
+    downloadDocumentFromStorage({
+      config,
+      storage: createDownloadStorageAdapter({
+        data: null,
+        error: {
+          message: 'storage refused download',
+        },
+      }),
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      storagePath,
+      maximumBytes: fileBytes.byteLength,
+    }),
+  );
+
+  await expectAsyncThrow('invalid private download limit rejection', () =>
+    downloadDocumentFromStorage({
+      config,
+      storage,
+      organizationId: 'organization-1',
+      machineId: 'machine-1',
+      storagePath,
+      maximumBytes: 0,
+    }),
+  );
+}
 async function runDocumentStorageSmokeCheck(): Promise<void> {
   runConfigSmokeCheck();
   const storagePath = runStoragePathSmokeCheck();
   await runSignedUrlSmokeCheck(storagePath);
+  await runPrivateDownloadSmokeCheck(storagePath);
 }
 
 await runDocumentStorageSmokeCheck();
