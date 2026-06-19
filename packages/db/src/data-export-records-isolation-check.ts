@@ -421,6 +421,19 @@ async function run(): Promise<void> {
     await expectManifestRejection(
       {
         ...originalManifest,
+        documents: [
+          {
+            ...originalManifestDocument,
+            category: '../manuals',
+          },
+        ],
+      },
+      'Unsupported manifest document category must fail revalidation.',
+    );
+
+    await expectManifestRejection(
+      {
+        ...originalManifest,
         documents: [originalManifestDocument, originalManifestDocument],
       },
       'Duplicate manifest document IDs must fail revalidation.',

@@ -12,7 +12,8 @@
     "document-constants:smoke": "tsx src/document-constants-smoke-check.ts",
     "document-classifier:smoke": "tsx src/document-classifier-smoke-check.ts",
     "customer-handover:smoke": "tsx src/customer-handover-smoke-check.ts",
-    "customer-handover-export:smoke": "tsx src/customer-handover-export-smoke-check.ts"
+    "customer-handover-export:smoke": "tsx src/customer-handover-export-smoke-check.ts",
+    "customer-handover-zip:smoke": "tsx src/customer-handover-zip-smoke-check.ts"
   },
   "devDependencies": {
     "tsx": "^4.22.4"

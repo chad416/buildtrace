@@ -14,6 +14,8 @@ export {
   createPrivateCustomerHandoverExportManifest,
   customerHandoverExportManifestVersion,
 } from './customer-handover-export';
+export { createCustomerHandoverZipEntries } from './customer-handover-zip';
+export type { CustomerHandoverZipEntry } from './customer-handover-zip';
 export type {
   CustomerHandoverExportCandidateDocument,
   PrivateCustomerHandoverExportManifest,
