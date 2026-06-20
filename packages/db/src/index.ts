@@ -33,6 +33,12 @@ export {
   listMachinesByOrganization,
   updateMachine,
 } from './machine-records';
+export {
+  assignQrToken,
+  generateQrToken,
+  getMachineQrToken,
+  getQrPortalMachine,
+} from './qr-portal-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
   CompletedCustomerHandoverExportArtifact,
@@ -69,5 +75,6 @@ export type {
 } from './document-records';
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
+export type { QrPortalMachineRecord } from './qr-portal-records';
 
 export const dbPackageStatus = 'phase-6-zip-export-lifecycle-ready';

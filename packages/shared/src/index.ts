@@ -103,6 +103,8 @@ export const sensitiveEngineeringDocumentCategories = [
 export type SensitiveEngineeringDocumentCategory =
   (typeof sensitiveEngineeringDocumentCategories)[number];
 
+export const qrTokenByteLength = 32;
+
 export const machineStatuses = ['ACTIVE', 'MAINTENANCE', 'OUT_OF_SERVICE', 'ARCHIVED'] as const;
 
 export type MachineStatus = (typeof machineStatuses)[number];

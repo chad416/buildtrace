@@ -1,0 +1,9 @@
+ALTER TABLE machines
+  ADD COLUMN IF NOT EXISTS qr_token TEXT,
+  ADD COLUMN IF NOT EXISTS qr_pin_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS qr_pin_hash TEXT,
+  ADD COLUMN IF NOT EXISTS portal_default_locale TEXT NOT NULL DEFAULT 'en';
+
+CREATE UNIQUE INDEX IF NOT EXISTS machines_qr_token_key
+  ON machines (qr_token)
+  WHERE qr_token IS NOT NULL;

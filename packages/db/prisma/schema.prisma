@@ -193,9 +193,13 @@ model Machine {
   deliveryDate   DateTime?     @map("delivery_date")
   plcType        String?       @map("plc_type")
   hmiType        String?       @map("hmi_type")
-  status         MachineStatus @default(ACTIVE)
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  status              MachineStatus @default(ACTIVE)
+  qrToken             String?       @unique @map("qr_token")
+  qrPinEnabled        Boolean       @default(false) @map("qr_pin_enabled")
+  qrPinHash           String?       @map("qr_pin_hash")
+  portalDefaultLocale String        @default("en") @map("portal_default_locale")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
 
   customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
   dataExports  DataExport[]
