@@ -8,6 +8,14 @@ export type HandoverCompletenessCopy = {
   readonly requiredLabel: string;
   readonly missingTitle: string;
   readonly completeMessage: string;
+  readonly export: {
+    readonly sectionTitle: string;
+    readonly sectionDescription: string;
+    readonly noDocumentsMessage: string;
+    readonly generateButtonLabel: string;
+    readonly createdMessage: string;
+    readonly errorTitle: string;
+  };
 };
 
 export const handoverCompletenessCopy = {
@@ -20,69 +28,126 @@ export const handoverCompletenessCopy = {
     requiredLabel: 'required',
     missingTitle: 'Missing required documents',
     completeMessage: 'All required customer handover documents are present.',
+    export: {
+      sectionTitle: 'Generate handover ZIP',
+      sectionDescription: 'Select customer-visible documents to include in the handover package.',
+      noDocumentsMessage: 'No customer-visible documents are available for export.',
+      generateButtonLabel: 'Generate ZIP',
+      createdMessage: 'Handover ZIP was generated successfully.',
+      errorTitle: 'Export could not be created',
+    },
   },
   cs: {
-    eyebrow: 'P\u0159ed\u00e1n\u00ed z\u00e1kazn\u00edkovi',
-    title: '\u00daplnost p\u0159ed\u00e1n\u00ed',
-    description:
-      '\u00daplnost zahrnuje pouze po\u017eadovan\u00e9 dokumenty v\u00fdslovn\u011b viditeln\u00e9 pro z\u00e1kazn\u00edka.',
-    completedLabel: 'spln\u011bno',
-    requiredLabel: 'po\u017eadov\u00e1no',
-    missingTitle: 'Chyb\u011bj\u00edc\u00ed po\u017eadovan\u00e9 dokumenty',
-    completeMessage:
-      'V\u0161echny po\u017eadovan\u00e9 dokumenty pro p\u0159ed\u00e1n\u00ed z\u00e1kazn\u00edkovi jsou k dispozici.',
+    eyebrow: 'Předání zákazníkovi',
+    title: 'Úplnost předání',
+    description: 'Úplnost zahrnuje pouze požadované dokumenty výslovně viditelné pro zákazníka.',
+    completedLabel: 'splněno',
+    requiredLabel: 'požadováno',
+    missingTitle: 'Chybějící požadované dokumenty',
+    completeMessage: 'Všechny požadované dokumenty pro předání zákazníkovi jsou k dispozici.',
+    export: {
+      sectionTitle: 'Vygenerovat ZIP pro předání',
+      sectionDescription:
+        'Vyberte dokumenty viditelné pro zákazníka, které chcete zahrnout do balíčku pro předání.',
+      noDocumentsMessage: 'Pro export nejsou k dispozici žádné dokumenty viditelné pro zákazníka.',
+      generateButtonLabel: 'Vygenerovat ZIP',
+      createdMessage: 'ZIP pro předání byl úspěšně vygenerován.',
+      errorTitle: 'Export se nepodařilo vytvořit',
+    },
   },
   sk: {
-    eyebrow: 'Odovzdanie z\u00e1kazn\u00edkovi',
-    title: '\u00daplnos\u0165 odovzdania',
-    description:
-      '\u00daplnos\u0165 zah\u0155\u0148a iba po\u017eadovan\u00e9 dokumenty v\u00fdslovne vidite\u013en\u00e9 pre z\u00e1kazn\u00edka.',
-    completedLabel: 'splnen\u00e9',
-    requiredLabel: 'po\u017eadovan\u00e9',
-    missingTitle: 'Ch\u00fdbaj\u00face po\u017eadovan\u00e9 dokumenty',
-    completeMessage:
-      'V\u0161etky po\u017eadovan\u00e9 dokumenty na odovzdanie z\u00e1kazn\u00edkovi s\u00fa k dispoz\u00edcii.',
+    eyebrow: 'Odovzdanie zákazníkovi',
+    title: 'Úplnosť odovzdania',
+    description: 'Úplnosť zahŕňa iba požadované dokumenty výslovne viditeľné pre zákazníka.',
+    completedLabel: 'splnené',
+    requiredLabel: 'požadované',
+    missingTitle: 'Chýbajúce požadované dokumenty',
+    completeMessage: 'Všetky požadované dokumenty na odovzdanie zákazníkovi sú k dispozícii.',
+    export: {
+      sectionTitle: 'Vygenerovať ZIP pre odovzdanie',
+      sectionDescription:
+        'Vyberte dokumenty viditeľné pre zákazníka, ktoré chcete zahrnúť do balíčka pre odovzdanie.',
+      noDocumentsMessage:
+        'Pre export nie sú k dispozícii žiadne dokumenty viditeľné pre zákazníka.',
+      generateButtonLabel: 'Vygenerovať ZIP',
+      createdMessage: 'ZIP pre odovzdanie bol úspešne vygenerovaný.',
+      errorTitle: 'Export sa nepodarilo vytvoriť',
+    },
   },
   pl: {
     eyebrow: 'Przekazanie klientowi',
-    title: 'Kompletno\u015b\u0107 przekazania',
-    description:
-      'Kompletno\u015b\u0107 obejmuje wy\u0142\u0105cznie wymagane dokumenty wyra\u017anie widoczne dla klienta.',
-    completedLabel: 'uko\u0144czone',
+    title: 'Kompletność przekazania',
+    description: 'Kompletność obejmuje wyłącznie wymagane dokumenty wyraźnie widoczne dla klienta.',
+    completedLabel: 'ukończone',
     requiredLabel: 'wymagane',
-    missingTitle: 'Brakuj\u0105ce wymagane dokumenty',
-    completeMessage: 'Wszystkie wymagane dokumenty przekazania klientowi s\u0105 dost\u0119pne.',
+    missingTitle: 'Brakujące wymagane dokumenty',
+    completeMessage: 'Wszystkie wymagane dokumenty przekazania klientowi są dostępne.',
+    export: {
+      sectionTitle: 'Generuj ZIP przekazania',
+      sectionDescription:
+        'Wybierz dokumenty widoczne dla klienta, które mają zostać uwzględnione w pakiecie przekazania.',
+      noDocumentsMessage: 'Brak dokumentów widocznych dla klienta dostępnych do eksportu.',
+      generateButtonLabel: 'Generuj ZIP',
+      createdMessage: 'ZIP przekazania został pomyślnie wygenerowany.',
+      errorTitle: 'Nie udało się utworzyć eksportu',
+    },
   },
   de: {
-    eyebrow: 'Kunden\u00fcbergabe',
-    title: 'Vollst\u00e4ndigkeit der \u00dcbergabe',
+    eyebrow: 'Kundenübergabe',
+    title: 'Vollständigkeit der Übergabe',
     description:
-      'Die Vollst\u00e4ndigkeit ber\u00fccksichtigt nur erforderliche Dokumente, die ausdr\u00fccklich f\u00fcr Kunden sichtbar sind.',
-    completedLabel: 'erf\u00fcllt',
+      'Die Vollständigkeit berücksichtigt nur erforderliche Dokumente, die ausdrücklich für Kunden sichtbar sind.',
+    completedLabel: 'erfüllt',
     requiredLabel: 'erforderlich',
     missingTitle: 'Fehlende erforderliche Dokumente',
-    completeMessage:
-      'Alle erforderlichen Dokumente f\u00fcr die Kunden\u00fcbergabe sind vorhanden.',
+    completeMessage: 'Alle erforderlichen Dokumente für die Kundenübergabe sind vorhanden.',
+    export: {
+      sectionTitle: 'Übergabe-ZIP erstellen',
+      sectionDescription:
+        'Wählen Sie kundensichtige Dokumente aus, die in das Übergabepaket aufgenommen werden sollen.',
+      noDocumentsMessage: 'Keine kundensichtigen Dokumente für den Export verfügbar.',
+      generateButtonLabel: 'ZIP erstellen',
+      createdMessage: 'Übergabe-ZIP wurde erfolgreich erstellt.',
+      errorTitle: 'Export konnte nicht erstellt werden',
+    },
   },
   fr: {
     eyebrow: 'Remise au client',
-    title: 'Compl\u00e9tude de la remise',
+    title: 'Complétude de la remise',
     description:
-      'La compl\u00e9tude compte uniquement les documents requis explicitement visibles par le client.',
-    completedLabel: 'termin\u00e9s',
+      'La complétude compte uniquement les documents requis explicitement visibles par le client.',
+    completedLabel: 'terminés',
     requiredLabel: 'requis',
     missingTitle: 'Documents requis manquants',
-    completeMessage: 'Tous les documents requis pour la remise au client sont pr\u00e9sents.',
+    completeMessage: 'Tous les documents requis pour la remise au client sont présents.',
+    export: {
+      sectionTitle: 'Générer le ZIP de remise',
+      sectionDescription:
+        'Sélectionnez les documents visibles par le client à inclure dans le package de remise.',
+      noDocumentsMessage: "Aucun document visible par le client n'est disponible pour l'export.",
+      generateButtonLabel: 'Générer le ZIP',
+      createdMessage: 'Le ZIP de remise a été généré avec succès.',
+      errorTitle: "L'export n'a pas pu être créé",
+    },
   },
   es: {
     eyebrow: 'Entrega al cliente',
     title: 'Integridad de la entrega',
     description:
-      'La integridad solo cuenta los documentos requeridos que son expl\u00edcitamente visibles para el cliente.',
+      'La integridad solo cuenta los documentos requeridos que son explícitamente visibles para el cliente.',
     completedLabel: 'completados',
     requiredLabel: 'requeridos',
     missingTitle: 'Documentos requeridos pendientes',
     completeMessage:
-      'Todos los documentos requeridos para la entrega al cliente est\u00e1n disponibles.',
+      'Todos los documentos requeridos para la entrega al cliente están disponibles.',
+    export: {
+      sectionTitle: 'Generar ZIP de entrega',
+      sectionDescription:
+        'Seleccione los documentos visibles para el cliente que se incluirán en el paquete de entrega.',
+      noDocumentsMessage: 'No hay documentos visibles para el cliente disponibles para exportar.',
+      generateButtonLabel: 'Generar ZIP',
+      createdMessage: 'El ZIP de entrega se generó correctamente.',
+      errorTitle: 'No se pudo crear la exportación',
+    },
   },
 } as const satisfies Record<SupportedLocale, HandoverCompletenessCopy>;

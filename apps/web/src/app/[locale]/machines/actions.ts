@@ -14,6 +14,7 @@ import {
 } from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
+import { createCustomerHandoverExport } from '@/customer-handover-export-api';
 import {
   applyDocumentClassificationSuggestion,
   confirmDocumentClassificationSuggestion,
@@ -632,4 +633,38 @@ export async function confirmMachineDocumentClassificationSuggestionAction(
       normalizedMachineId,
     )}?documentClassification=confirmed`,
   );
+}
+
+export async function createCustomerHandoverExportAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const locale = ((formData.get('locale') as string | null) ?? '').trim() || 'en';
+  const documentIds = formData.getAll('documentIds') as string[];
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  if (documentIds.length === 0) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportError=${encodeURIComponent('No documents selected')}`,
+    );
+  }
+
+  try {
+    await createCustomerHandoverExport({
+      organizationId: session.organizationId,
+      machineId,
+      documentIds,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?handoverExport=created`);
 }

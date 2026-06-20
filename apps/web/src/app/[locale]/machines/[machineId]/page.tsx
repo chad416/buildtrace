@@ -20,6 +20,7 @@ import { notFound } from 'next/navigation';
 
 import {
   confirmMachineDocumentClassificationSuggestionAction,
+  createCustomerHandoverExportAction,
   createMachineDocumentDownloadUrlAction,
   refreshMachineDocumentClassificationSuggestionAction,
   updateMachineDocumentCategoryAction,
@@ -58,6 +59,8 @@ type MachineDetailSearchParams = {
   readonly documentDownloadError?: string;
   readonly documentClassification?: string;
   readonly documentClassificationError?: string;
+  readonly handoverExport?: string;
+  readonly handoverExportError?: string;
 };
 
 type PageProps = {
@@ -140,6 +143,8 @@ function normalizeSearchParams(
     searchParams,
     'documentClassificationError',
   );
+  const handoverExport = readStringSearchParam(searchParams, 'handoverExport');
+  const handoverExportError = readStringSearchParam(searchParams, 'handoverExportError');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -153,6 +158,8 @@ function normalizeSearchParams(
     ...(documentDownloadError ? { documentDownloadError } : {}),
     ...(documentClassification ? { documentClassification } : {}),
     ...(documentClassificationError ? { documentClassificationError } : {}),
+    ...(handoverExport ? { handoverExport } : {}),
+    ...(handoverExportError ? { handoverExportError } : {}),
   };
 }
 
@@ -776,6 +783,66 @@ function renderHandoverCompleteness({
     </section>
   );
 }
+function renderHandoverExportSection({
+  machine,
+  documents,
+  handoverCopy,
+  locale,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly documents: readonly DocumentMetadataApiModel[];
+  readonly handoverCopy: HandoverCompletenessCopy;
+  readonly locale: string;
+}) {
+  const eligibleDocuments = documents.filter(
+    (doc) => doc.visibilityLevel === 'customer-visible' && doc.visibleToCustomer === true,
+  );
+
+  return (
+    <section
+      id="handover-export"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {handoverCopy.export.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">
+        {handoverCopy.export.sectionDescription}
+      </p>
+
+      {eligibleDocuments.length === 0 ? (
+        <p className="mt-6 rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+          {handoverCopy.export.noDocumentsMessage}
+        </p>
+      ) : (
+        <form action={createCustomerHandoverExportAction} className="mt-6 grid gap-5">
+          <input type="hidden" name="machineId" value={machine.id} />
+          <input type="hidden" name="locale" value={locale} />
+          <div className="grid gap-3">
+            {eligibleDocuments.map((document) => (
+              <label key={document.id} className="flex items-center gap-3 text-sm text-stone-200">
+                <input
+                  type="checkbox"
+                  name="documentIds"
+                  value={document.id}
+                  className="rounded border-stone-700 bg-black"
+                />
+                {document.fileName}
+              </label>
+            ))}
+          </div>
+          <button
+            type="submit"
+            className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+          >
+            {handoverCopy.export.generateButtonLabel}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -886,6 +953,13 @@ function renderMachineDetail({
         completeness: handoverCompleteness,
         copy: handoverCopy,
         labels,
+      })}
+
+      {renderHandoverExportSection({
+        machine,
+        documents,
+        handoverCopy,
+        locale,
       })}
 
       {renderMachineEditForm({
@@ -1151,6 +1225,22 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             tone: 'error',
             title: 'Signed download could not be created',
             body: normalizedSearchParams.documentDownloadError,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.handoverExport === 'created'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: handoverCopy.export.sectionTitle,
+            body: handoverCopy.export.createdMessage,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.handoverExportError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: handoverCopy.export.errorTitle,
+            body: normalizedSearchParams.handoverExportError,
           })
         : null}
 

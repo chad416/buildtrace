@@ -114,6 +114,7 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 Phase 6 is approximately 65% complete.
 
 Completed:
+
 - shared completeness evaluator and export manifest builder
 - shared ZIP entry builder with traversal guards
 - i18n document labels and handover completeness copy (all 7 locales)
@@ -128,6 +129,7 @@ Completed:
 - handover completeness widget in machine detail page
 
 Still required before Phase 6 can close:
+
 1. Web export API client (customer-handover-export-api.ts)
 2. Export trigger UI + server action
 3. Export history list endpoint (API) + web client
