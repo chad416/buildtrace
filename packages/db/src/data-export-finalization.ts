@@ -1,6 +1,8 @@
 import {
   activityLogActions,
   buildPrivateCustomerHandoverExportStoragePath,
+  buildPrivateCustomerHandoverPdfSummaryStoragePath,
+  customerHandoverExportManifestVersion,
 } from '@buildtrace/shared';
 
 import { Prisma, type DataExport, type PrismaClient } from './generated/prisma/client';
@@ -37,6 +39,7 @@ export type FinalizeCustomerHandoverExportSuccessInput = {
   readonly archiveByteLength: number;
   readonly documentCount: number;
   readonly totalDocumentBytes: number;
+  readonly pdfStoragePath?: string;
   readonly completedAt?: Date;
 };
 
@@ -137,6 +140,7 @@ export async function finalizeCustomerHandoverExportSuccess({
   archiveByteLength,
   documentCount,
   totalDocumentBytes,
+  pdfStoragePath,
   completedAt,
 }: FinalizeCustomerHandoverExportSuccessInput): Promise<CompletedCustomerHandoverExportArtifact> {
   const organization = required(organizationId, 'organizationId');
@@ -149,6 +153,9 @@ export async function finalizeCustomerHandoverExportSuccess({
   const documents = positiveDatabaseInteger(documentCount, 'documentCount');
   const totalBytes = positiveDatabaseInteger(totalDocumentBytes, 'totalDocumentBytes');
   const completionDate = validCompletionDate(completedAt);
+  const summaryStoragePath = pdfStoragePath
+    ? required(pdfStoragePath, 'pdfStoragePath')
+    : undefined;
 
   const expectedStoragePath = buildPrivateCustomerHandoverExportStoragePath({
     organizationId: organization,
@@ -158,6 +165,18 @@ export async function finalizeCustomerHandoverExportSuccess({
 
   if (storagePath !== expectedStoragePath) {
     throw new Error('artifactStoragePath does not match the export tenant scope.');
+  }
+
+  if (
+    summaryStoragePath &&
+    summaryStoragePath !==
+      buildPrivateCustomerHandoverPdfSummaryStoragePath({
+        organizationId: organization,
+        machineId: machine,
+        exportId: dataExportId,
+      })
+  ) {
+    throw new Error('pdfStoragePath does not match the export tenant scope.');
   }
 
   if (!canonicalSha256Pattern.test(checksum)) {
@@ -177,6 +196,15 @@ export async function finalizeCustomerHandoverExportSuccess({
         throw new Error('documentCount does not match the revalidated export manifest.');
       }
 
+      const manifest: Prisma.InputJsonObject = {
+        manifestVersion: customerHandoverExportManifestVersion,
+        checklistVersion: revalidated.checklistVersion,
+        documents: revalidated.documents.map((document) => ({
+          ...document,
+        })),
+        ...(summaryStoragePath ? { pdfStoragePath: summaryStoragePath } : {}),
+      };
+
       const update = await transaction.dataExport.updateMany({
         where: {
           id: dataExportId,
@@ -193,6 +221,7 @@ export async function finalizeCustomerHandoverExportSuccess({
           archiveByteLength: archiveBytes,
           documentCount: documents,
           totalDocumentBytes: totalBytes,
+          manifest,
           completedAt: completionDate,
         },
       });

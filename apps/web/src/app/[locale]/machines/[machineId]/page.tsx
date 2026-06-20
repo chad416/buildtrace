@@ -22,6 +22,7 @@ import {
   confirmMachineDocumentClassificationSuggestionAction,
   createCustomerHandoverExportAction,
   createCustomerHandoverExportDownloadUrlAction,
+  createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
   refreshMachineDocumentClassificationSuggestionAction,
   updateMachineDocumentCategoryAction,
@@ -67,6 +68,7 @@ type MachineDetailSearchParams = {
   readonly handoverExport?: string;
   readonly handoverExportError?: string;
   readonly handoverExportDownloadUrl?: string;
+  readonly handoverExportPdfDownloadUrl?: string;
   readonly handoverExportDownloadExpiry?: string;
   readonly handoverExportDownloadError?: string;
   readonly handoverExportSensitiveCategories?: string;
@@ -159,6 +161,10 @@ function normalizeSearchParams(
     searchParams,
     'handoverExportDownloadUrl',
   );
+  const handoverExportPdfDownloadUrl = readStringSearchParam(
+    searchParams,
+    'handoverExportPdfDownloadUrl',
+  );
   const handoverExportDownloadExpiry = readStringSearchParam(
     searchParams,
     'handoverExportDownloadExpiry',
@@ -187,6 +193,7 @@ function normalizeSearchParams(
     ...(handoverExport ? { handoverExport } : {}),
     ...(handoverExportError ? { handoverExportError } : {}),
     ...(handoverExportDownloadUrl ? { handoverExportDownloadUrl } : {}),
+    ...(handoverExportPdfDownloadUrl ? { handoverExportPdfDownloadUrl } : {}),
     ...(handoverExportDownloadExpiry ? { handoverExportDownloadExpiry } : {}),
     ...(handoverExportDownloadError ? { handoverExportDownloadError } : {}),
     ...(handoverExportSensitiveCategories ? { handoverExportSensitiveCategories } : {}),
@@ -920,17 +927,30 @@ function renderHandoverExportHistory({
                     {formatArchiveBytes(entry.archiveByteLength)} {handoverCopy.export.sizeLabel}
                   </p>
                 </div>
-                <form action={createCustomerHandoverExportDownloadUrlAction}>
-                  <input type="hidden" name="machineId" value={machine.id} />
-                  <input type="hidden" name="exportId" value={entry.id} />
-                  <input type="hidden" name="locale" value={locale} />
-                  <button
-                    type="submit"
-                    className="inline-flex min-h-9 items-center rounded-md border border-sky-500/50 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:border-sky-300 hover:text-white"
-                  >
-                    {handoverCopy.export.downloadButtonLabel}
-                  </button>
-                </form>
+                <div className="flex flex-wrap gap-2">
+                  <form action={createCustomerHandoverExportDownloadUrlAction}>
+                    <input type="hidden" name="machineId" value={machine.id} />
+                    <input type="hidden" name="exportId" value={entry.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-9 items-center rounded-md border border-sky-500/50 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:border-sky-300 hover:text-white"
+                    >
+                      {handoverCopy.export.downloadButtonLabel}
+                    </button>
+                  </form>
+                  <form action={createCustomerHandoverExportPdfDownloadUrlAction}>
+                    <input type="hidden" name="machineId" value={machine.id} />
+                    <input type="hidden" name="exportId" value={entry.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-9 items-center rounded-md border border-emerald-500/50 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-white"
+                    >
+                      {handoverCopy.export.downloadPdfButtonLabel}
+                    </button>
+                  </form>
+                </div>
               </div>
             </li>
           ))}
@@ -1393,6 +1413,22 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             rel="noopener noreferrer"
           >
             {handoverCopy.export.downloadButtonLabel}
+          </a>
+        </section>
+      ) : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.handoverExportPdfDownloadUrl ? (
+        <section className="rounded-lg border border-emerald-500/40 bg-emerald-950/20 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+            {handoverCopy.export.downloadPdfButtonLabel}
+          </p>
+          <a
+            href={normalizedSearchParams.handoverExportPdfDownloadUrl}
+            className="mt-3 inline-flex items-center rounded-md border border-emerald-500/50 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:border-emerald-300 hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {handoverCopy.export.downloadPdfButtonLabel}
           </a>
         </section>
       ) : null}

@@ -1,6 +1,7 @@
 import {
   createCustomerHandoverExport,
   createCustomerHandoverExportDownloadUrl,
+  createCustomerHandoverExportPdfDownloadUrl,
   type CustomerHandoverExportFetcher,
 } from './customer-handover-export-api.js';
 
@@ -50,7 +51,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
 
     const url = readUrl(input);
 
-    if (url.pathname.endsWith('/download-url')) {
+    if (url.pathname.endsWith('download-url')) {
       return createJsonResponse({
         exportId: 'export-1',
         downloadUrl: 'https://example.com/download',
@@ -78,6 +79,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
       organizationId: ' organization-1 ',
       machineId: ' machine-1 ',
       documentIds: [' doc-1 ', ' doc-2 '],
+      locale: 'en',
       accessToken: ' token-1 ',
     },
     fetcher,
@@ -118,6 +120,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
       body1.documentIds[1] === 'doc-2',
     'Document IDs were not normalized.',
   );
+  assert(body1.locale === 'en', 'Locale was not sent.');
 
   // Test createCustomerHandoverExportDownloadUrl
   const downloadUrlResult = await createCustomerHandoverExportDownloadUrl(
@@ -155,6 +158,30 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
   const body2 = JSON.parse(call2.init?.body as string);
   assert(body2.organizationId === 'organization-1', 'Organization ID was not normalized.');
 
+  const pdfDownloadUrlResult = await createCustomerHandoverExportPdfDownloadUrl(
+    {
+      organizationId: ' organization-1 ',
+      machineId: ' machine-1 ',
+      exportId: ' export-1 ',
+      accessToken: ' token-1 ',
+    },
+    fetcher,
+  );
+
+  assert(pdfDownloadUrlResult.exportId === 'export-1', 'PDF download export ID mismatch.');
+  assert(
+    pdfDownloadUrlResult.downloadUrl === 'https://example.com/download',
+    'PDF download URL mismatch.',
+  );
+
+  const call3 = calls[2];
+  assert(call3 !== undefined, 'PDF download URL request was not captured.');
+  assert(
+    readUrl(call3.input).pathname ===
+      '/document-records/machines/machine-1/customer-handover-exports/export-1/pdf-download-url',
+    'PDF download URL request used the wrong path.',
+  );
+
   // Validation checks for invalid inputs
   await expectThrows('missing organization ID in create', () =>
     createCustomerHandoverExport(
@@ -162,6 +189,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
         organizationId: '   ',
         machineId: 'machine-1',
         documentIds: ['doc-1'],
+        locale: 'en',
         accessToken: 'token-1',
       },
       fetcher,
@@ -174,6 +202,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
         organizationId: 'organization-1',
         machineId: '   ',
         documentIds: ['doc-1'],
+        locale: 'en',
         accessToken: 'token-1',
       },
       fetcher,
@@ -186,6 +215,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
         organizationId: 'organization-1',
         machineId: 'machine-1',
         documentIds: ['doc-1', '  '],
+        locale: 'en',
         accessToken: 'token-1',
       },
       fetcher,
@@ -198,6 +228,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
         organizationId: 'organization-1',
         machineId: 'machine-1',
         documentIds: ['doc-1'],
+        locale: 'en',
         accessToken: '   ',
       },
       fetcher,
@@ -210,6 +241,7 @@ async function runCustomerHandoverExportApiSmokeCheck(): Promise<void> {
         organizationId: 'organization-1',
         machineId: 'machine-1',
         documentIds: ['doc-1'],
+        locale: 'en',
         accessToken: 'token-1',
       },
       async () => new Response('nope', { status: 500 }),

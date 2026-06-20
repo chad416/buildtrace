@@ -1,9 +1,12 @@
+import type { SupportedLocale } from '@buildtrace/shared';
+
 import type { Fetcher } from './document-records-api';
 
 export type CreateCustomerHandoverExportApiInput = {
   readonly organizationId: string;
   readonly machineId: string;
   readonly documentIds: readonly string[];
+  readonly locale: SupportedLocale;
   readonly accessToken: string;
 };
 
@@ -26,6 +29,7 @@ export type CreateCustomerHandoverExportResponse = {
     readonly completedAt: string;
   };
   readonly sensitiveCategories: readonly string[];
+  readonly pdfStoragePath?: string;
 };
 
 export type CreateCustomerHandoverExportDownloadUrlResponse = {
@@ -33,6 +37,12 @@ export type CreateCustomerHandoverExportDownloadUrlResponse = {
   readonly downloadUrl: string;
   readonly expiresInSeconds: number;
 };
+
+export type CreateCustomerHandoverExportPdfDownloadUrlApiInput =
+  CreateCustomerHandoverExportDownloadUrlApiInput;
+
+export type CreateCustomerHandoverExportPdfDownloadUrlResponse =
+  CreateCustomerHandoverExportDownloadUrlResponse;
 
 export type CustomerHandoverExportFetcher = Fetcher;
 
@@ -69,6 +79,17 @@ function buildCreateCustomerHandoverExportDownloadUrlUrl(
   );
 }
 
+function buildCreateCustomerHandoverExportPdfDownloadUrlUrl(
+  input: Pick<CreateCustomerHandoverExportPdfDownloadUrlApiInput, 'machineId' | 'exportId'>,
+): URL {
+  const machineId = normalizeRequiredText('Machine ID', input.machineId);
+  const exportId = normalizeRequiredText('Export ID', input.exportId);
+  return new URL(
+    `/document-records/machines/${encodeURIComponent(machineId)}/customer-handover-exports/${encodeURIComponent(exportId)}/pdf-download-url`,
+    apiBaseUrl,
+  );
+}
+
 function createAuthorizationHeader(accessToken: string): string {
   return `Bearer ${normalizeRequiredText('Access token', accessToken)}`;
 }
@@ -99,6 +120,7 @@ export async function createCustomerHandoverExport(
     body: JSON.stringify({
       organizationId,
       documentIds,
+      locale: input.locale,
     }),
   });
 
@@ -168,4 +190,24 @@ export async function createCustomerHandoverExportDownloadUrl(
   });
 
   return parseJsonResponse<CreateCustomerHandoverExportDownloadUrlResponse>(response);
+}
+
+export async function createCustomerHandoverExportPdfDownloadUrl(
+  input: CreateCustomerHandoverExportPdfDownloadUrlApiInput,
+  fetcher: CustomerHandoverExportFetcher = fetch,
+): Promise<CreateCustomerHandoverExportPdfDownloadUrlResponse> {
+  const organizationId = normalizeRequiredText('Organization ID', input.organizationId);
+
+  const response = await fetcher(buildCreateCustomerHandoverExportPdfDownloadUrlUrl(input), {
+    method: 'POST',
+    headers: {
+      authorization: createAuthorizationHeader(input.accessToken),
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      organizationId,
+    }),
+  });
+
+  return parseJsonResponse<CreateCustomerHandoverExportPdfDownloadUrlResponse>(response);
 }

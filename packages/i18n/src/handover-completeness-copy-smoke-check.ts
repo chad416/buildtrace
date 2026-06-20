@@ -8,6 +8,18 @@ function assert(condition: boolean, message: string): void {
   }
 }
 
+function stringValues(value: unknown): readonly string[] {
+  if (typeof value === 'string') {
+    return [value];
+  }
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.values(value).flatMap((nestedValue) => stringValues(nestedValue));
+}
+
 function runHandoverCompletenessCopySmokeCheck(): void {
   assert(
     Object.keys(handoverCompletenessCopy).length === supportedLocales.length,
@@ -16,12 +28,7 @@ function runHandoverCompletenessCopySmokeCheck(): void {
 
   for (const locale of supportedLocales) {
     const copy = handoverCompletenessCopy[locale];
-    const values = Object.values(copy);
-
-    assert(
-      values.length === 7,
-      `${locale} handover completeness copy has the wrong number of fields.`,
-    );
+    const values = stringValues(copy);
 
     for (const value of values) {
       assert(

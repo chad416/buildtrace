@@ -1,5 +1,6 @@
 import {
   buildPrivateCustomerHandoverExportStoragePath,
+  buildPrivateCustomerHandoverPdfSummaryStoragePath,
   type CustomerHandoverExportStorageScope,
 } from '@buildtrace/shared';
 
@@ -25,7 +26,21 @@ export type CreateCustomerHandoverExportSignedUrlInput = CustomerHandoverExportS
   readonly storage: DocumentStorageAdapter;
 };
 
+export type UploadCustomerHandoverPdfSummaryInput = CustomerHandoverExportStorageScope & {
+  readonly config: DocumentStorageConfig;
+  readonly storage: DocumentStorageAdapter;
+  readonly pdfBody: ArrayBuffer;
+};
+
+export type CreateCustomerHandoverPdfSummarySignedUrlInput = CustomerHandoverExportStorageScope & {
+  readonly config: DocumentStorageConfig;
+  readonly storage: DocumentStorageAdapter;
+  readonly pdfStoragePath: string;
+};
+
 export const buildCustomerHandoverExportStoragePath = buildPrivateCustomerHandoverExportStoragePath;
+export const buildCustomerHandoverPdfSummaryStoragePath =
+  buildPrivateCustomerHandoverPdfSummaryStoragePath;
 
 export async function uploadCustomerHandoverExport({
   config,
@@ -79,6 +94,40 @@ export async function removeCustomerHandoverExport({
   }
 }
 
+export async function uploadCustomerHandoverPdfSummary({
+  config,
+  storage,
+  organizationId,
+  machineId,
+  exportId,
+  pdfBody,
+}: UploadCustomerHandoverPdfSummaryInput): Promise<string> {
+  if (pdfBody.byteLength === 0) {
+    throw new Error('Customer handover PDF summary must not be empty.');
+  }
+
+  const storagePath = buildCustomerHandoverPdfSummaryStoragePath({
+    organizationId,
+    machineId,
+    exportId,
+  });
+
+  const response = await storage.from(config.bucketName).upload(storagePath, pdfBody, {
+    contentType: 'application/pdf',
+    upsert: false,
+  });
+
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
+
+  if (response.data?.path?.trim() !== storagePath) {
+    throw new Error('Customer handover PDF upload returned an unexpected storage path.');
+  }
+
+  return storagePath;
+}
+
 export async function createCustomerHandoverExportSignedUrl({
   config,
   storage,
@@ -98,6 +147,38 @@ export async function createCustomerHandoverExportSignedUrl({
 
   if (response.error || !response.data?.signedUrl) {
     throw new Error(response.error?.message ?? 'Customer handover ZIP URL could not be created.');
+  }
+
+  return {
+    signedUrl: response.data.signedUrl,
+    expiresInSeconds: config.signedUrlTtlSeconds,
+  };
+}
+
+export async function createCustomerHandoverPdfSummarySignedUrl({
+  config,
+  storage,
+  organizationId,
+  machineId,
+  exportId,
+  pdfStoragePath,
+}: CreateCustomerHandoverPdfSummarySignedUrlInput): Promise<DocumentStorageSignedUrlResult> {
+  const expectedStoragePath = buildCustomerHandoverPdfSummaryStoragePath({
+    organizationId,
+    machineId,
+    exportId,
+  });
+
+  if (pdfStoragePath.trim() !== expectedStoragePath) {
+    throw new Error('Customer handover PDF path does not match the export tenant scope.');
+  }
+
+  const response = await storage
+    .from(config.bucketName)
+    .createSignedUrl(expectedStoragePath, config.signedUrlTtlSeconds);
+
+  if (response.error || !response.data?.signedUrl) {
+    throw new Error(response.error?.message ?? 'Customer handover PDF URL could not be created.');
   }
 
   return {

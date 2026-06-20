@@ -17,6 +17,7 @@ import { redirect } from 'next/navigation';
 import {
   createCustomerHandoverExport,
   createCustomerHandoverExportDownloadUrl,
+  createCustomerHandoverExportPdfDownloadUrl,
 } from '@/customer-handover-export-api';
 import {
   applyDocumentClassificationSuggestion,
@@ -641,7 +642,10 @@ export async function confirmMachineDocumentClassificationSuggestionAction(
 export async function createCustomerHandoverExportAction(formData: FormData): Promise<void> {
   const session = await readMachineRecordsSession();
   const machineId = (formData.get('machineId') as string).trim();
-  const locale = ((formData.get('locale') as string | null) ?? '').trim() || 'en';
+  const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
+  const locale = supportedLocales.includes(requestedLocale as SupportedLocale)
+    ? (requestedLocale as SupportedLocale)
+    : 'en';
   const documentIds = formData.getAll('documentIds') as string[];
 
   if (session.status === 'missing') {
@@ -662,6 +666,7 @@ export async function createCustomerHandoverExportAction(formData: FormData): Pr
       organizationId: session.organizationId,
       machineId,
       documentIds,
+      locale,
       accessToken: session.accessToken,
     });
   } catch (error) {
@@ -713,5 +718,40 @@ export async function createCustomerHandoverExportDownloadUrlAction(
 
   redirect(
     `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadUrl=${encodeURIComponent(downloadUrl)}&handoverExportDownloadExpiry=${encodeURIComponent(String(expiresInSeconds))}`,
+  );
+}
+
+export async function createCustomerHandoverExportPdfDownloadUrlAction(
+  formData: FormData,
+): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const exportId = (formData.get('exportId') as string).trim();
+  const locale = ((formData.get('locale') as string | null) ?? '').trim() || 'en';
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  let downloadUrl: string;
+
+  try {
+    const result = await createCustomerHandoverExportPdfDownloadUrl({
+      organizationId: session.organizationId,
+      machineId,
+      exportId,
+      accessToken: session.accessToken,
+    });
+    downloadUrl = result.downloadUrl;
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportPdfDownloadUrl=${encodeURIComponent(downloadUrl)}`,
   );
 }

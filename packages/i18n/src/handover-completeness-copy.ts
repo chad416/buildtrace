@@ -18,6 +18,7 @@ export type HandoverCompletenessCopy = {
     readonly historyTitle: string;
     readonly noHistoryMessage: string;
     readonly downloadButtonLabel: string;
+    readonly downloadPdfButtonLabel: string;
     readonly documentsLabel: string;
     readonly sizeLabel: string;
     readonly sensitiveWarning: string;
@@ -44,6 +45,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Export history',
       noHistoryMessage: 'No handover exports have been created yet.',
       downloadButtonLabel: 'Download',
+      downloadPdfButtonLabel: 'Download PDF',
       documentsLabel: 'documents',
       sizeLabel: 'archive',
       sensitiveWarning:
@@ -69,6 +71,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Historie exportů',
       noHistoryMessage: 'Zatím nebyly vytvořeny žádné exporty předání.',
       downloadButtonLabel: 'Stáhnout',
+      downloadPdfButtonLabel: 'Stáhnout PDF',
       documentsLabel: 'dokumentů',
       sizeLabel: 'archiv',
       sensitiveWarning:
@@ -95,6 +98,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'História exportov',
       noHistoryMessage: 'Zatiaľ neboli vytvorené žiadne exporty odovzdania.',
       downloadButtonLabel: 'Stiahnuť',
+      downloadPdfButtonLabel: 'Stiahnuť PDF',
       documentsLabel: 'dokumentov',
       sizeLabel: 'archív',
       sensitiveWarning:
@@ -120,6 +124,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Historia eksportów',
       noHistoryMessage: 'Nie utworzono jeszcze żadnych eksportów przekazania.',
       downloadButtonLabel: 'Pobierz',
+      downloadPdfButtonLabel: 'Pobierz PDF',
       documentsLabel: 'dokumentów',
       sizeLabel: 'archiwum',
       sensitiveWarning:
@@ -146,6 +151,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Exportverlauf',
       noHistoryMessage: 'Es wurden noch keine Übergabe-Exporte erstellt.',
       downloadButtonLabel: 'Herunterladen',
+      downloadPdfButtonLabel: 'PDF herunterladen',
       documentsLabel: 'Dokumente',
       sizeLabel: 'Archiv',
       sensitiveWarning:
@@ -172,6 +178,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Historique des exports',
       noHistoryMessage: "Aucun export de remise n'a encore été créé.",
       downloadButtonLabel: 'Télécharger',
+      downloadPdfButtonLabel: 'Télécharger le PDF',
       documentsLabel: 'documents',
       sizeLabel: 'archive',
       sensitiveWarning:
@@ -199,6 +206,7 @@ export const handoverCompletenessCopy = {
       historyTitle: 'Historial de exportaciones',
       noHistoryMessage: 'Aún no se han creado exportaciones de entrega.',
       downloadButtonLabel: 'Descargar',
+      downloadPdfButtonLabel: 'Descargar PDF',
       documentsLabel: 'documentos',
       sizeLabel: 'archivo',
       sensitiveWarning:

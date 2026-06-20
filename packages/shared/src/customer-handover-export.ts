@@ -31,6 +31,7 @@ export type PrivateCustomerHandoverExportManifest = {
   readonly manifestVersion: typeof customerHandoverExportManifestVersion;
   readonly checklistVersion: typeof customerHandoverChecklistVersion;
   readonly documents: readonly PrivateCustomerHandoverExportManifestEntry[];
+  readonly pdfStoragePath?: string;
 };
 
 export type CustomerHandoverExportStorageScope = {
@@ -82,6 +83,22 @@ export function buildPrivateCustomerHandoverExportStoragePath({
     'exports',
     safeStoragePathSegment(exportId, 'exportId'),
     'customer-handover.zip',
+  ].join('/');
+}
+
+export function buildPrivateCustomerHandoverPdfSummaryStoragePath({
+  organizationId,
+  machineId,
+  exportId,
+}: CustomerHandoverExportStorageScope): string {
+  return [
+    'organizations',
+    safeStoragePathSegment(organizationId, 'organizationId'),
+    'machines',
+    safeStoragePathSegment(machineId, 'machineId'),
+    'exports',
+    safeStoragePathSegment(exportId, 'exportId'),
+    'customer-handover-summary.pdf',
   ].join('/');
 }
 

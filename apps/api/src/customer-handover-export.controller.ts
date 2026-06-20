@@ -12,11 +12,13 @@ import {
   Query,
 } from '@nestjs/common';
 import type {
+  MachineRecord,
   OrganizationRole,
   PrismaClient,
   RevalidatedCustomerHandoverExport,
   SucceededCustomerHandoverExportSummary,
 } from '@buildtrace/db';
+import { documentLabels, handoverCompletenessCopy } from '@buildtrace/i18n';
 import {
   failCustomerHandoverExport,
   createActivityLog,
@@ -31,7 +33,11 @@ import {
 import {
   activityLogActions,
   buildPrivateCustomerHandoverExportStoragePath,
+  evaluateCustomerHandoverCompleteness,
   sensitiveEngineeringDocumentCategories,
+  supportedLocales,
+  type CustomerHandoverDocument,
+  type SupportedLocale,
 } from '@buildtrace/shared';
 
 import {
@@ -40,9 +46,12 @@ import {
 } from './authenticated-tenant-context.js';
 import {
   createCustomerHandoverExportSignedUrl,
+  createCustomerHandoverPdfSummarySignedUrl,
   removeCustomerHandoverExport,
   uploadCustomerHandoverExport,
+  uploadCustomerHandoverPdfSummary,
 } from './customer-handover-export-storage.js';
+import { buildCustomerHandoverPdfSummary } from './customer-handover-pdf-summary.js';
 import {
   buildCustomerHandoverZipArchive,
   type CustomerHandoverZipArchive,
@@ -65,6 +74,7 @@ export const maximumCustomerHandoverArchiveBytes = 55 * 1024 * 1024;
 export type CreateCustomerHandoverExportRequestBody = {
   readonly organizationId?: unknown;
   readonly documentIds?: unknown;
+  readonly locale?: unknown;
 };
 
 export type CreateCustomerHandoverExportResponse = {
@@ -79,6 +89,7 @@ export type CreateCustomerHandoverExportResponse = {
     readonly completedAt: Date;
   };
   readonly sensitiveCategories: readonly string[];
+  readonly pdfStoragePath?: string;
 };
 
 export type CreateCustomerHandoverExportDownloadUrlRequestBody = {
@@ -91,6 +102,9 @@ export type CreateCustomerHandoverExportDownloadUrlResponse = {
   readonly expiresInSeconds: number;
 };
 
+export type CreateCustomerHandoverPdfSummaryDownloadUrlResponse =
+  CreateCustomerHandoverExportDownloadUrlResponse;
+
 type ResolveAuthenticatedTenantContextDependency = (input: {
   readonly authorizationHeader: string | undefined;
   readonly organizationId: string;
@@ -100,7 +114,7 @@ type ResolveAuthenticatedTenantContextDependency = (input: {
 
 type GetMachineByOrganizationDependency = (
   input: Parameters<typeof getMachineByOrganization>[0],
-) => Promise<unknown | null>;
+) => Promise<Pick<MachineRecord, 'id' | 'machineName' | 'serialNumber'> | null>;
 
 type ListSucceededCustomerHandoverExportsDependency = (
   input: Parameters<typeof listSucceededCustomerHandoverExports>[0],
@@ -121,7 +135,7 @@ type GetSucceededCustomerHandoverExportArtifactDependency = (
   input: Parameters<typeof getSucceededCustomerHandoverExportArtifact>[0],
 ) => Promise<Pick<
   NonNullable<Awaited<ReturnType<typeof getSucceededCustomerHandoverExportArtifact>>>,
-  'id'
+  'id' | 'manifest'
 > | null>;
 
 export type CustomerHandoverRecoveryFailure = {
@@ -149,9 +163,12 @@ export type CustomerHandoverExportEndpointDependencies = {
   ) => CustomerHandoverStorageAdapter;
   readonly downloadDocumentFromStorage: typeof downloadDocumentFromStorage;
   readonly buildCustomerHandoverZipArchive: typeof buildCustomerHandoverZipArchive;
+  readonly buildCustomerHandoverPdfSummary: typeof buildCustomerHandoverPdfSummary;
   readonly uploadCustomerHandoverExport: typeof uploadCustomerHandoverExport;
+  readonly uploadCustomerHandoverPdfSummary: typeof uploadCustomerHandoverPdfSummary;
   readonly removeCustomerHandoverExport: typeof removeCustomerHandoverExport;
   readonly createCustomerHandoverExportSignedUrl: typeof createCustomerHandoverExportSignedUrl;
+  readonly createCustomerHandoverPdfSummarySignedUrl: typeof createCustomerHandoverPdfSummarySignedUrl;
   readonly reportRecoveryFailure?: (failure: CustomerHandoverRecoveryFailure) => void;
 };
 
@@ -169,6 +186,9 @@ type CreateCustomerHandoverExportDownloadUrlFromRequestInput = {
   readonly body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined;
   readonly dependencies: CustomerHandoverExportEndpointDependencies;
 };
+
+type CreateCustomerHandoverPdfSummaryDownloadUrlFromRequestInput =
+  CreateCustomerHandoverExportDownloadUrlFromRequestInput;
 
 export type ListCustomerHandoverExportsQuery = {
   readonly organizationId?: unknown;
@@ -235,6 +255,47 @@ function documentIds(value: unknown): readonly string[] {
   return normalized;
 }
 
+function supportedLocale(value: unknown): SupportedLocale {
+  if (typeof value === 'string' && supportedLocales.includes(value.trim() as SupportedLocale)) {
+    return value.trim() as SupportedLocale;
+  }
+
+  return 'en';
+}
+
+function pdfStoragePathFromManifest(manifest: unknown): string | undefined {
+  if (typeof manifest !== 'object' || manifest === null || Array.isArray(manifest)) {
+    return undefined;
+  }
+
+  const pdfStoragePath = (manifest as Record<string, unknown>).pdfStoragePath;
+
+  if (typeof pdfStoragePath !== 'string' || !pdfStoragePath.trim()) {
+    return undefined;
+  }
+
+  return pdfStoragePath.trim();
+}
+
+function reportPdfSummaryFailure(
+  organizationId: string,
+  machineId: string,
+  exportId: string,
+  reason: unknown,
+): void {
+  const error = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason);
+
+  logger.error(
+    [
+      'Customer handover PDF summary could not be created.',
+      'organizationId=' + organizationId,
+      'machineId=' + machineId,
+      'exportId=' + exportId,
+      error,
+    ].join(' '),
+  );
+}
+
 function reportRecoveryFailure(failure: CustomerHandoverRecoveryFailure): void {
   const reason =
     failure.reason instanceof Error
@@ -269,9 +330,12 @@ function createRealDependencies(): CustomerHandoverExportEndpointDependencies {
     createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
     downloadDocumentFromStorage,
     buildCustomerHandoverZipArchive,
+    buildCustomerHandoverPdfSummary,
     uploadCustomerHandoverExport,
+    uploadCustomerHandoverPdfSummary,
     removeCustomerHandoverExport,
     createCustomerHandoverExportSignedUrl,
+    createCustomerHandoverPdfSummarySignedUrl,
     reportRecoveryFailure,
   };
 }
@@ -389,6 +453,7 @@ export async function createCustomerHandoverExportFromRequest({
   const normalizedMachineId = requiredString('machineId', machineId);
 
   const selectedDocumentIds = documentIds(requestBody.documentIds);
+  const locale = supportedLocale(requestBody.locale);
 
   const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
     authorizationHeader,
@@ -424,6 +489,16 @@ export async function createCustomerHandoverExportFromRequest({
       machineId: normalizedMachineId,
       exportId: pendingExport.id,
     });
+
+    const machine = await dependencies.getMachineByOrganization({
+      db: dependencies.db,
+      organizationId,
+      machineId: normalizedMachineId,
+    });
+
+    if (!machine) {
+      throw new Error('Machine was not found for this organization.');
+    }
 
     const sensitiveCategories = Array.from(
       new Set(
@@ -463,6 +538,48 @@ export async function createCustomerHandoverExportFromRequest({
       archiveBody: archive.archiveBody,
     });
 
+    let pdfStoragePath: string | undefined;
+
+    try {
+      const completeness = evaluateCustomerHandoverCompleteness(
+        initialRevalidation.documents.map(
+          (document): CustomerHandoverDocument => ({
+            category: document.category,
+            suggestedCategory: null,
+            visibilityLevel: document.visibilityLevel,
+            visibleToCustomer: document.visibleToCustomer,
+          }),
+        ),
+      );
+      const pdfBody = await dependencies.buildCustomerHandoverPdfSummary({
+        machineName: machine.machineName,
+        serialNumber: machine.serialNumber,
+        locale,
+        completeness,
+        documents: initialRevalidation.documents.map((document) => ({
+          fileName: document.fileName,
+          category: document.category,
+          visibilityLevel: document.visibilityLevel,
+        })),
+        exportId: pendingExport.id,
+        createdAt: new Date(),
+        sensitiveCategories,
+        labels: documentLabels[locale],
+        copy: handoverCompletenessCopy[locale],
+      });
+
+      pdfStoragePath = await dependencies.uploadCustomerHandoverPdfSummary({
+        config,
+        storage,
+        organizationId,
+        machineId: normalizedMachineId,
+        exportId: pendingExport.id,
+        pdfBody,
+      });
+    } catch (error) {
+      reportPdfSummaryFailure(organizationId, normalizedMachineId, pendingExport.id, error);
+    }
+
     const artifactStoragePath = buildPrivateCustomerHandoverExportStoragePath({
       organizationId,
       machineId: normalizedMachineId,
@@ -480,6 +597,7 @@ export async function createCustomerHandoverExportFromRequest({
       archiveByteLength: archive.archiveByteLength,
       documentCount: archive.documentCount,
       totalDocumentBytes: archive.totalDocumentBytes,
+      ...(pdfStoragePath ? { pdfStoragePath } : {}),
     });
 
     return {
@@ -494,6 +612,7 @@ export async function createCustomerHandoverExportFromRequest({
         completedAt: completed.completedAt,
       },
       sensitiveCategories,
+      ...(pdfStoragePath ? { pdfStoragePath } : {}),
     };
   } catch {
     await recoverFailedExport(
@@ -569,6 +688,82 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
   } catch {
     throw new InternalServerErrorException(
       'Customer handover ZIP download URL could not be created.',
+    );
+  }
+
+  return {
+    exportId: completed.id,
+    downloadUrl: signedUrl.signedUrl,
+    expiresInSeconds: signedUrl.expiresInSeconds,
+  };
+}
+
+export async function createCustomerHandoverPdfSummaryDownloadUrlFromRequest({
+  authorizationHeader,
+  machineId,
+  exportId,
+  body,
+  dependencies,
+}: CreateCustomerHandoverPdfSummaryDownloadUrlFromRequestInput): Promise<CreateCustomerHandoverPdfSummaryDownloadUrlResponse> {
+  const requestBody = body ?? {};
+
+  const organizationId = requiredString('organizationId', requestBody.organizationId);
+
+  const normalizedMachineId = requiredString('machineId', machineId);
+
+  const normalizedExportId = requiredString('exportId', exportId);
+
+  const tenantContext = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: exportRoles,
+  });
+
+  const completed = await dependencies.getSucceededCustomerHandoverExportArtifact({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+    exportId: normalizedExportId,
+  });
+
+  if (!completed) {
+    throw new NotFoundException('Completed customer handover export was not found.');
+  }
+
+  const pdfStoragePath = pdfStoragePathFromManifest(completed.manifest);
+
+  if (!pdfStoragePath) {
+    throw new NotFoundException('Customer handover PDF summary was not found.');
+  }
+
+  let signedUrl: DocumentStorageSignedUrlResult;
+
+  try {
+    const config = dependencies.readDocumentStorageConfig();
+
+    const storage = dependencies.createDocumentStorageAdapter(config);
+
+    signedUrl = await dependencies.createCustomerHandoverPdfSummarySignedUrl({
+      config,
+      storage,
+      organizationId,
+      machineId: normalizedMachineId,
+      exportId: normalizedExportId,
+      pdfStoragePath,
+    });
+
+    await dependencies.createActivityLog({
+      db: dependencies.db,
+      organizationId,
+      action: activityLogActions.customerHandoverExportDownloadUrlIssued,
+      actorUserId: tenantContext.currentUser.appUserId,
+      targetType: 'data-export',
+      targetId: normalizedExportId,
+    });
+  } catch {
+    throw new InternalServerErrorException(
+      'Customer handover PDF download URL could not be created.',
     );
   }
 
@@ -660,6 +855,26 @@ export class CustomerHandoverExportController {
     body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined,
   ): Promise<CreateCustomerHandoverExportDownloadUrlResponse> {
     return createCustomerHandoverExportDownloadUrlFromRequest({
+      authorizationHeader,
+      machineId,
+      exportId,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Post('machines/:machineId/customer-handover-exports/:exportId/pdf-download-url')
+  async createCustomerHandoverPdfSummaryDownloadUrl(
+    @Headers('authorization')
+    authorizationHeader: string | undefined,
+    @Param('machineId')
+    machineId: string | undefined,
+    @Param('exportId')
+    exportId: string | undefined,
+    @Body()
+    body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined,
+  ): Promise<CreateCustomerHandoverPdfSummaryDownloadUrlResponse> {
+    return createCustomerHandoverPdfSummaryDownloadUrlFromRequest({
       authorizationHeader,
       machineId,
       exportId,

@@ -11,6 +11,7 @@ import { buildCustomerHandoverZipArchive } from './customer-handover-zip-archive
 import {
   createCustomerHandoverExportDownloadUrlFromRequest,
   createCustomerHandoverExportFromRequest,
+  createCustomerHandoverPdfSummaryDownloadUrlFromRequest,
   maximumCustomerHandoverExportDocuments,
   type CustomerHandoverExportEndpointDependencies,
 } from './customer-handover-export.controller.js';
@@ -58,11 +59,14 @@ type CapturedCalls = {
     CustomerHandoverExportEndpointDependencies['buildCustomerHandoverZipArchive']
   >[0][];
   readonly uploadExportIds: string[];
+  readonly uploadPdfExportIds: string[];
   readonly removeExportIds: string[];
   readonly successfulCompletionIds: string[];
+  readonly finalizedPdfStoragePaths: Array<string | undefined>;
   readonly failureCompletionIds: string[];
   readonly succeededLookupIds: string[];
   readonly signedUrlExportIds: string[];
+  readonly signedPdfUrlExportIds: string[];
   readonly activityActions: string[];
 };
 
@@ -244,11 +248,14 @@ function createCapturedCalls(): CapturedCalls {
     downloadPaths: [],
     archiveInputs: [],
     uploadExportIds: [],
+    uploadPdfExportIds: [],
     removeExportIds: [],
     successfulCompletionIds: [],
+    finalizedPdfStoragePaths: [],
     failureCompletionIds: [],
     succeededLookupIds: [],
     signedUrlExportIds: [],
+    signedPdfUrlExportIds: [],
     activityActions: [],
   };
 }
@@ -282,7 +289,11 @@ function createDependencies(
         },
       };
     },
-    getMachineByOrganization: async () => ({ id: 'machine-1' }),
+    getMachineByOrganization: async () => ({
+      id: 'machine-1',
+      machineName: 'Assembly Cell 7',
+      serialNumber: 'BT-2026-007',
+    }),
     listSucceededCustomerHandoverExports: async () => [],
     createPendingCustomerHandoverExport: async (input) => {
       calls.pendingInputs.push(input);
@@ -305,13 +316,20 @@ function createDependencies(
     },
     finalizeCustomerHandoverExportSuccess: async (input) => {
       calls.successfulCompletionIds.push(input.exportId);
+      calls.finalizedPdfStoragePaths.push(input.pdfStoragePath);
 
       return completedExport;
     },
     getSucceededCustomerHandoverExportArtifact: async (input) => {
       calls.succeededLookupIds.push(input.exportId);
 
-      return completedExport;
+      return {
+        id: completedExport.id,
+        manifest: {
+          pdfStoragePath:
+            'organizations/organization-1/machines/machine-1/exports/export-1/customer-handover-summary.pdf',
+        },
+      };
     },
     createActivityLog: async (input) => {
       calls.activityActions.push(input.action);
@@ -345,8 +363,14 @@ function createDependencies(
 
       return buildCustomerHandoverZipArchive(input);
     },
+    buildCustomerHandoverPdfSummary: async () => bytes('PDF'),
     uploadCustomerHandoverExport: async (input) => {
       calls.uploadExportIds.push(input.exportId);
+    },
+    uploadCustomerHandoverPdfSummary: async (input) => {
+      calls.uploadPdfExportIds.push(input.exportId);
+
+      return `organizations/${input.organizationId}/machines/${input.machineId}/exports/${input.exportId}/customer-handover-summary.pdf`;
     },
     removeCustomerHandoverExport: async (input) => {
       calls.removeExportIds.push(input.exportId);
@@ -356,6 +380,14 @@ function createDependencies(
 
       return {
         signedUrl: 'https://storage.test/signed/customer-handover.zip',
+        expiresInSeconds: 900,
+      };
+    },
+    createCustomerHandoverPdfSummarySignedUrl: async (input) => {
+      calls.signedPdfUrlExportIds.push(input.exportId);
+
+      return {
+        signedUrl: 'https://storage.test/signed/customer-handover-summary.pdf',
         expiresInSeconds: 900,
       };
     },
@@ -455,6 +487,11 @@ async function runSuccessfulCreationCheck(): Promise<void> {
   assert(response.export.totalDocumentBytes === 33, 'Created export byte count is incorrect.');
   assert(response.export.archiveByteLength > 0, 'Created export archive is empty.');
   assert(
+    response.pdfStoragePath ===
+      'organizations/organization-1/machines/machine-1/exports/export-1/customer-handover-summary.pdf',
+    'Created export PDF storage path is incorrect.',
+  );
+  assert(
     response.export.completedAt.getTime() === completedAt.getTime(),
     'Created export completion time is incorrect.',
   );
@@ -474,14 +511,47 @@ async function runSuccessfulCreationCheck(): Promise<void> {
   assert(calls.downloadPaths.length === 2, 'Every export document must be downloaded.');
   assert(calls.archiveInputs.length === 1, 'ZIP archive must be generated exactly once.');
   assert(calls.uploadExportIds.join('|') === 'export-1', 'ZIP artifact was not uploaded.');
+  assert(calls.uploadPdfExportIds.join('|') === 'export-1', 'PDF summary was not uploaded.');
   assert(
     calls.successfulCompletionIds.join('|') === 'export-1',
     'Successful lifecycle completion was not called.',
+  );
+  assert(
+    calls.finalizedPdfStoragePaths.join('|') === response.pdfStoragePath,
+    'PDF storage path was not persisted during finalization.',
   );
   assert(calls.failureCompletionIds.length === 0, 'Successful export was marked failed.');
 }
 
 async function runCreationFailureChecks(): Promise<void> {
+  const pdfFailureCalls = createCapturedCalls();
+
+  const pdfFailureResponse = await createCustomerHandoverExportFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: 'machine-1',
+    body: {
+      organizationId: 'organization-1',
+      documentIds: ['document-1', 'document-2'],
+      locale: 'en',
+    },
+    dependencies: createDependencies(pdfFailureCalls, {
+      buildCustomerHandoverPdfSummary: async () => {
+        throw new Error('PDF renderer unavailable');
+      },
+    }),
+  });
+
+  assert(pdfFailureResponse.export.result === 'succeeded', 'PDF failure must not fail the ZIP.');
+  assert(pdfFailureResponse.pdfStoragePath === undefined, 'Failed PDF path was returned.');
+  assert(
+    pdfFailureCalls.uploadExportIds.join('|') === 'export-1',
+    'PDF failure prevented ZIP upload.',
+  );
+  assert(
+    pdfFailureCalls.successfulCompletionIds.join('|') === 'export-1',
+    'PDF failure prevented export finalization.',
+  );
+
   const finalizationCalls = createCapturedCalls();
 
   await expectException(
@@ -797,10 +867,57 @@ async function runDownloadUrlChecks(): Promise<void> {
   );
 }
 
+async function runPdfDownloadUrlChecks(): Promise<void> {
+  const successCalls = createCapturedCalls();
+
+  const response = await createCustomerHandoverPdfSummaryDownloadUrlFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    machineId: ' machine-1 ',
+    exportId: ' export-1 ',
+    body: {
+      organizationId: ' organization-1 ',
+    },
+    dependencies: createDependencies(successCalls),
+  });
+
+  assert(response.exportId === 'export-1', 'PDF download URL export ID is incorrect.');
+  assert(response.expiresInSeconds === 900, 'PDF download URL TTL is incorrect.');
+  assert(response.downloadUrl.endsWith('.pdf'), 'PDF download URL was not returned.');
+  assert(
+    successCalls.signedPdfUrlExportIds.join('|') === 'export-1',
+    'PDF signed URL was not created.',
+  );
+
+  const missingPdfCalls = createCapturedCalls();
+
+  await expectException('missing PDF summary', NotFoundException, () =>
+    createCustomerHandoverPdfSummaryDownloadUrlFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      machineId: 'machine-1',
+      exportId: 'export-1',
+      body: {
+        organizationId: 'organization-1',
+      },
+      dependencies: createDependencies(missingPdfCalls, {
+        getSucceededCustomerHandoverExportArtifact: async () => ({
+          id: 'export-1',
+          manifest: {},
+        }),
+      }),
+    }),
+  );
+
+  assert(
+    missingPdfCalls.signedPdfUrlExportIds.length === 0,
+    'Missing PDF summary minted a signed URL.',
+  );
+}
+
 await runStorageBoundaryCheck();
 await runSuccessfulCreationCheck();
 await runCreationFailureChecks();
 await runCreationValidationChecks();
 await runDownloadUrlChecks();
+await runPdfDownloadUrlChecks();
 
 console.info('Customer handover export endpoint smoke check passed.');

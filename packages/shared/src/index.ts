@@ -12,6 +12,7 @@ export {
 export type { CustomerHandoverCompleteness, CustomerHandoverDocument } from './customer-handover';
 export {
   buildPrivateCustomerHandoverExportStoragePath,
+  buildPrivateCustomerHandoverPdfSummaryStoragePath,
   createPrivateCustomerHandoverExportManifest,
   customerHandoverExportManifestVersion,
 } from './customer-handover-export';

@@ -20,19 +20,23 @@
     "document-upload-endpoint:smoke": "tsx src/document-upload-endpoint-smoke-check.ts",
     "dev:preflight": "tsx src/dev-preflight.ts",
     "dev:browser-session": "tsx src/dev-browser-session.ts",
+    "customer-handover-pdf:smoke": "tsx src/customer-handover-pdf-summary-smoke-check.ts",
     "customer-handover-zip-archive:smoke": "tsx src/customer-handover-zip-archive-smoke-check.ts",
     "customer-handover-export:smoke": "tsx src/customer-handover-export-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
+    "@buildtrace/i18n": "workspace:*",
     "@buildtrace/shared": "workspace:*",
     "@fastify/multipart": "^10.0.0",
     "@nestjs/common": "^11.1.25",
     "@nestjs/core": "^11.1.25",
     "@nestjs/platform-fastify": "^11.1.25",
+    "@playwright/browser-chromium": "^1.61.0",
     "@supabase/supabase-js": "^2.108.1",
     "fflate": "0.8.3",
     "pino": "^10.3.1",
+    "playwright": "^1.61.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
