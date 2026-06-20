@@ -18,13 +18,15 @@ Phase 4 is complete.
 
 Phase 5 is complete.
 
+Phase 6 is complete.
+
 Current full beta roadmap completion:
 
-- about 55%
+- about 65%
 
 Current active phase:
 
-- Phase 6 - Handover completeness + export
+- Phase 7 - QR customer portal
 
 ## Beta scope
 
@@ -371,7 +373,7 @@ Exit condition:
 
 Completion: 65% of beta.
 
-Status: not started.
+Status: complete.
 
 Scope:
 

@@ -1523,3 +1523,55 @@ Out of scope for Phase 5:
 - QR customer portal access
 - handover completeness scoring
 - export packaging
+
+## 2026-06-20 - Phase 6 - Handover completeness + export closeout
+
+Phase 6 is complete.
+
+Full beta roadmap completion moved from about 55% to about 65%.
+
+Verified shipped scope:
+
+- shared completeness evaluator and export manifest builder
+- shared ZIP entry builder with traversal guards
+- i18n document labels and handover completeness copy (all 7 locales)
+- i18n handover export copy (all 7 locales) including sensitive warning
+- DB data_exports schema with CHECK constraints and migrations
+- DB export creation/revalidation/finalization helpers
+- DB export list helper (`listSucceededCustomerHandoverExports`)
+- API completeness endpoint
+- API export create endpoint with sensitive-file detection
+- API export list endpoint
+- API export ZIP download-url endpoint
+- API export PDF download-url endpoint
+- API ZIP archive builder with fflate + SHA-256 checksum
+- API PDF summary generator with Playwright (localized, all 7 locales)
+- API export storage (Supabase) with upload/remove/signed URL for ZIP and PDF
+- API recovery path on export failure
+- web handover completeness API client
+- web export API client (create, list, ZIP download URL, PDF download URL)
+- handover completeness widget in machine detail page
+- export trigger UI with customer-visible document selection
+- export history list UI with ZIP and PDF download buttons
+- sensitive-file warning banner on export creation
+- localized PDF summary generated and stored privately
+
+Phase 6 commits:
+
+- `6b73c4d docs: update agent context for Phase 6 partial progress`
+- `3e722a5 feat(web): add customer handover export API client and smoke check`
+- `3e36193 feat(web): add handover export trigger UI and server action`
+- `af46e33 feat: add handover export history list endpoint and UI`
+- `1211dea feat: add sensitive-file warning to handover export response and UI`
+- `21b20ad feat: add localized PDF summary to customer handover export`
+- `fix(api): add playwright dependency for PDF summary generation`
+
+Out of scope for Phase 6:
+
+- QR portal
+- service tickets
+- software timeline
+- spare parts
+- quote flow
+- feedback collection
+- production deployment

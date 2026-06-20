@@ -223,7 +223,6 @@ Current implementation does not yet include:
 - real frontend login flow
 - mounted protected API routes
 - QR portal
-- QR portal
 - ticket workflows
 - customer data export
 - deletion workflow

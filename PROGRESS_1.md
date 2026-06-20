@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- 6b73c4d docs: update agent context for Phase 6 partial progress
+- fix(api): add playwright dependency for PDF summary generation
 
 Current branch:
 
@@ -12,7 +12,7 @@ Current branch:
 
 Current phase:
 
-- Phase 6 - Handover completeness + export
+- Phase 6 complete — Phase 7 next
 
 Current full beta roadmap completion:
 
@@ -26,7 +26,7 @@ Phase 5 completion:
 
 BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, and later QR customer portal, service tickets, software version timeline, spare parts intelligence, quotes, and feedback.
 
-Phase 4 is complete. Phase 5 is complete. Phase 6 is active. Phase 7 and later are not started.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is next.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -109,39 +109,35 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - Stale category/visibility controls after confirmation were fixed.
 - Dev browser-session bootstrap added for repeatable browser testing.
 
-## Phase 6 Partial Progress
-
-Phase 6 is approximately 65% complete.
-
-Completed:
+## Phase 6 Complete
 
 - shared completeness evaluator and export manifest builder
 - shared ZIP entry builder with traversal guards
 - i18n document labels and handover completeness copy (all 7 locales)
+- i18n handover export copy (all 7 locales) including sensitive warning
 - DB data_exports schema with CHECK constraints and migrations
 - DB export creation/revalidation/finalization helpers
+- DB export list helper (`listSucceededCustomerHandoverExports`)
 - API completeness endpoint
-- API export create and download-url endpoints
+- API export create endpoint with sensitive-file detection
+- API export list endpoint
+- API export ZIP download-url endpoint
+- API export PDF download-url endpoint
 - API ZIP archive builder with fflate + SHA-256 checksum
-- API export storage (Supabase) with upload/remove/signed URL
+- API PDF summary generator with Playwright (localized, all 7 locales)
+- API export storage (Supabase) with upload/remove/signed URL for ZIP and PDF
 - API recovery path on export failure
 - web handover completeness API client
+- web export API client (create, list, ZIP download URL, PDF download URL)
 - handover completeness widget in machine detail page
-
-Still required before Phase 6 can close:
-
-1. Web export API client (customer-handover-export-api.ts)
-2. Export trigger UI + server action
-3. Export history list endpoint (API) + web client
-4. Sensitive-file warning in export response
-5. Localized PDF summary
-6. Browser verification
-7. Docs closeout
+- export trigger UI with customer-visible document selection
+- export history list UI with ZIP and PDF download buttons
+- sensitive-file warning banner on export creation
+- localized PDF summary generated and stored privately
 
 ## Next Exact Engineering Step
 
-Slice B: create apps/web/src/customer-handover-export-api.ts (web API client for
-create-export and download-url endpoints) plus its smoke check.
+Phase 7 - QR customer portal. Start with QR token schema migration.
 
 ## Handoff Docs
 

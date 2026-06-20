@@ -181,8 +181,6 @@ Storage buckets must not be public.
 
 Uploaded files must use private storage and signed temporary download URLs in later phases.
 
-Storage is not implemented yet.
-
 ## EU hosting target
 
 BuildTrace Beta targets EU-hosted infrastructure for database, storage, auth, API, worker, and monitoring where possible.
@@ -266,18 +264,20 @@ Before adding production organization deletion workflows, revisit whether audit 
 
 ## Known current gaps
 
+Implemented controls no longer considered gaps:
+
+- private storage: implemented in Phase 4
+- signed URLs: implemented in Phase 4
+- export artifacts: private, signed URLs, and TOCTOU revalidation implemented in Phase 6
+- PDF summary: private storage and signed URLs implemented in Phase 6
+
 Current implementation does not yet include:
 
 - real frontend login flow
-- mounted protected API routes
 - product-specific RBAC
-- private storage buckets
-- signed URLs
 - production rate limiting
 - QR token access control
 - secure customer portal
-- machine/customer data access checks
-- document access checks
 - ticket access checks
 - database row-level security
 - production security monitoring
