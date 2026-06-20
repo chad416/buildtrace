@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "document-labels:smoke": "tsx src/document-labels-smoke-check.ts",
-    "handover-completeness-copy:smoke": "tsx src/handover-completeness-copy-smoke-check.ts"
+    "handover-completeness-copy:smoke": "tsx src/handover-completeness-copy-smoke-check.ts",
+    "qr-portal-copy:smoke": "tsx src/qr-portal-copy-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/shared": "workspace:*"
