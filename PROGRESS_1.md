@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- dfb57f2 test(api): add dev browser session bootstrap
+- 6b73c4d docs: update agent context for Phase 6 partial progress
 
 Current branch:
 
@@ -12,11 +12,11 @@ Current branch:
 
 Current phase:
 
-- Phase 5 - Document classification
+- Phase 6 - Handover completeness + export
 
 Current full beta roadmap completion:
 
-- about 55%
+- about 65%
 
 Phase 5 completion:
 
