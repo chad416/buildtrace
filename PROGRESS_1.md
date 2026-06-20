@@ -109,30 +109,37 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - Stale category/visibility controls after confirmation were fixed.
 - Dev browser-session bootstrap added for repeatable browser testing.
 
-## Phase 6 Not Complete Yet
+## Phase 6 Partial Progress
 
-Still required before Phase 6 can be closed:
+Phase 6 is approximately 65% complete.
 
-1. Handover completeness foundation.
-2. Required-document checklist.
-3. Missing document list.
-4. Completeness percentage.
-5. Export-readiness boundary.
-6. Browser verification.
-7. Docs update for honest Phase 6 progress/closeout.
+Completed:
+- shared completeness evaluator and export manifest builder
+- shared ZIP entry builder with traversal guards
+- i18n document labels and handover completeness copy (all 7 locales)
+- DB data_exports schema with CHECK constraints and migrations
+- DB export creation/revalidation/finalization helpers
+- API completeness endpoint
+- API export create and download-url endpoints
+- API ZIP archive builder with fflate + SHA-256 checksum
+- API export storage (Supabase) with upload/remove/signed URL
+- API recovery path on export failure
+- web handover completeness API client
+- handover completeness widget in machine detail page
+
+Still required before Phase 6 can close:
+1. Web export API client (customer-handover-export-api.ts)
+2. Export trigger UI + server action
+3. Export history list endpoint (API) + web client
+4. Sensitive-file warning in export response
+5. Localized PDF summary
+6. Browser verification
+7. Docs closeout
 
 ## Next Exact Engineering Step
 
-Start the smallest safe Phase 6 handover-completeness foundation slice.
-
-Lean/no-compromise rules for that step:
-
-- It must build on existing machine/document metadata.
-- It must stay tenant-scoped.
-- It must not weaken private storage or signed download boundaries.
-- It must not add AI/OCR/vector search/worker queues.
-- It must not expose sensitive documents to customers automatically.
-- It must pass relevant smoke/typecheck/lint/build/format gates before commit.
+Slice B: create apps/web/src/customer-handover-export-api.ts (web API client for
+create-export and download-url endpoints) plus its smoke check.
 
 ## Handoff Docs
 

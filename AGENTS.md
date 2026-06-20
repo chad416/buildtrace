@@ -93,38 +93,41 @@ git diff --check      # catch whitespace / conflict markers
 4. Any warnings or errors and how they were handled
 5. Confirmation that no out-of-scope work (auth/db/storage/tenant/etc.) was added
 
-## Phase 5 Current State
+## Phase 6 Current State
 
-Phase 5 - Document classification is complete. Phase 6 - Handover completeness + export is active.
+Phase 6 - Handover completeness + export is active.
+Phase 5 is complete and closed.
 
-As of commit `dfb57f2 test(api): add dev browser session bootstrap`, Phase 5 is complete and the full beta roadmap is roughly 55% complete.
+As of the last verified commit, Phase 6 is approximately 65% complete.
 
-Completed Phase 5 pieces:
+Completed Phase 6 pieces:
 
-- classification boundary decision locked
-- shared classification constants
-- DB classification metadata
-- filename/type classifier
-- DB persistence of suggestions
-- API exposure and refresh endpoint
-- web API client support
-- machine detail UI display and refresh action
-- explicit builder accept/confirm suggestion path
-- status transition to `manually-confirmed`
-- source transition to `manual`
-- activity log action `document.classification_confirmed`
-- browser verification
-- stale metadata control root fix after confirmation
-- dev browser-session bootstrap for repeatable verification
+- shared completeness evaluator (`packages/shared/src/customer-handover.ts`)
+- shared export manifest builder (`packages/shared/src/customer-handover-export.ts`)
+- shared ZIP entry builder (`packages/shared/src/customer-handover-zip.ts`)
+- centralized i18n document labels for all 7 locales (`packages/i18n/src/document-labels.ts`)
+- centralized i18n handover completeness copy for all 7 locales (`packages/i18n/src/handover-completeness-copy.ts`)
+- DB data_exports schema, migrations, and CHECK constraints
+- DB export creation, revalidation, finalization, and schema drift/isolation checks
+- API handover completeness endpoint: GET /document-records/machines/:machineId/handover-completeness
+- API export create endpoint: POST /document-records/machines/:machineId/customer-handover-exports
+- API export download-url endpoint: POST /document-records/machines/:machineId/customer-handover-exports/:exportId/download-url
+- API ZIP archive builder with deterministic checksum (apps/api/src/customer-handover-zip-archive.ts)
+- API export storage upload/remove/signed-url via Supabase (apps/api/src/customer-handover-export-storage.ts)
+- API recovery path (mark failed + remove orphaned artifact on export error)
+- web handover completeness API client (apps/web/src/handover-completeness-api.ts)
+- handover completeness widget rendered in machine detail page
+- smoke checks for completeness controller, completeness API client, ZIP archive, and export controller
 
 Still required before Phase 6 can be closed:
 
-- handover completeness foundation
-- missing required document list
-- completeness percentage
-- export-readiness boundary
-- browser verification
-- roadmap/docs closeout
+1. Web export API client (apps/web/src/customer-handover-export-api.ts) — Slice B
+2. Export trigger UI + server action in machine detail — Slice C
+3. Export history list endpoint (API GET) + web client function — Slice D
+4. Sensitive-file inclusion warning in export API response — Slice E
+5. Localized PDF summary (Playwright HTML-to-PDF) — Slice F
+6. Browser verification of completeness widget, full export flow, and PDF download — Slice G
+7. Phase 6 docs closeout (PROGRESS_1.md, AGENTS.md, phase-log.md, roadmap.md) — Slice G
 
 ## Hard Warning For Future AI Agents
 
