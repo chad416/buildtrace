@@ -656,8 +656,9 @@ export async function createCustomerHandoverExportAction(formData: FormData): Pr
     );
   }
 
+  let result;
   try {
-    await createCustomerHandoverExport({
+    result = await createCustomerHandoverExport({
       organizationId: session.organizationId,
       machineId,
       documentIds,
@@ -666,6 +667,12 @@ export async function createCustomerHandoverExportAction(formData: FormData): Pr
   } catch (error) {
     redirect(
       `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  if (result.sensitiveCategories && result.sensitiveCategories.length > 0) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExport=created&handoverExportSensitiveCategories=${encodeURIComponent(result.sensitiveCategories.join(','))}`,
     );
   }
 

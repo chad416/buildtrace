@@ -25,6 +25,7 @@ export type CreateCustomerHandoverExportResponse = {
     readonly createdAt: string;
     readonly completedAt: string;
   };
+  readonly sensitiveCategories: readonly string[];
 };
 
 export type CreateCustomerHandoverExportDownloadUrlResponse = {

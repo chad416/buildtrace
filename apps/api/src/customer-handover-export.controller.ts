@@ -31,6 +31,7 @@ import {
 import {
   activityLogActions,
   buildPrivateCustomerHandoverExportStoragePath,
+  sensitiveEngineeringDocumentCategories,
 } from '@buildtrace/shared';
 
 import {
@@ -77,6 +78,7 @@ export type CreateCustomerHandoverExportResponse = {
     readonly createdAt: Date;
     readonly completedAt: Date;
   };
+  readonly sensitiveCategories: readonly string[];
 };
 
 export type CreateCustomerHandoverExportDownloadUrlRequestBody = {
@@ -423,6 +425,16 @@ export async function createCustomerHandoverExportFromRequest({
       exportId: pendingExport.id,
     });
 
+    const sensitiveCategories = Array.from(
+      new Set(
+        initialRevalidation.documents
+          .map((doc) => doc.category)
+          .filter((category) =>
+            (sensitiveEngineeringDocumentCategories as readonly string[]).includes(category),
+          ),
+      ),
+    );
+
     config = dependencies.readDocumentStorageConfig();
 
     storage = dependencies.createDocumentStorageAdapter(config);
@@ -481,6 +493,7 @@ export async function createCustomerHandoverExportFromRequest({
         createdAt: completed.createdAt,
         completedAt: completed.completedAt,
       },
+      sensitiveCategories,
     };
   } catch {
     await recoverFailedExport(

@@ -69,6 +69,7 @@ type MachineDetailSearchParams = {
   readonly handoverExportDownloadUrl?: string;
   readonly handoverExportDownloadExpiry?: string;
   readonly handoverExportDownloadError?: string;
+  readonly handoverExportSensitiveCategories?: string;
 };
 
 type PageProps = {
@@ -166,6 +167,10 @@ function normalizeSearchParams(
     searchParams,
     'handoverExportDownloadError',
   );
+  const handoverExportSensitiveCategories = readStringSearchParam(
+    searchParams,
+    'handoverExportSensitiveCategories',
+  );
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -184,6 +189,7 @@ function normalizeSearchParams(
     ...(handoverExportDownloadUrl ? { handoverExportDownloadUrl } : {}),
     ...(handoverExportDownloadExpiry ? { handoverExportDownloadExpiry } : {}),
     ...(handoverExportDownloadError ? { handoverExportDownloadError } : {}),
+    ...(handoverExportSensitiveCategories ? { handoverExportSensitiveCategories } : {}),
   };
 }
 
@@ -1347,6 +1353,25 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             body: handoverCopy.export.createdMessage,
           })
         : null}
+
+      {loadState.status === 'ready' &&
+      normalizedSearchParams.handoverExport === 'created' &&
+      normalizedSearchParams.handoverExportSensitiveCategories ? (
+        <section className="rounded-lg border border-amber-500/40 bg-amber-950/20 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-normal text-amber-300">
+            {handoverCopy.export.sensitiveWarning}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-stone-200">
+            {normalizedSearchParams.handoverExportSensitiveCategories
+              .split(',')
+              .map((category) => {
+                const trimmed = category.trim();
+                return labels.categories[trimmed as keyof typeof labels.categories] ?? trimmed;
+              })
+              .join(', ')}
+          </p>
+        </section>
+      ) : null}
 
       {loadState.status === 'ready' && normalizedSearchParams.handoverExportError
         ? renderFeedbackPanel({

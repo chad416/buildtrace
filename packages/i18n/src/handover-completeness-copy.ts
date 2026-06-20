@@ -20,6 +20,7 @@ export type HandoverCompletenessCopy = {
     readonly downloadButtonLabel: string;
     readonly documentsLabel: string;
     readonly sizeLabel: string;
+    readonly sensitiveWarning: string;
   };
 };
 
@@ -45,6 +46,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Download',
       documentsLabel: 'documents',
       sizeLabel: 'archive',
+      sensitiveWarning:
+        'Warning: the following sensitive engineering categories are included in this export',
     },
   },
   cs: {
@@ -68,6 +71,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Stáhnout',
       documentsLabel: 'dokumentů',
       sizeLabel: 'archiv',
+      sensitiveWarning:
+        'Upozornění: následující citlivé technické kategorie jsou zahrnuty v tomto exportu',
     },
   },
   sk: {
@@ -92,6 +97,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Stiahnuť',
       documentsLabel: 'dokumentov',
       sizeLabel: 'archív',
+      sensitiveWarning:
+        'Upozornenie: nasledujúce citlivé technické kategórie sú odovzdané v tomto exporte',
     },
   },
   pl: {
@@ -115,6 +122,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Pobierz',
       documentsLabel: 'dokumentów',
       sizeLabel: 'archiwum',
+      sensitiveWarning:
+        'Ostrzeżenie: następujące wrażliwe kategorie inżynieryjne są uwzględnione w tym eksporcie',
     },
   },
   de: {
@@ -139,6 +148,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Herunterladen',
       documentsLabel: 'Dokumente',
       sizeLabel: 'Archiv',
+      sensitiveWarning:
+        'Warnung: Die folgenden sensiblen technischen Kategorien sind in diesem Export enthalten',
     },
   },
   fr: {
@@ -163,6 +174,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Télécharger',
       documentsLabel: 'documents',
       sizeLabel: 'archive',
+      sensitiveWarning:
+        'Avertissement : les catégories techniques sensibles suivantes sont incluses dans cet export',
     },
   },
   es: {
@@ -188,6 +201,8 @@ export const handoverCompletenessCopy = {
       downloadButtonLabel: 'Descargar',
       documentsLabel: 'documentos',
       sizeLabel: 'archivo',
+      sensitiveWarning:
+        'Advertencia: las siguientes categorías técnicas sensibles se incluyen en esta exportación',
     },
   },
 } as const satisfies Record<SupportedLocale, HandoverCompletenessCopy>;
