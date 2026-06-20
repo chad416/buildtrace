@@ -21,6 +21,7 @@ import { notFound } from 'next/navigation';
 import {
   confirmMachineDocumentClassificationSuggestionAction,
   createCustomerHandoverExportAction,
+  createCustomerHandoverExportDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
   refreshMachineDocumentClassificationSuggestionAction,
   updateMachineDocumentCategoryAction,
@@ -28,6 +29,10 @@ import {
   updateMachineRecordAction,
   uploadMachineDocumentAction,
 } from '../actions';
+import {
+  listCustomerHandoverExports,
+  type ListCustomerHandoverExportsResponse,
+} from '@/customer-handover-export-api';
 import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
 import { getHandoverCompleteness } from '@/handover-completeness-api';
 import {
@@ -61,6 +66,9 @@ type MachineDetailSearchParams = {
   readonly documentClassificationError?: string;
   readonly handoverExport?: string;
   readonly handoverExportError?: string;
+  readonly handoverExportDownloadUrl?: string;
+  readonly handoverExportDownloadExpiry?: string;
+  readonly handoverExportDownloadError?: string;
 };
 
 type PageProps = {
@@ -87,6 +95,7 @@ type MachineDetailLoadState =
       readonly machineModels: readonly MachineModelRecordApiModel[];
       readonly documents: readonly DocumentMetadataApiModel[];
       readonly handoverCompleteness: CustomerHandoverCompleteness;
+      readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
     };
 
 const statusClassNames = {
@@ -145,6 +154,18 @@ function normalizeSearchParams(
   );
   const handoverExport = readStringSearchParam(searchParams, 'handoverExport');
   const handoverExportError = readStringSearchParam(searchParams, 'handoverExportError');
+  const handoverExportDownloadUrl = readStringSearchParam(
+    searchParams,
+    'handoverExportDownloadUrl',
+  );
+  const handoverExportDownloadExpiry = readStringSearchParam(
+    searchParams,
+    'handoverExportDownloadExpiry',
+  );
+  const handoverExportDownloadError = readStringSearchParam(
+    searchParams,
+    'handoverExportDownloadError',
+  );
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -160,6 +181,9 @@ function normalizeSearchParams(
     ...(documentClassificationError ? { documentClassificationError } : {}),
     ...(handoverExport ? { handoverExport } : {}),
     ...(handoverExportError ? { handoverExportError } : {}),
+    ...(handoverExportDownloadUrl ? { handoverExportDownloadUrl } : {}),
+    ...(handoverExportDownloadExpiry ? { handoverExportDownloadExpiry } : {}),
+    ...(handoverExportDownloadError ? { handoverExportDownloadError } : {}),
   };
 }
 
@@ -185,6 +209,14 @@ function formatDateInput(value: string | null): string | undefined {
   }
 
   return value.slice(0, 10);
+}
+
+function formatArchiveBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) {
+    return (bytes / 1024).toFixed(1) + ' KB';
+  }
+
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
 function renderMissingFields(
@@ -843,6 +875,65 @@ function renderHandoverExportSection({
   );
 }
 
+function renderHandoverExportHistory({
+  exportHistory,
+  machine,
+  handoverCopy,
+  locale,
+}: {
+  readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
+  readonly machine: MachineRecordApiModel;
+  readonly handoverCopy: HandoverCompletenessCopy;
+  readonly locale: string;
+}) {
+  return (
+    <section
+      id="handover-export-history"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {handoverCopy.export.historyTitle}
+      </p>
+
+      {exportHistory.length === 0 ? (
+        <p className="mt-3 text-sm leading-6 text-stone-300">
+          {handoverCopy.export.noHistoryMessage}
+        </p>
+      ) : (
+        <ul className="mt-4 grid gap-4">
+          {exportHistory.map((entry) => (
+            <li key={entry.id} className="rounded-lg border border-stone-800 bg-black/30 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="grid gap-1">
+                  <p className="text-sm font-semibold text-white">
+                    {formatDate(entry.completedAt, locale, entry.createdAt)}
+                  </p>
+                  <p className="text-xs text-stone-400">
+                    {entry.documentCount} {handoverCopy.export.documentsLabel}
+                    {' · '}
+                    {formatArchiveBytes(entry.archiveByteLength)} {handoverCopy.export.sizeLabel}
+                  </p>
+                </div>
+                <form action={createCustomerHandoverExportDownloadUrlAction}>
+                  <input type="hidden" name="machineId" value={machine.id} />
+                  <input type="hidden" name="exportId" value={entry.id} />
+                  <input type="hidden" name="locale" value={locale} />
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-9 items-center rounded-md border border-sky-500/50 px-3 py-1.5 text-xs font-semibold text-sky-200 transition hover:border-sky-300 hover:text-white"
+                  >
+                    {handoverCopy.export.downloadButtonLabel}
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -853,6 +944,7 @@ function renderMachineDetail({
   createCopy,
   handoverCompleteness,
   handoverCopy,
+  exportHistory,
   labels,
   sections,
   sectionsAriaLabel,
@@ -866,6 +958,7 @@ function renderMachineDetail({
   readonly createCopy: (typeof machineRecordsCreateCopy)['en'];
   readonly handoverCompleteness: CustomerHandoverCompleteness;
   readonly handoverCopy: HandoverCompletenessCopy;
+  readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
   readonly labels: DocumentLabels;
   readonly sections: readonly {
     readonly id: string;
@@ -958,6 +1051,13 @@ function renderMachineDetail({
       {renderHandoverExportSection({
         machine,
         documents,
+        handoverCopy,
+        locale,
+      })}
+
+      {renderHandoverExportHistory({
+        exportHistory,
+        machine,
         handoverCopy,
         locale,
       })}
@@ -1061,32 +1161,43 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
     };
   } else {
     try {
-      const [machine, customers, machineModels, documents, handoverCompleteness] =
-        await Promise.all([
-          getMachineRecord({
-            organizationId: session.organizationId,
-            machineId,
-            accessToken: session.accessToken,
-          }),
-          listCustomers({
-            organizationId: session.organizationId,
-            accessToken: session.accessToken,
-          }),
-          listMachineModels({
-            organizationId: session.organizationId,
-            accessToken: session.accessToken,
-          }),
-          listDocuments({
-            organizationId: session.organizationId,
-            machineId,
-            accessToken: session.accessToken,
-          }),
-          getHandoverCompleteness({
-            organizationId: session.organizationId,
-            machineId,
-            accessToken: session.accessToken,
-          }),
-        ]);
+      const [
+        machine,
+        customers,
+        machineModels,
+        documents,
+        handoverCompleteness,
+        exportHistoryResponse,
+      ] = await Promise.all([
+        getMachineRecord({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
+        listCustomers({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+        listMachineModels({
+          organizationId: session.organizationId,
+          accessToken: session.accessToken,
+        }),
+        listDocuments({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
+        getHandoverCompleteness({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
+        listCustomerHandoverExports({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
+      ]);
 
       loadState = {
         status: 'ready',
@@ -1095,6 +1206,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         machineModels,
         documents,
         handoverCompleteness,
+        exportHistory: exportHistoryResponse.exports,
       };
     } catch (error) {
       loadState = {
@@ -1244,6 +1356,30 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.handoverExportDownloadUrl ? (
+        <section className="rounded-lg border border-sky-500/40 bg-sky-950/20 p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-normal text-sky-300">
+            {handoverCopy.export.downloadButtonLabel}
+          </p>
+          <a
+            href={normalizedSearchParams.handoverExportDownloadUrl}
+            className="mt-3 inline-flex items-center rounded-md border border-sky-500/50 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:border-sky-300 hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {handoverCopy.export.downloadButtonLabel}
+          </a>
+        </section>
+      ) : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.handoverExportDownloadError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: handoverCopy.export.errorTitle,
+            body: normalizedSearchParams.handoverExportDownloadError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -1255,6 +1391,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             createCopy,
             handoverCompleteness: loadState.handoverCompleteness,
             handoverCopy,
+            exportHistory: loadState.exportHistory,
             labels,
             sections: sections.filter(
               (section) => section.id !== 'documents' && section.id !== 'handover-readiness',

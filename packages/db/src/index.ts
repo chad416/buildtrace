@@ -7,6 +7,7 @@ export { createPrismaClient } from './client';
 export {
   createPendingCustomerHandoverExport,
   failCustomerHandoverExport,
+  listSucceededCustomerHandoverExports,
 } from './data-export-records';
 export { revalidatePendingCustomerHandoverExport } from './data-export-revalidation';
 export {
@@ -43,6 +44,8 @@ export type {
   CreatePendingCustomerHandoverExportInput,
   DataExportRecordsDatabase,
   FailCustomerHandoverExportInput,
+  ListSucceededCustomerHandoverExportsInput,
+  SucceededCustomerHandoverExportSummary,
 } from './data-export-records';
 export type {
   DataExportRevalidationDatabase,

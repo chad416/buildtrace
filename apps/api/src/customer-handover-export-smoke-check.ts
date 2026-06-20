@@ -282,6 +282,8 @@ function createDependencies(
         },
       };
     },
+    getMachineByOrganization: async () => ({ id: 'machine-1' }),
+    listSucceededCustomerHandoverExports: async () => [],
     createPendingCustomerHandoverExport: async (input) => {
       calls.pendingInputs.push(input);
 

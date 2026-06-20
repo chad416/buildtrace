@@ -194,6 +194,65 @@ function validCompletionDate(completedAt: Date | undefined): Date {
   return resolved;
 }
 
+export type ListSucceededCustomerHandoverExportsInput = {
+  readonly db: DataExportRecordsDatabase;
+  readonly organizationId: string;
+  readonly machineId: string;
+};
+
+export type SucceededCustomerHandoverExportSummary = {
+  readonly id: string;
+  readonly checklistVersion: string;
+  readonly documentCount: number;
+  readonly archiveByteLength: number;
+  readonly totalDocumentBytes: number;
+  readonly createdAt: Date;
+  readonly completedAt: Date;
+};
+
+export async function listSucceededCustomerHandoverExports({
+  db,
+  organizationId,
+  machineId,
+}: ListSucceededCustomerHandoverExportsInput): Promise<
+  readonly SucceededCustomerHandoverExportSummary[]
+> {
+  const organization = required(organizationId, 'organizationId');
+  const machine = required(machineId, 'machineId');
+
+  const rows = await db.$transaction(async (transaction) => {
+    return transaction.dataExport.findMany({
+      where: {
+        organizationId: organization,
+        machineId: machine,
+        audience: DataExportAudience.CUSTOMER_HANDOVER,
+        result: DataExportResult.SUCCEEDED,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      select: {
+        id: true,
+        checklistVersion: true,
+        documentCount: true,
+        archiveByteLength: true,
+        totalDocumentBytes: true,
+        createdAt: true,
+        completedAt: true,
+      },
+    });
+  });
+
+  return rows.filter(
+    (row): row is SucceededCustomerHandoverExportSummary =>
+      row.documentCount !== null &&
+      row.archiveByteLength !== null &&
+      row.totalDocumentBytes !== null &&
+      row.completedAt !== null,
+  );
+}
+
 export async function failCustomerHandoverExport({
   db,
   organizationId,

@@ -15,6 +15,11 @@ export type HandoverCompletenessCopy = {
     readonly generateButtonLabel: string;
     readonly createdMessage: string;
     readonly errorTitle: string;
+    readonly historyTitle: string;
+    readonly noHistoryMessage: string;
+    readonly downloadButtonLabel: string;
+    readonly documentsLabel: string;
+    readonly sizeLabel: string;
   };
 };
 
@@ -35,6 +40,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Generate ZIP',
       createdMessage: 'Handover ZIP was generated successfully.',
       errorTitle: 'Export could not be created',
+      historyTitle: 'Export history',
+      noHistoryMessage: 'No handover exports have been created yet.',
+      downloadButtonLabel: 'Download',
+      documentsLabel: 'documents',
+      sizeLabel: 'archive',
     },
   },
   cs: {
@@ -53,6 +63,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Vygenerovat ZIP',
       createdMessage: 'ZIP pro předání byl úspěšně vygenerován.',
       errorTitle: 'Export se nepodařilo vytvořit',
+      historyTitle: 'Historie exportů',
+      noHistoryMessage: 'Zatím nebyly vytvořeny žádné exporty předání.',
+      downloadButtonLabel: 'Stáhnout',
+      documentsLabel: 'dokumentů',
+      sizeLabel: 'archiv',
     },
   },
   sk: {
@@ -72,6 +87,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Vygenerovať ZIP',
       createdMessage: 'ZIP pre odovzdanie bol úspešne vygenerovaný.',
       errorTitle: 'Export sa nepodarilo vytvoriť',
+      historyTitle: 'História exportov',
+      noHistoryMessage: 'Zatiaľ neboli vytvorené žiadne exporty odovzdania.',
+      downloadButtonLabel: 'Stiahnuť',
+      documentsLabel: 'dokumentov',
+      sizeLabel: 'archív',
     },
   },
   pl: {
@@ -90,6 +110,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Generuj ZIP',
       createdMessage: 'ZIP przekazania został pomyślnie wygenerowany.',
       errorTitle: 'Nie udało się utworzyć eksportu',
+      historyTitle: 'Historia eksportów',
+      noHistoryMessage: 'Nie utworzono jeszcze żadnych eksportów przekazania.',
+      downloadButtonLabel: 'Pobierz',
+      documentsLabel: 'dokumentów',
+      sizeLabel: 'archiwum',
     },
   },
   de: {
@@ -109,6 +134,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'ZIP erstellen',
       createdMessage: 'Übergabe-ZIP wurde erfolgreich erstellt.',
       errorTitle: 'Export konnte nicht erstellt werden',
+      historyTitle: 'Exportverlauf',
+      noHistoryMessage: 'Es wurden noch keine Übergabe-Exporte erstellt.',
+      downloadButtonLabel: 'Herunterladen',
+      documentsLabel: 'Dokumente',
+      sizeLabel: 'Archiv',
     },
   },
   fr: {
@@ -128,6 +158,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Générer le ZIP',
       createdMessage: 'Le ZIP de remise a été généré avec succès.',
       errorTitle: "L'export n'a pas pu être créé",
+      historyTitle: 'Historique des exports',
+      noHistoryMessage: "Aucun export de remise n'a encore été créé.",
+      downloadButtonLabel: 'Télécharger',
+      documentsLabel: 'documents',
+      sizeLabel: 'archive',
     },
   },
   es: {
@@ -148,6 +183,11 @@ export const handoverCompletenessCopy = {
       generateButtonLabel: 'Generar ZIP',
       createdMessage: 'El ZIP de entrega se generó correctamente.',
       errorTitle: 'No se pudo crear la exportación',
+      historyTitle: 'Historial de exportaciones',
+      noHistoryMessage: 'Aún no se han creado exportaciones de entrega.',
+      downloadButtonLabel: 'Descargar',
+      documentsLabel: 'documentos',
+      sizeLabel: 'archivo',
     },
   },
 } as const satisfies Record<SupportedLocale, HandoverCompletenessCopy>;

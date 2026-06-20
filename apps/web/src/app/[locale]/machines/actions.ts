@@ -14,7 +14,10 @@ import {
 } from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
-import { createCustomerHandoverExport } from '@/customer-handover-export-api';
+import {
+  createCustomerHandoverExport,
+  createCustomerHandoverExportDownloadUrl,
+} from '@/customer-handover-export-api';
 import {
   applyDocumentClassificationSuggestion,
   confirmDocumentClassificationSuggestion,
@@ -667,4 +670,41 @@ export async function createCustomerHandoverExportAction(formData: FormData): Pr
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?handoverExport=created`);
+}
+
+export async function createCustomerHandoverExportDownloadUrlAction(
+  formData: FormData,
+): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const exportId = (formData.get('exportId') as string).trim();
+  const locale = ((formData.get('locale') as string | null) ?? '').trim() || 'en';
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  let downloadUrl: string;
+  let expiresInSeconds: number;
+
+  try {
+    const result = await createCustomerHandoverExportDownloadUrl({
+      organizationId: session.organizationId,
+      machineId,
+      exportId,
+      accessToken: session.accessToken,
+    });
+    downloadUrl = result.downloadUrl;
+    expiresInSeconds = result.expiresInSeconds;
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadUrl=${encodeURIComponent(downloadUrl)}&handoverExportDownloadExpiry=${encodeURIComponent(String(expiresInSeconds))}`,
+  );
 }

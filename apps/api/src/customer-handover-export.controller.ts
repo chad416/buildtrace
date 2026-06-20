@@ -2,17 +2,20 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Headers,
   InternalServerErrorException,
   Logger,
   NotFoundException,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import type {
   OrganizationRole,
   PrismaClient,
   RevalidatedCustomerHandoverExport,
+  SucceededCustomerHandoverExportSummary,
 } from '@buildtrace/db';
 import {
   failCustomerHandoverExport,
@@ -20,7 +23,9 @@ import {
   createPendingCustomerHandoverExport,
   createPrismaClient,
   finalizeCustomerHandoverExportSuccess,
+  getMachineByOrganization,
   getSucceededCustomerHandoverExportArtifact,
+  listSucceededCustomerHandoverExports,
   revalidatePendingCustomerHandoverExport,
 } from '@buildtrace/db';
 import {
@@ -91,6 +96,14 @@ type ResolveAuthenticatedTenantContextDependency = (input: {
   readonly allowedRoles?: readonly OrganizationRole[];
 }) => Promise<AuthenticatedTenantContext>;
 
+type GetMachineByOrganizationDependency = (
+  input: Parameters<typeof getMachineByOrganization>[0],
+) => Promise<unknown | null>;
+
+type ListSucceededCustomerHandoverExportsDependency = (
+  input: Parameters<typeof listSucceededCustomerHandoverExports>[0],
+) => Promise<readonly SucceededCustomerHandoverExportSummary[]>;
+
 type CustomerHandoverStorageAdapter = DocumentStorageAdapter & DocumentStorageDownloadAdapter;
 
 type FinalizeCustomerHandoverExportDependency = (
@@ -120,6 +133,8 @@ export type CustomerHandoverRecoveryFailure = {
 export type CustomerHandoverExportEndpointDependencies = {
   readonly db: PrismaClient;
   readonly resolveAuthenticatedTenantContext: ResolveAuthenticatedTenantContextDependency;
+  readonly getMachineByOrganization: GetMachineByOrganizationDependency;
+  readonly listSucceededCustomerHandoverExports: ListSucceededCustomerHandoverExportsDependency;
   readonly createPendingCustomerHandoverExport: typeof createPendingCustomerHandoverExport;
   readonly revalidatePendingCustomerHandoverExport: typeof revalidatePendingCustomerHandoverExport;
   readonly failCustomerHandoverExport: typeof failCustomerHandoverExport;
@@ -150,6 +165,29 @@ type CreateCustomerHandoverExportDownloadUrlFromRequestInput = {
   readonly machineId: string | undefined;
   readonly exportId: string | undefined;
   readonly body: CreateCustomerHandoverExportDownloadUrlRequestBody | undefined;
+  readonly dependencies: CustomerHandoverExportEndpointDependencies;
+};
+
+export type ListCustomerHandoverExportsQuery = {
+  readonly organizationId?: unknown;
+};
+
+export type ListCustomerHandoverExportsResponse = {
+  readonly exports: ReadonlyArray<{
+    readonly id: string;
+    readonly checklistVersion: string;
+    readonly documentCount: number;
+    readonly archiveByteLength: number;
+    readonly totalDocumentBytes: number;
+    readonly createdAt: Date;
+    readonly completedAt: Date;
+  }>;
+};
+
+type ListCustomerHandoverExportsFromRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly machineId: string | undefined;
+  readonly query: ListCustomerHandoverExportsQuery | undefined;
   readonly dependencies: CustomerHandoverExportEndpointDependencies;
 };
 
@@ -217,6 +255,8 @@ function createRealDependencies(): CustomerHandoverExportEndpointDependencies {
   return {
     db,
     resolveAuthenticatedTenantContext,
+    getMachineByOrganization,
+    listSucceededCustomerHandoverExports,
     createPendingCustomerHandoverExport,
     revalidatePendingCustomerHandoverExport,
     failCustomerHandoverExport,
@@ -526,6 +566,42 @@ export async function createCustomerHandoverExportDownloadUrlFromRequest({
   };
 }
 
+export async function listCustomerHandoverExportsFromRequest({
+  authorizationHeader,
+  machineId,
+  query,
+  dependencies,
+}: ListCustomerHandoverExportsFromRequestInput): Promise<ListCustomerHandoverExportsResponse> {
+  const organizationId = requiredString('organizationId', query?.organizationId);
+
+  const normalizedMachineId = requiredString('machineId', machineId);
+
+  await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: exportRoles,
+  });
+
+  const machine = await dependencies.getMachineByOrganization({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+  });
+
+  if (!machine) {
+    throw new NotFoundException('Machine was not found for this organization.');
+  }
+
+  const exports = await dependencies.listSucceededCustomerHandoverExports({
+    db: dependencies.db,
+    organizationId,
+    machineId: normalizedMachineId,
+  });
+
+  return { exports };
+}
+
 @Controller('document-records')
 export class CustomerHandoverExportController {
   @Post('machines/:machineId/customer-handover-exports')
@@ -541,6 +617,20 @@ export class CustomerHandoverExportController {
       authorizationHeader,
       machineId,
       body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Get('machines/:machineId/customer-handover-exports')
+  async listCustomerHandoverExports(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Query() query: ListCustomerHandoverExportsQuery | undefined,
+  ): Promise<ListCustomerHandoverExportsResponse> {
+    return listCustomerHandoverExportsFromRequest({
+      authorizationHeader,
+      machineId,
+      query,
       dependencies: createRealDependencies(),
     });
   }

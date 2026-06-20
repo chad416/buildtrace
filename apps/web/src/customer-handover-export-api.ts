@@ -104,6 +104,51 @@ export async function createCustomerHandoverExport(
   return parseJsonResponse<CreateCustomerHandoverExportResponse>(response);
 }
 
+export type ListCustomerHandoverExportsApiInput = {
+  readonly organizationId: string;
+  readonly machineId: string;
+  readonly accessToken: string;
+};
+
+export type ListCustomerHandoverExportsResponse = {
+  readonly exports: ReadonlyArray<{
+    readonly id: string;
+    readonly checklistVersion: string;
+    readonly documentCount: number;
+    readonly archiveByteLength: number;
+    readonly totalDocumentBytes: number;
+    readonly createdAt: string;
+    readonly completedAt: string;
+  }>;
+};
+
+function buildListCustomerHandoverExportsUrl(
+  input: Pick<ListCustomerHandoverExportsApiInput, 'machineId' | 'organizationId'>,
+): URL {
+  const machineId = normalizeRequiredText('Machine ID', input.machineId);
+  const organizationId = normalizeRequiredText('Organization ID', input.organizationId);
+  const url = new URL(
+    `/document-records/machines/${encodeURIComponent(machineId)}/customer-handover-exports`,
+    apiBaseUrl,
+  );
+  url.searchParams.set('organizationId', organizationId);
+  return url;
+}
+
+export async function listCustomerHandoverExports(
+  input: ListCustomerHandoverExportsApiInput,
+  fetcher: CustomerHandoverExportFetcher = fetch,
+): Promise<ListCustomerHandoverExportsResponse> {
+  const response = await fetcher(buildListCustomerHandoverExportsUrl(input), {
+    method: 'GET',
+    headers: {
+      authorization: createAuthorizationHeader(input.accessToken),
+    },
+  });
+
+  return parseJsonResponse<ListCustomerHandoverExportsResponse>(response);
+}
+
 export async function createCustomerHandoverExportDownloadUrl(
   input: CreateCustomerHandoverExportDownloadUrlApiInput,
   fetcher: CustomerHandoverExportFetcher = fetch,
