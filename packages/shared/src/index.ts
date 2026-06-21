@@ -129,6 +129,9 @@ export const activityLogActions = {
   customerHandoverExportDownloadUrlIssued: 'customer_handover_export.download_url_issued',
   portalDocumentDownloaded: 'portal.document_downloaded',
   portalMachineOpened: 'portal.machine_opened',
+  ticketCreated: 'ticket.created',
+  ticketStatusUpdated: 'ticket.status_updated',
+  ticketCommentAdded: 'ticket.comment_added',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];
@@ -156,3 +159,18 @@ export function getDefaultDocumentVisibilityForCategory(category: DocumentCatego
 
   return defaultDocumentVisibility;
 }
+
+export const ticketStatuses = [
+  'open',
+  'under-review',
+  'waiting-for-buyer',
+  'quote-sent',
+  'resolved',
+] as const;
+export type TicketStatus = (typeof ticketStatuses)[number];
+
+export const ticketPriorities = ['low', 'normal', 'high', 'urgent'] as const;
+export type TicketPriority = (typeof ticketPriorities)[number];
+
+export const ticketAuthorTypes = ['builder', 'customer'] as const;
+export type TicketAuthorType = (typeof ticketAuthorTypes)[number];

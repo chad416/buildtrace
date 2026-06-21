@@ -90,8 +90,10 @@ model Organization {
   dataExports   DataExport[]
   documents     Document[]
   machineModels MachineModel[]
-  machines      Machine[]
-  memberships   OrganizationMembership[]
+  machines       Machine[]
+  memberships    OrganizationMembership[]
+  serviceTickets ServiceTicket[]
+  ticketComments TicketComment[]
 
   @@map("organizations")
 }
@@ -205,7 +207,8 @@ model Machine {
   dataExports  DataExport[]
   documents    Document[]
   machineModel MachineModel @relation(fields: [machineModelId], references: [id], onDelete: Restrict)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  serviceTickets ServiceTicket[]
 
   @@unique([organizationId, serialNumber])
   @@unique([organizationId, id])
@@ -277,4 +280,40 @@ model DataExport {
   @@index([organizationId, result])
   @@index([requestedByUserId])
   @@map("data_exports")
+}
+
+model ServiceTicket {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  organizationId      String    @map("organization_id")
+  machineId           String    @map("machine_id")
+  customerId          String?   @map("customer_id")
+  title               String
+  description         String
+  status              String    @default("open")
+  priority            String    @default("normal")
+  createdFromPortal   Boolean   @default(false) @map("created_from_portal")
+  customerAccessToken String?   @unique @map("customer_access_token")
+  meetingLink         String?   @map("meeting_link")
+  meetingNotes        String?   @map("meeting_notes")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  machine             Machine      @relation(fields: [machineId], references: [id])
+  comments            TicketComment[]
+  @@map("service_tickets")
+}
+
+model TicketComment {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  organizationId        String   @map("organization_id")
+  ticketId              String   @map("ticket_id")
+  authorType            String   @map("author_type")
+  message               String
+  internalOnly          Boolean  @default(false) @map("internal_only")
+  attachmentUrl         String?  @map("attachment_url")
+  attachmentStoragePath String?  @map("attachment_storage_path")
+  createdAt             DateTime @default(now()) @map("created_at")
+  organization          Organization @relation(fields: [organizationId], references: [id])
+  ticket                ServiceTicket @relation(fields: [ticketId], references: [id])
+  @@map("ticket_comments")
 }

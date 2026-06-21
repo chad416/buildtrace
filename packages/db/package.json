@@ -20,7 +20,8 @@
     "data-export-schema:drift": "pnpm run generate && tsx src/data-export-schema-drift-check.ts",
     "data-export-records:isolation": "pnpm run generate && tsx src/data-export-records-isolation-check.ts",
     "qr-portal-schema:drift": "tsx src/qr-portal-schema-drift-check.ts",
-    "qr-portal-records:smoke": "tsx src/qr-portal-records-smoke-check.ts"
+    "qr-portal-records:smoke": "tsx src/qr-portal-records-smoke-check.ts",
+    "service-ticket-records:smoke": "tsx src/service-ticket-records-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/shared": "workspace:*",

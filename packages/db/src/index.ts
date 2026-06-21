@@ -39,6 +39,14 @@ export {
   getMachineQrToken,
   getQrPortalMachine,
 } from './qr-portal-records';
+export {
+  createServiceTicket,
+  listServiceTickets,
+  getServiceTicket,
+  updateServiceTicketStatus,
+  addTicketComment,
+  listTicketComments,
+} from './service-ticket-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
   CompletedCustomerHandoverExportArtifact,
@@ -76,5 +84,15 @@ export type {
 export type { OrganizationRole } from './generated/prisma/enums';
 export type { CustomerRecord, MachineModelRecord, MachineRecord } from './machine-records';
 export type { QrPortalMachineRecord } from './qr-portal-records';
+export type {
+  ServiceTicketRecord,
+  TicketCommentRecord,
+  CreateServiceTicketInput,
+  ListServiceTicketsInput,
+  GetServiceTicketInput,
+  UpdateServiceTicketStatusInput,
+  AddTicketCommentInput,
+  ListTicketCommentsInput,
+} from './service-ticket-records';
 
 export const dbPackageStatus = 'phase-6-zip-export-lifecycle-ready';
