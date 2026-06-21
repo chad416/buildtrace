@@ -14,6 +14,8 @@ export { handoverCompletenessCopy } from './handover-completeness-copy';
 export type { HandoverCompletenessCopy } from './handover-completeness-copy';
 export { qrPortalCopy } from './qr-portal-copy';
 export type { QrPortalCopy } from './qr-portal-copy';
+export { qrPortalBuilderCopy } from './qr-portal-builder-copy';
+export type { QrPortalBuilderCopy } from './qr-portal-builder-copy';
 
 export const locales = supportedLocales;
 

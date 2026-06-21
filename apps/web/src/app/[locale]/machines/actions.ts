@@ -43,6 +43,11 @@ import {
   type CreateMachineRecordApiInput,
   type UpdateMachineRecordApiInput,
 } from '@/machine-records-api';
+import {
+  assignMachineQrToken,
+  disableMachineQrPortal,
+  rotateMachineQrToken,
+} from '@/qr-portal-builder-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
 function formatActionError(error: unknown): string {
@@ -754,4 +759,91 @@ export async function createCustomerHandoverExportPdfDownloadUrlAction(
   redirect(
     `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportPdfDownloadUrl=${encodeURIComponent(downloadUrl)}`,
   );
+}
+
+export async function assignMachineQrTokenAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
+  const locale = supportedLocales.includes(requestedLocale as SupportedLocale)
+    ? (requestedLocale as SupportedLocale)
+    : 'en';
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    await assignMachineQrToken({
+      organizationId: session.organizationId,
+      machineId,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalAction=assigned`);
+}
+
+export async function rotateMachineQrTokenAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
+  const locale = supportedLocales.includes(requestedLocale as SupportedLocale)
+    ? (requestedLocale as SupportedLocale)
+    : 'en';
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    await rotateMachineQrToken({
+      organizationId: session.organizationId,
+      machineId,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalAction=rotated`);
+}
+
+export async function disableMachineQrPortalAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const machineId = (formData.get('machineId') as string).trim();
+  const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
+  const locale = supportedLocales.includes(requestedLocale as SupportedLocale)
+    ? (requestedLocale as SupportedLocale)
+    : 'en';
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    await disableMachineQrPortal({
+      organizationId: session.organizationId,
+      machineId,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalError=${encodeURIComponent(formatActionError(error))}`,
+    );
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalAction=disabled`);
 }

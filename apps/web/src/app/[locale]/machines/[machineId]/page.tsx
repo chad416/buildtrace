@@ -3,8 +3,10 @@ import {
   documentLabels,
   handoverCompletenessCopy,
   isSupportedLocale,
+  qrPortalBuilderCopy,
   type DocumentLabels,
   type HandoverCompletenessCopy,
+  type QrPortalBuilderCopy,
 } from '@buildtrace/i18n';
 import {
   documentCategories,
@@ -19,12 +21,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
+  assignMachineQrTokenAction,
   confirmMachineDocumentClassificationSuggestionAction,
   createCustomerHandoverExportAction,
   createCustomerHandoverExportDownloadUrlAction,
   createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
+  disableMachineQrPortalAction,
   refreshMachineDocumentClassificationSuggestionAction,
+  rotateMachineQrTokenAction,
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
@@ -36,6 +41,7 @@ import {
 } from '@/customer-handover-export-api';
 import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
 import { getHandoverCompleteness } from '@/handover-completeness-api';
+import { getMachineQrToken } from '@/qr-portal-builder-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -72,6 +78,8 @@ type MachineDetailSearchParams = {
   readonly handoverExportDownloadExpiry?: string;
   readonly handoverExportDownloadError?: string;
   readonly handoverExportSensitiveCategories?: string;
+  readonly qrPortalAction?: string;
+  readonly qrPortalError?: string;
 };
 
 type PageProps = {
@@ -99,6 +107,7 @@ type MachineDetailLoadState =
       readonly documents: readonly DocumentMetadataApiModel[];
       readonly handoverCompleteness: CustomerHandoverCompleteness;
       readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
+      readonly qrToken: string | null;
     };
 
 const statusClassNames = {
@@ -177,6 +186,8 @@ function normalizeSearchParams(
     searchParams,
     'handoverExportSensitiveCategories',
   );
+  const qrPortalAction = readStringSearchParam(searchParams, 'qrPortalAction');
+  const qrPortalError = readStringSearchParam(searchParams, 'qrPortalError');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -197,6 +208,8 @@ function normalizeSearchParams(
     ...(handoverExportDownloadExpiry ? { handoverExportDownloadExpiry } : {}),
     ...(handoverExportDownloadError ? { handoverExportDownloadError } : {}),
     ...(handoverExportSensitiveCategories ? { handoverExportSensitiveCategories } : {}),
+    ...(qrPortalAction ? { qrPortalAction } : {}),
+    ...(qrPortalError ? { qrPortalError } : {}),
   };
 }
 
@@ -230,6 +243,15 @@ function formatArchiveBytes(bytes: number): string {
   }
 
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function buildPortalLink(qrToken: string): string {
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(
+    /\/$/,
+    '',
+  );
+
+  return `${appBaseUrl}/portal/${encodeURIComponent(qrToken)}`;
 }
 
 function renderMissingFields(
@@ -960,6 +982,99 @@ function renderHandoverExportHistory({
   );
 }
 
+function renderQrPortalSection({
+  machine,
+  qrToken,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly qrToken: string | null;
+  readonly locale: string;
+  readonly copy: QrPortalBuilderCopy;
+}) {
+  const portalLink = qrToken ? buildPortalLink(qrToken) : null;
+
+  return (
+    <section
+      id="qr-portal"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {copy.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">{copy.sectionDescription}</p>
+
+      {qrToken === null ? (
+        <div className="mt-6 grid gap-5">
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            {copy.noTokenMessage}
+          </p>
+          <form action={assignMachineQrTokenAction} className="grid gap-5">
+            <input type="hidden" name="machineId" value={machine.id} />
+            <input type="hidden" name="locale" value={locale} />
+            <button
+              type="submit"
+              className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+            >
+              {copy.assignButtonLabel}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+              {copy.qrTokenLabel}
+            </p>
+            <p className="mt-2 break-all font-mono text-sm text-stone-100">{qrToken}</p>
+          </div>
+
+          {portalLink ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                {copy.portalLinkLabel}
+              </p>
+              <a
+                href={portalLink}
+                className="mt-2 inline-flex break-all text-sm font-semibold text-sky-200 transition hover:text-white"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {portalLink}
+              </a>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-3">
+            <form action={rotateMachineQrTokenAction}>
+              <input type="hidden" name="machineId" value={machine.id} />
+              <input type="hidden" name="locale" value={locale} />
+              <button
+                type="submit"
+                className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-stone-700 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+              >
+                {copy.rotateButtonLabel}
+              </button>
+            </form>
+
+            <form action={disableMachineQrPortalAction}>
+              <input type="hidden" name="machineId" value={machine.id} />
+              <input type="hidden" name="locale" value={locale} />
+              <button
+                type="submit"
+                className="inline-flex min-h-11 w-fit items-center justify-center rounded-md border border-amber-500/50 bg-amber-950/30 px-5 py-2 text-sm font-semibold text-amber-200 transition hover:border-amber-300 hover:text-white"
+              >
+                {copy.disableButtonLabel}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -971,6 +1086,8 @@ function renderMachineDetail({
   handoverCompleteness,
   handoverCopy,
   exportHistory,
+  qrToken,
+  qrPortalCopy,
   labels,
   sections,
   sectionsAriaLabel,
@@ -985,6 +1102,8 @@ function renderMachineDetail({
   readonly handoverCompleteness: CustomerHandoverCompleteness;
   readonly handoverCopy: HandoverCompletenessCopy;
   readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
+  readonly qrToken: string | null;
+  readonly qrPortalCopy: QrPortalBuilderCopy;
   readonly labels: DocumentLabels;
   readonly sections: readonly {
     readonly id: string;
@@ -1088,6 +1207,13 @@ function renderMachineDetail({
         locale,
       })}
 
+      {renderQrPortalSection({
+        machine,
+        qrToken,
+        locale,
+        copy: qrPortalCopy,
+      })}
+
       {renderMachineEditForm({
         machine,
         customers,
@@ -1143,6 +1269,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
   const createCopy = machineRecordsCreateCopy[locale];
   const labels = documentLabels[locale];
   const handoverCopy = handoverCompletenessCopy[locale];
+  const qrPortalCopy = qrPortalBuilderCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -1194,6 +1321,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         documents,
         handoverCompleteness,
         exportHistoryResponse,
+        machineQrTokenResponse,
       ] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
@@ -1223,6 +1351,11 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           machineId,
           accessToken: session.accessToken,
         }),
+        getMachineQrToken({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
 
       loadState = {
@@ -1233,6 +1366,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         documents,
         handoverCompleteness,
         exportHistory: exportHistoryResponse.exports,
+        qrToken: machineQrTokenResponse.qrToken,
       };
     } catch (error) {
       loadState = {
@@ -1441,6 +1575,38 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.qrPortalAction === 'assigned'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: qrPortalCopy.sectionTitle,
+            body: qrPortalCopy.assignedMessage,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.qrPortalAction === 'rotated'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: qrPortalCopy.sectionTitle,
+            body: qrPortalCopy.rotatedMessage,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.qrPortalAction === 'disabled'
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: qrPortalCopy.sectionTitle,
+            body: qrPortalCopy.disabledMessage,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.qrPortalError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: qrPortalCopy.errorTitle,
+            body: normalizedSearchParams.qrPortalError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -1453,6 +1619,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             handoverCompleteness: loadState.handoverCompleteness,
             handoverCopy,
             exportHistory: loadState.exportHistory,
+            qrToken: loadState.qrToken,
+            qrPortalCopy,
             labels,
             sections: sections.filter(
               (section) => section.id !== 'documents' && section.id !== 'handover-readiness',

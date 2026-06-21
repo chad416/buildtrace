@@ -12,6 +12,7 @@
     "handover-completeness:smoke": "tsx src/handover-completeness-api-smoke-check.ts",
     "customer-handover-export:smoke": "tsx src/customer-handover-export-api-smoke-check.ts",
     "qr-portal:smoke": "tsx src/qr-portal-api-smoke-check.ts",
+    "qr-portal-builder:smoke": "tsx src/qr-portal-builder-api-smoke-check.ts",
     "build": "next build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
