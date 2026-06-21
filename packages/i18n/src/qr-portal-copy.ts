@@ -12,6 +12,7 @@ export type QrPortalCopy = {
   readonly notFoundMessage: string;
   readonly errorMessage: string;
   readonly languageSwitcherLabel: string;
+  readonly downloadButtonLabel: string;
 };
 
 export const qrPortalCopy = {
@@ -28,6 +29,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'This portal link is not valid or has been disabled.',
     errorMessage: 'Portal could not be loaded.',
     languageSwitcherLabel: 'Language',
+    downloadButtonLabel: 'Download',
   },
   cs: {
     title: 'Portál stroje',
@@ -42,6 +44,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'Tento odkaz na portál není platný nebo byl deaktivován.',
     errorMessage: 'Portál se nepodařilo načíst.',
     languageSwitcherLabel: 'Jazyk',
+    downloadButtonLabel: 'Stáhnout',
   },
   sk: {
     title: 'Portál stroja',
@@ -56,6 +59,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'Tento odkaz na portál nie je platný alebo bol deaktivovaný.',
     errorMessage: 'Portál sa nepodarilo načítať.',
     languageSwitcherLabel: 'Jazyk',
+    downloadButtonLabel: 'Stiahnuť',
   },
   pl: {
     title: 'Portal maszyny',
@@ -70,6 +74,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'Ten link do portalu jest nieprawidłowy lub został wyłączony.',
     errorMessage: 'Nie udało się załadować portalu.',
     languageSwitcherLabel: 'Język',
+    downloadButtonLabel: 'Pobierz',
   },
   de: {
     title: 'Maschinenportal',
@@ -84,6 +89,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'Dieser Portal-Link ist ungültig oder wurde deaktiviert.',
     errorMessage: 'Das Portal konnte nicht geladen werden.',
     languageSwitcherLabel: 'Sprache',
+    downloadButtonLabel: 'Herunterladen',
   },
   fr: {
     title: 'Portail de la machine',
@@ -98,6 +104,7 @@ export const qrPortalCopy = {
     notFoundMessage: 'Ce lien de portail n’est pas valide ou a été désactivé.',
     errorMessage: 'Le portail n’a pas pu être chargé.',
     languageSwitcherLabel: 'Langue',
+    downloadButtonLabel: 'Télécharger',
   },
   es: {
     title: 'Portal de la máquina',
@@ -112,5 +119,6 @@ export const qrPortalCopy = {
     notFoundMessage: 'Este enlace del portal no es válido o ha sido desactivado.',
     errorMessage: 'No se pudo cargar el portal.',
     languageSwitcherLabel: 'Idioma',
+    downloadButtonLabel: 'Descargar',
   },
 } as const satisfies Record<SupportedLocale, QrPortalCopy>;

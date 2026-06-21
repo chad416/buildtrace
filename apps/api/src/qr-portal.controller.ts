@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Post,
@@ -16,12 +17,22 @@ import {
   getMachineQrToken,
   getQrPortalMachine,
 } from '@buildtrace/db';
-import { activityLogActions } from '@buildtrace/shared';
+import {
+  activityLogActions,
+  type DocumentCategory,
+  type DocumentLanguageCode,
+} from '@buildtrace/shared';
 
 import {
   resolveAuthenticatedTenantContext,
   type AuthenticatedTenantContext,
 } from './authenticated-tenant-context.js';
+
+import {
+  createSignedDocumentDownloadUrl,
+  createSupabaseDocumentStorageAdapter,
+  readDocumentStorageConfig,
+} from './document-storage.js';
 
 export type QrPortalQuery = {
   readonly organizationId?: unknown;
@@ -41,6 +52,9 @@ export type QrPortalEndpointDependencies = {
   readonly getMachineQrToken: typeof getMachineQrToken;
   readonly getQrPortalMachine: typeof getQrPortalMachine;
   readonly createActivityLog: typeof createActivityLog;
+  readonly readDocumentStorageConfig: typeof readDocumentStorageConfig;
+  readonly createDocumentStorageAdapter: typeof createSupabaseDocumentStorageAdapter;
+  readonly createSignedDocumentDownloadUrl: typeof createSignedDocumentDownloadUrl;
 };
 
 type AuthenticatedMachineQrRequestInput = {
@@ -110,6 +124,9 @@ function createRealDependencies(): QrPortalEndpointDependencies {
     getMachineQrToken,
     getQrPortalMachine,
     createActivityLog,
+    readDocumentStorageConfig,
+    createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
+    createSignedDocumentDownloadUrl,
   };
 }
 
@@ -263,6 +280,172 @@ export async function getQrPortalFromRequest({
   };
 }
 
+export type QrPortalDocumentResponse = {
+  readonly id: string;
+  readonly fileName: string;
+  readonly category: DocumentCategory;
+  readonly language: DocumentLanguageCode;
+  readonly uploadedAt: Date;
+};
+
+export type ListQrPortalDocumentsResponse = {
+  readonly documents: readonly QrPortalDocumentResponse[];
+};
+
+export type QrPortalDocumentDownloadUrlResponse = {
+  readonly downloadUrl: string;
+  readonly expiresInSeconds: number;
+};
+
+type CreateQrPortalDocumentDownloadUrlFromRequestInput = {
+  readonly qrToken: string | undefined;
+  readonly documentId: string | undefined;
+  readonly dependencies: QrPortalEndpointDependencies;
+};
+
+const documentCategoryFromPrisma = (value: string): DocumentCategory => {
+  const mapping: Record<string, DocumentCategory> = {
+    PLC: 'plc',
+    HMI: 'hmi',
+    MECHANICAL_DRAWINGS: 'mechanical-drawings',
+    ELECTRICAL_DRAWINGS: 'electrical-drawings',
+    CAD: 'cad',
+    MACHINE_PHOTOS: 'machine-photos',
+    FAT: 'fat',
+    SAT: 'sat',
+    MANUALS: 'manuals',
+    SAFETY_INSTRUCTIONS: 'safety-instructions',
+    SUPPLIER_DOCUMENTS: 'supplier-documents',
+    SPARE_PARTS_BOM: 'spare-parts-bom',
+    CERTIFICATES: 'certificates',
+    SERVICE_NOTES: 'service-notes',
+    OTHER: 'other',
+  };
+  return mapping[value] || 'other';
+};
+
+const documentLanguageFromPrisma = (value: string): DocumentLanguageCode => {
+  const mapping: Record<string, DocumentLanguageCode> = {
+    EN: 'en',
+    CS: 'cs',
+    SK: 'sk',
+    PL: 'pl',
+    DE: 'de',
+    FR: 'fr',
+    ES: 'es',
+    UNKNOWN: 'unknown',
+  };
+  return mapping[value] || 'unknown';
+};
+
+export async function getQrPortalDocumentsFromRequest({
+  qrToken,
+  dependencies,
+}: GetQrPortalFromRequestInput): Promise<ListQrPortalDocumentsResponse> {
+  const normalizedQrToken = readRequiredString('qrToken', qrToken);
+
+  const machine = await dependencies.getQrPortalMachine({
+    db: dependencies.db,
+    qrToken: normalizedQrToken,
+  });
+
+  if (!machine) {
+    throw new NotFoundException('QR portal was not found.');
+  }
+
+  // Rate limit consideration: this public endpoint should be rate-limited in production.
+  const documents = await dependencies.db.document.findMany({
+    where: {
+      machineId: machine.id,
+      visibilityLevel: 'CUSTOMER_VISIBLE',
+      visibleToCustomer: true,
+    },
+    orderBy: {
+      uploadedAt: 'desc',
+    },
+    select: {
+      id: true,
+      fileName: true,
+      category: true,
+      language: true,
+      uploadedAt: true,
+    },
+  });
+
+  return {
+    documents: documents.map((doc) => ({
+      id: doc.id,
+      fileName: doc.fileName,
+      category: documentCategoryFromPrisma(doc.category),
+      language: documentLanguageFromPrisma(doc.language),
+      uploadedAt: doc.uploadedAt,
+    })),
+  };
+}
+
+export async function createQrPortalDocumentDownloadUrlFromRequest({
+  qrToken,
+  documentId,
+  dependencies,
+}: CreateQrPortalDocumentDownloadUrlFromRequestInput): Promise<QrPortalDocumentDownloadUrlResponse> {
+  const normalizedQrToken = readRequiredString('qrToken', qrToken);
+  const normalizedDocumentId = readRequiredString('documentId', documentId);
+
+  const machine = await dependencies.getQrPortalMachine({
+    db: dependencies.db,
+    qrToken: normalizedQrToken,
+  });
+
+  if (!machine) {
+    throw new NotFoundException('QR portal was not found.');
+  }
+
+  const document = await dependencies.db.document.findFirst({
+    where: {
+      id: normalizedDocumentId,
+      machineId: machine.id,
+      visibilityLevel: 'CUSTOMER_VISIBLE',
+      visibleToCustomer: true,
+    },
+    select: {
+      storagePath: true,
+    },
+  });
+
+  if (!document) {
+    throw new NotFoundException('Document was not found or is not accessible.');
+  }
+
+  let signedUrlResult;
+  try {
+    const config = dependencies.readDocumentStorageConfig();
+    const storage = dependencies.createDocumentStorageAdapter(config);
+
+    signedUrlResult = await dependencies.createSignedDocumentDownloadUrl({
+      config,
+      storage,
+      organizationId: machine.organizationId,
+      machineId: machine.id,
+      storagePath: document.storagePath,
+    });
+  } catch {
+    throw new InternalServerErrorException('Document download URL could not be created.');
+  }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId: machine.organizationId,
+    action: activityLogActions.portalDocumentDownloaded,
+    targetType: 'document',
+    targetId: normalizedDocumentId,
+  });
+
+  return {
+    downloadUrl: signedUrlResult.signedUrl,
+    expiresInSeconds: signedUrlResult.expiresInSeconds,
+  };
+}
+
 @Controller('qr-portal')
 export class QrPortalController {
   @Post('machines/:machineId/qr-token')
@@ -327,6 +510,28 @@ export class QrPortalController {
   ): Promise<QrPortalMachineResponse> {
     return getQrPortalFromRequest({
       qrToken,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Get('portal/:qrToken/documents')
+  async getQrPortalDocuments(
+    @Param('qrToken') qrToken: string | undefined,
+  ): Promise<ListQrPortalDocumentsResponse> {
+    return getQrPortalDocumentsFromRequest({
+      qrToken,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Post('portal/:qrToken/documents/:documentId/download-url')
+  async createQrPortalDocumentDownloadUrl(
+    @Param('qrToken') qrToken: string | undefined,
+    @Param('documentId') documentId: string | undefined,
+  ): Promise<QrPortalDocumentDownloadUrlResponse> {
+    return createQrPortalDocumentDownloadUrlFromRequest({
+      qrToken,
+      documentId,
       dependencies: createRealDependencies(),
     });
   }

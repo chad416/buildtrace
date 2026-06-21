@@ -127,6 +127,7 @@ export const activityLogActions = {
   documentClassificationConfirmed: 'document.classification_confirmed',
   customerHandoverExportCreated: 'customer_handover_export.created',
   customerHandoverExportDownloadUrlIssued: 'customer_handover_export.download_url_issued',
+  portalDocumentDownloaded: 'portal.document_downloaded',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];

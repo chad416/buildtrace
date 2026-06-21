@@ -8,8 +8,11 @@ import {
   getMachineQrTokenFromRequest,
   getQrPortalFromRequest,
   rotateMachineQrTokenFromRequest,
+  getQrPortalDocumentsFromRequest,
+  createQrPortalDocumentDownloadUrlFromRequest,
   type QrPortalEndpointDependencies,
 } from './qr-portal.controller.js';
+import type { DocumentStorageAdapter, DocumentStorageDownloadAdapter } from './document-storage.js';
 
 type ResolveInput = Parameters<
   QrPortalEndpointDependencies['resolveAuthenticatedTenantContext']
@@ -21,6 +24,9 @@ type ActivityInput = Parameters<QrPortalEndpointDependencies['createActivityLog'
 type MachineUpdateInput = Parameters<PrismaClient['machine']['updateMany']>[0];
 type MachineUpdateResult = Awaited<ReturnType<PrismaClient['machine']['updateMany']>>;
 
+type DocumentFindManyInput = Parameters<PrismaClient['document']['findMany']>[0];
+type DocumentFindFirstInput = Parameters<PrismaClient['document']['findFirst']>[0];
+
 type CapturedCalls = {
   readonly resolveInputs: ResolveInput[];
   readonly assignInputs: AssignInput[];
@@ -28,6 +34,8 @@ type CapturedCalls = {
   readonly getPortalInputs: GetPortalInput[];
   readonly activityInputs: ActivityInput[];
   readonly machineUpdateInputs: MachineUpdateInput[];
+  readonly documentFindManyInputs: DocumentFindManyInput[];
+  readonly documentFindFirstInputs: DocumentFindFirstInput[];
 };
 
 const now = new Date('2026-06-21T00:00:00.000Z');
@@ -59,6 +67,8 @@ function createCapturedCalls(): CapturedCalls {
     getPortalInputs: [],
     activityInputs: [],
     machineUpdateInputs: [],
+    documentFindManyInputs: [],
+    documentFindFirstInputs: [],
   };
 }
 
@@ -67,6 +77,7 @@ function createDependencies(
   options: {
     readonly machineUpdateCount?: number;
     readonly portalMachine?: QrPortalMachineRecord | null;
+    readonly documentNotFound?: boolean;
   } = {},
 ): QrPortalEndpointDependencies {
   const fakeDb = {
@@ -76,6 +87,34 @@ function createDependencies(
 
         return {
           count: options.machineUpdateCount ?? 1,
+        };
+      },
+    },
+    document: {
+      findMany: async (input: DocumentFindManyInput) => {
+        capturedCalls.documentFindManyInputs.push(input);
+        return [
+          {
+            id: 'document-1',
+            fileName: 'drawing.pdf',
+            category: 'MECHANICAL_DRAWINGS',
+            language: 'EN',
+            uploadedAt: now,
+          },
+        ];
+      },
+      findFirst: async (input: DocumentFindFirstInput) => {
+        capturedCalls.documentFindFirstInputs.push(input);
+        if (options.documentNotFound) {
+          return null;
+        }
+        return {
+          id: 'document-1',
+          fileName: 'drawing.pdf',
+          category: 'MECHANICAL_DRAWINGS',
+          language: 'EN',
+          storagePath: 'org-1/mach-1/drawing.pdf',
+          uploadedAt: now,
         };
       },
     },
@@ -136,6 +175,35 @@ function createDependencies(
         ipAddress: input.ipAddress ?? null,
         userAgent: input.userAgent ?? null,
         createdAt: now,
+      };
+    },
+    readDocumentStorageConfig: () => {
+      return {
+        bucketName: 'test-bucket',
+        supabaseUrl: 'https://test.supabase.co',
+        serviceRoleKey: 'test-key',
+        signedUrlTtlSeconds: 3600,
+      };
+    },
+    createDocumentStorageAdapter: () => {
+      return {
+        from() {
+          return {
+            createSignedUrl: async () => ({
+              data: { signedUrl: 'https://test.local' },
+              error: null,
+            }),
+            upload: async () => ({ data: { path: '' }, error: null }),
+            download: async () => ({ data: null, error: null }),
+            remove: async () => ({ data: null, error: null }),
+          };
+        },
+      } as unknown as DocumentStorageAdapter & DocumentStorageDownloadAdapter;
+    },
+    createSignedDocumentDownloadUrl: async () => {
+      return {
+        signedUrl: 'https://test-storage.local/file.pdf',
+        expiresInSeconds: 3600,
       };
     },
   };
@@ -355,11 +423,83 @@ async function runValidationCheck(): Promise<void> {
   );
 }
 
+async function runGetDocumentsCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const response = await getQrPortalDocumentsFromRequest({
+    qrToken: 'public-token',
+    dependencies: createDependencies(calls),
+  });
+
+  assert(calls.getPortalInputs.length === 1, 'Portal machine query was not called.');
+  assert(calls.documentFindManyInputs.length === 1, 'Documents query was not called.');
+  assert(response.documents.length === 1, 'Documents array was empty.');
+  const doc = response.documents[0];
+  assert(doc?.id === 'document-1', 'Document ID was incorrect.');
+  assert(doc?.fileName === 'drawing.pdf', 'File name was incorrect.');
+  assert(doc?.category === 'mechanical-drawings', 'Category was incorrect.');
+  assert(doc?.language === 'en', 'Language was incorrect.');
+
+  await expectException('unknown machine for documents', NotFoundException, () =>
+    getQrPortalDocumentsFromRequest({
+      qrToken: 'unknown-token',
+      dependencies: createDependencies(createCapturedCalls(), {
+        portalMachine: null,
+      }),
+    }),
+  );
+}
+
+async function runCreateDownloadUrlCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const response = await createQrPortalDocumentDownloadUrlFromRequest({
+    qrToken: 'public-token',
+    documentId: 'document-1',
+    dependencies: createDependencies(calls),
+  });
+
+  assert(calls.getPortalInputs.length === 1, 'Portal machine query was not called.');
+  assert(calls.documentFindFirstInputs.length === 1, 'Document query was not called.');
+  assert(
+    response.downloadUrl === 'https://test-storage.local/file.pdf',
+    'Download URL was incorrect.',
+  );
+  assert(response.expiresInSeconds === 3600, 'Expiration was incorrect.');
+  assert(calls.activityInputs.length === 1, 'Activity log was not created.');
+  assert(
+    calls.activityInputs[0]?.action === activityLogActions.portalDocumentDownloaded,
+    'Activity log action was incorrect.',
+  );
+  assert(calls.activityInputs[0]?.targetId === 'document-1', 'Activity target ID was incorrect.');
+  assert(calls.activityInputs[0]?.targetType === 'document', 'Activity target type was incorrect.');
+
+  await expectException('unknown machine for download', NotFoundException, () =>
+    createQrPortalDocumentDownloadUrlFromRequest({
+      qrToken: 'unknown-token',
+      documentId: 'document-1',
+      dependencies: createDependencies(createCapturedCalls(), {
+        portalMachine: null,
+      }),
+    }),
+  );
+
+  await expectException('document not found/ineligible', NotFoundException, () =>
+    createQrPortalDocumentDownloadUrlFromRequest({
+      qrToken: 'public-token',
+      documentId: 'document-1',
+      dependencies: createDependencies(createCapturedCalls(), {
+        documentNotFound: true,
+      }),
+    }),
+  );
+}
+
 await runAssignCheck();
 await runReadCheck();
 await runRotateCheck();
 await runDisableCheck();
 await runPublicPortalCheck();
 await runValidationCheck();
+await runGetDocumentsCheck();
+await runCreateDownloadUrlCheck();
 
 console.info('QR portal controller smoke check passed.');

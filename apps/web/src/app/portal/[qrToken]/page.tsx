@@ -1,7 +1,19 @@
-import { isSupportedLocale, locales, qrPortalCopy, type Locale } from '@buildtrace/i18n';
+import {
+  documentLabels,
+  isSupportedLocale,
+  locales,
+  qrPortalCopy,
+  type Locale,
+} from '@buildtrace/i18n';
+import type { DocumentCategory } from '@buildtrace/shared';
 import Link from 'next/link';
 
-import { getQrPortalMachine, type QrPortalMachineApiModel } from '@/qr-portal-api';
+import {
+  getQrPortalMachine,
+  listQrPortalDocuments,
+  type QrPortalMachineApiModel,
+} from '@/qr-portal-api';
+import { createQrPortalDocumentDownloadUrlAction } from '../actions';
 
 type PortalPageProps = {
   params: Promise<{
@@ -9,6 +21,7 @@ type PortalPageProps = {
   }>;
   searchParams?: Promise<{
     lang?: string | readonly string[];
+    downloadError?: string | readonly string[];
   }>;
 };
 
@@ -48,20 +61,39 @@ function LanguageSwitcher({
   );
 }
 
-async function loadPortalMachine(qrToken: string): Promise<QrPortalMachineApiModel | null> {
-  try {
-    return await getQrPortalMachine({ qrToken });
-  } catch {
-    return null;
-  }
-}
-
 export default async function QrPortalPage({ params, searchParams }: PortalPageProps) {
   const { qrToken } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const locale = readLocale(resolvedSearchParams?.lang);
   const copy = qrPortalCopy[locale];
-  const machine = await loadPortalMachine(qrToken);
+  const downloadError =
+    typeof resolvedSearchParams?.downloadError === 'string'
+      ? resolvedSearchParams.downloadError
+      : undefined;
+
+  let machine: QrPortalMachineApiModel | null = null;
+  let documents: ReadonlyArray<{
+    id: string;
+    fileName: string;
+    category: string;
+    language: string;
+    uploadedAt: string;
+  }> = [];
+
+  try {
+    const [machineResult, docsResult] = await Promise.all([
+      getQrPortalMachine({ qrToken }),
+      listQrPortalDocuments({ qrToken }),
+    ]);
+    machine = machineResult;
+    documents = docsResult.documents;
+  } catch {
+    try {
+      machine = await getQrPortalMachine({ qrToken });
+    } catch {
+      machine = null;
+    }
+  }
 
   if (!machine) {
     return (
@@ -123,9 +155,49 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
         <h2 id="portal-documents-title" className="text-xl font-semibold text-white sm:text-2xl">
           {copy.documentsTitle}
         </h2>
-        <div className="mt-5 rounded-xl border border-dashed border-stone-700 bg-neutral-950/60 p-6">
-          <p className="text-sm leading-6 text-stone-400">{copy.noDocumentsMessage}</p>
-        </div>
+
+        {downloadError ? (
+          <div className="mt-4 rounded-xl border border-red-500/25 bg-red-950/20 p-4 text-sm text-red-200">
+            {downloadError}
+          </div>
+        ) : null}
+
+        {documents.length === 0 ? (
+          <div className="mt-5 rounded-xl border border-dashed border-stone-700 bg-neutral-950/60 p-6">
+            <p className="text-sm leading-6 text-stone-400">{copy.noDocumentsMessage}</p>
+          </div>
+        ) : (
+          <div className="mt-5 divide-y divide-stone-800">
+            {documents.map((document) => {
+              const localizedCategory =
+                documentLabels[locale].categories[document.category as DocumentCategory] ||
+                document.category;
+
+              return (
+                <div
+                  key={document.id}
+                  className="flex flex-col gap-4 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-white">{document.fileName}</p>
+                    <p className="mt-1 text-xs text-stone-400">{localizedCategory}</p>
+                  </div>
+                  <form action={createQrPortalDocumentDownloadUrlAction}>
+                    <input type="hidden" name="qrToken" value={qrToken} />
+                    <input type="hidden" name="documentId" value={document.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto inline-flex min-h-10 items-center justify-center rounded-xl bg-emerald-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-emerald-300"
+                    >
+                      {copy.downloadButtonLabel}
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2" aria-label={copy.title}>
