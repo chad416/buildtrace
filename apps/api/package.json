@@ -23,7 +23,8 @@
     "customer-handover-pdf:smoke": "tsx src/customer-handover-pdf-summary-smoke-check.ts",
     "customer-handover-zip-archive:smoke": "tsx src/customer-handover-zip-archive-smoke-check.ts",
     "customer-handover-export:smoke": "tsx src/customer-handover-export-smoke-check.ts",
-    "qr-portal:smoke": "tsx src/qr-portal-controller-smoke-check.ts"
+    "qr-portal:smoke": "tsx src/qr-portal-controller-smoke-check.ts",
+    "service-tickets:smoke": "tsx src/service-tickets-controller-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
