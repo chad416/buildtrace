@@ -128,6 +128,7 @@ export const activityLogActions = {
   customerHandoverExportCreated: 'customer_handover_export.created',
   customerHandoverExportDownloadUrlIssued: 'customer_handover_export.download_url_issued',
   portalDocumentDownloaded: 'portal.document_downloaded',
+  portalMachineOpened: 'portal.machine_opened',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];

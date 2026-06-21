@@ -272,6 +272,14 @@ export async function getQrPortalFromRequest({
     throw new NotFoundException('QR portal was not found.');
   }
 
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId: machine.organizationId,
+    action: activityLogActions.portalMachineOpened,
+    targetType: 'machine',
+    targetId: machine.id,
+  });
+
   return {
     machineId: machine.id,
     machineName: machine.machineName,

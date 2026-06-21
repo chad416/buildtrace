@@ -384,6 +384,13 @@ async function runPublicPortalCheck(): Promise<void> {
   assert(response.serialNumber === 'SN-100', 'Public serial number was wrong.');
   assert(response.portalDefaultLocale === 'de', 'Public locale was wrong.');
 
+  assert(calls.activityInputs.length === 1, 'Activity input count was wrong.');
+  assert(
+    calls.activityInputs[0]?.action === activityLogActions.portalMachineOpened,
+    'Activity action was wrong.',
+  );
+  assert(calls.activityInputs[0]?.targetId === 'machine-1', 'Activity target ID was wrong.');
+
   const serialized = JSON.stringify(response);
 
   assert(!serialized.includes('qrPinHash'), 'Public response exposed the QR PIN hash.');
