@@ -8,7 +8,7 @@
 BuildTrace is a multi-tenant industrial SaaS platform for machine documentation and
 service management, with an EU-first data-protection posture. Tenants manage machines,
 upload and classify documents, raise service tickets, and expose a public QR portal per
-machine. The product is in **Beta** (about 65% complete; Phases 0-6 done, Phase 7 next).
+machine. The product is in **Beta** (about 73% complete; Phases 0-7 done, Phase 8 active).
 
 ## Stack
 
@@ -93,52 +93,43 @@ git diff --check      # catch whitespace / conflict markers
 4. Any warnings or errors and how they were handled
 5. Confirmation that no out-of-scope work (auth/db/storage/tenant/etc.) was added
 
-## Phase 6 Current State
+## Phase 7 Current State
 
-Phase 6 - Handover completeness + export is complete and closed.
-Phase 5 is complete and closed.
+Phase 7 - QR customer portal is complete and closed.
+Phase 8 - Service tickets + support session is active.
 
-The full beta roadmap is about 65% complete.
+The full beta roadmap is about 73% complete.
 
-Completed Phase 6 pieces:
+Completed Phase 7 pieces:
 
-- shared completeness evaluator and export manifest builder
-- shared ZIP entry builder with traversal guards
-- i18n document labels and handover completeness copy for all 7 locales
-- i18n handover export copy for all 7 locales, including the sensitive warning
-- DB data_exports schema, migrations, and CHECK constraints
-- DB export creation, revalidation, finalization, and list helpers
-- API completeness, export create/list, ZIP download URL, and PDF download URL endpoints
-- API sensitive-file detection
-- API ZIP archive builder with fflate and SHA-256 checksum
-- API localized PDF summary generator with Playwright
-- private Supabase storage upload/remove/signed URLs for ZIP and PDF artifacts
-- API recovery path on export failure
-- web completeness and export API clients
-- handover completeness widget
-- export trigger and customer-visible document selection
-- export history with ZIP and PDF download actions
-- sensitive-file warning banner
-- localized private PDF summary
+- DB QR portal fields and token helpers
+- API QR token assign, read, rotate, and disable endpoints
+- public QR portal machine lookup
+- public customer-visible document list and signed download URL endpoints
+- portal machine-open and document-download activity logging
+- public portal page and auth-free portal layout
+- localized portal and builder copy for all 7 locales
+- portal language switcher
+- customer-visible document list with signed downloads
+- builder QR token controls and portal link in machine detail
 
-## Phase 7 Next
+## Phase 8 Active
 
-Phase 7 - QR customer portal scope:
+Phase 8 - Service tickets + support session scope from the roadmap:
 
-- QR token
-- customer portal
-- customer-visible documents only
-- browser language detection
-- language switcher
-- localized portal UI
-- portal access logs
-- optional PIN/password
-- QR token rotation option
-- portal disable option
+- ticket creation from QR portal
+- builder ticket dashboard
+- comments
+- attachments
+- support meeting link
+- internal notes hidden from customer
+- localized ticket statuses
+- localized ticket emails
+- rate-limited public ticket creation
 
 ## Hard Warning For Future AI Agents
 
-Do not reopen Phase 6 unless a real defect is found.
+Do not reopen Phase 7 unless a real defect is found.
 
 Do not implement AI/OCR/vector search/worker queues for Phase 5.
 

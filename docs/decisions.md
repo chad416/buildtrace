@@ -1406,3 +1406,16 @@ Rejected alternatives:
 - public export storage
 - permanent download URLs
 - combining ZIP/PDF/export-history work into the first slice
+
+### MEMBER role used for QR token read/assign instead of ENGINEER
+
+Decision:
+
+- Use the existing `MEMBER` role for QR token read and assign endpoints.
+- Keep QR token rotate and disable operations restricted to `OWNER` and `ADMIN`.
+
+Reason:
+
+- `ENGINEER` does not exist in the current schema.
+- `MEMBER` is the closest available role.
+- An `ENGINEER` role may be added in a future phase if the role model is extended.

@@ -1575,3 +1575,45 @@ Out of scope for Phase 6:
 - quote flow
 - feedback collection
 - production deployment
+
+## 2026-06-21 - Phase 7 - QR customer portal closeout
+
+Phase 7 is complete.
+
+Full beta roadmap completion moved from about 65% to about 73%.
+
+Verified shipped scope:
+
+- DB QR portal migration: `qr_token`, `qr_pin_enabled`, `qr_pin_hash`, `portal_default_locale`
+- DB QR token helpers: `generateQrToken`, `assignQrToken`, `getQrPortalMachine`, `getMachineQrToken`
+- API QR portal controller for assign, get, rotate, disable, and public portal lookup
+- API public document list endpoint restricted to customer-visible documents
+- API public document download URL endpoint with activity logging
+- API portal access logging through `portalMachineOpened` and `portalDocumentDownloaded`
+- web public portal page at `/portal/:qrToken`
+- web portal layout with no navigation and no authentication
+- web portal language switcher for all 7 locales
+- web portal document list with signed downloads
+- web builder QR token UI in machine detail for assign, rotate, disable, and portal link
+- web builder QR portal API client
+- i18n QR portal copy for all 7 locales
+- i18n QR portal builder copy for all 7 locales
+
+Phase 7 commits:
+
+- `7ca9161 feat(db): add QR portal schema migration and token helpers`
+- `3174605 feat(api): add QR portal controller with token assign, rotate, disable, and public lookup`
+- `1758e2d feat(web): add public QR portal page with language switcher`
+- `6aab2a3 feat: add customer-visible document list and download to QR portal`
+- `f1ba8ae feat(web): add builder QR token UI to machine detail page`
+- `fa14c09 feat(api): log portal machine opened event on QR portal access`
+
+Out of scope for Phase 7:
+
+- PIN/password protection
+- service tickets
+- software timeline
+- spare parts
+- quote flow
+- feedback
+- production deployment

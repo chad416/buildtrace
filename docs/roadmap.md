@@ -20,13 +20,15 @@ Phase 5 is complete.
 
 Phase 6 is complete.
 
+Phase 7 is complete.
+
 Current full beta roadmap completion:
 
-- about 65%
+- about 73%
 
 Current active phase:
 
-- Phase 7 - QR customer portal
+- Phase 8 - Service tickets + support session
 
 ## Beta scope
 
@@ -397,7 +399,7 @@ Exit condition:
 
 Completion: 73% of beta.
 
-Status: not started.
+Status: complete.
 
 Scope:
 
@@ -408,9 +410,12 @@ Scope:
 - language switcher
 - localized portal UI
 - portal access logs
-- optional PIN/password
 - QR token rotation option
 - portal disable option
+
+Deferred beyond Phase 7:
+
+- PIN/password protection
 
 Exit condition:
 

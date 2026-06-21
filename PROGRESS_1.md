@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- fix(api): add playwright dependency for PDF summary generation
+- fa14c09 feat(api): log portal machine opened event on QR portal access
 
 Current branch:
 
@@ -12,11 +12,11 @@ Current branch:
 
 Current phase:
 
-- Phase 6 complete — Phase 7 next
+- Phase 7 complete — Phase 8 next
 
 Current full beta roadmap completion:
 
-- about 65%
+- about 73%
 
 Phase 5 completion:
 
@@ -26,7 +26,7 @@ Phase 5 completion:
 
 BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, and later QR customer portal, service tickets, software version timeline, spare parts intelligence, quotes, and feedback.
 
-Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is next.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is next.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -109,7 +109,7 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - Stale category/visibility controls after confirmation were fixed.
 - Dev browser-session bootstrap added for repeatable browser testing.
 
-## Phase 6 Complete
+## Phase 6 Completed
 
 - shared completeness evaluator and export manifest builder
 - shared ZIP entry builder with traversal guards
@@ -135,9 +135,26 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - sensitive-file warning banner on export creation
 - localized PDF summary generated and stored privately
 
+## Phase 7 Complete
+
+- DB QR portal migration: `qr_token`, `qr_pin_enabled`, `qr_pin_hash`, `portal_default_locale`
+- DB QR token helpers: `generateQrToken`, `assignQrToken`, `getQrPortalMachine`, `getMachineQrToken`
+- API QR portal controller: assign, get, rotate, disable, and public portal lookup
+- API public document list endpoint restricted to customer-visible documents
+- API public document download URL endpoint with activity logging
+- API portal access logging: `portalMachineOpened`, `portalDocumentDownloaded`
+- web public portal page at `/portal/:qrToken`
+- web portal layout with no navigation and no authentication
+- web portal language switcher for all 7 locales
+- web portal document list with signed downloads
+- web builder QR token UI in machine detail: assign, rotate, disable, and portal link
+- web builder QR portal API client
+- i18n QR portal copy for all 7 locales
+- i18n QR portal builder copy for all 7 locales
+
 ## Next Exact Engineering Step
 
-Phase 7 - QR customer portal. Start with QR token schema migration.
+Phase 8 - Service tickets. Start with `service_tickets` schema migration.
 
 ## Handoff Docs
 

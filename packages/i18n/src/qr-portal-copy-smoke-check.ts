@@ -14,6 +14,7 @@ const requiredKeys = [
   'notFoundMessage',
   'errorMessage',
   'languageSwitcherLabel',
+  'downloadButtonLabel',
 ] as const satisfies readonly (keyof QrPortalCopy)[];
 
 function assert(condition: boolean, message: string): asserts condition {
