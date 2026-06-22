@@ -1419,3 +1419,16 @@ Reason:
 - `ENGINEER` does not exist in the current schema.
 - `MEMBER` is the closest available role.
 - An `ENGINEER` role may be added in a future phase if the role model is extended.
+
+### FileInterceptor replaced with Fastify native multipart for ticket attachments
+
+Decision:
+
+- Use Fastify native multipart handling for ticket comment attachments.
+- Do not use NestJS `FileInterceptor` from `@nestjs/platform-express` while the API runs on `FastifyAdapter`.
+
+Reason:
+
+- NestJS `FileInterceptor` from `@nestjs/platform-express` is officially incompatible with `FastifyAdapter`.
+- Fastify native multipart handling provides the required private attachment upload boundary without introducing an incompatible Express upload stack.
+- This is consistent with the existing document upload implementation.

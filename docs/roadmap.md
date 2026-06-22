@@ -22,13 +22,15 @@ Phase 6 is complete.
 
 Phase 7 is complete.
 
+Phase 8 is complete.
+
 Current full beta roadmap completion:
 
-- about 73%
+- about 81%
 
 Current active phase:
 
-- Phase 8 - Service tickets + support session
+- Phase 9 - Software version timeline
 
 ## Beta scope
 
@@ -427,7 +429,7 @@ Exit condition:
 
 Completion: 81% of beta.
 
-Status: not started.
+Status: complete.
 
 Scope:
 
@@ -450,7 +452,7 @@ Exit condition:
 
 Completion: 88% of beta.
 
-Status: not started.
+Status: active.
 
 Scope:
 

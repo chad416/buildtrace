@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- fa14c09 feat(api): log portal machine opened event on QR portal access
+- acc13d8 feat: add support meeting link field to service tickets
 
 Current branch:
 
@@ -12,11 +12,11 @@ Current branch:
 
 Current phase:
 
-- Phase 7 complete — Phase 8 next
+- Phase 8 complete — Phase 9 next
 
 Current full beta roadmap completion:
 
-- about 73%
+- about 81%
 
 Phase 5 completion:
 
@@ -26,7 +26,7 @@ Phase 5 completion:
 
 BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, and later QR customer portal, service tickets, software version timeline, spare parts intelligence, quotes, and feedback.
 
-Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is next.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is complete. Phase 9 is next.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -152,9 +152,25 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - i18n QR portal copy for all 7 locales
 - i18n QR portal builder copy for all 7 locales
 
+## Phase 8 Complete
+
+- DB `service_tickets` and `ticket_comments` schema and migration
+- DB helpers: `createServiceTicket`, `listServiceTickets`, `getServiceTicket`, `updateServiceTicketStatus`, `addTicketComment`, `listTicketComments`, `getTicketComment`, and `updateTicketMeetingLink`
+- API builder endpoints: create, list, get, update status, add comment, list comments, add comment with attachment, get attachment URL, and update meeting link
+- API public portal endpoint for creating a ticket from the QR portal
+- ticket comment attachments with signed URLs using Fastify native multipart
+- support meeting link and meeting notes fields
+- web service tickets API client (5 functions plus meeting-link and attachment-URL support)
+- web portal service tickets API client
+- builder ticket dashboard in the machine detail page
+- public ticket form on the QR portal page
+- i18n service tickets copy for all 7 locales
+- rate-limiting note on the public ticket creation endpoint
+- activity logging for ticket created, status updated, and comment added
+
 ## Next Exact Engineering Step
 
-Phase 8 - Service tickets. Start with `service_tickets` schema migration.
+Phase 9 - Software version timeline. Start with `software_versions` schema migration.
 
 ## Handoff Docs
 

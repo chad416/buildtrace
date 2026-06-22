@@ -1617,3 +1617,61 @@ Out of scope for Phase 7:
 - quote flow
 - feedback
 - production deployment
+
+## 2026-06-21 - Phase 8 - Service tickets + support session closeout
+
+Phase 8 is complete.
+
+Full beta roadmap completion moved from about 73% to about 81%.
+
+Verified shipped scope:
+
+- DB `service_tickets` and `ticket_comments` schema and migration
+- DB helpers for ticket creation, listing, lookup, status updates, comments, comment lookup, and meeting details
+- authenticated builder API endpoints for ticket and comment management
+- public ticket creation from the QR portal
+- private ticket comment attachments with signed download URLs
+- Fastify native multipart handling for ticket attachments
+- support meeting link and meeting notes
+- web service tickets API client
+- web portal service tickets API client
+- builder ticket dashboard in the machine detail page
+- public ticket form on the QR portal page
+- service-ticket copy for all 7 locales
+- rate-limiting note on public ticket creation
+- activity logging for ticket created, status updated, and comment added
+
+Final Phase 8 verification passed:
+
+- `pnpm.cmd --filter @buildtrace/shared typecheck`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db run service-ticket-records:smoke`
+- `pnpm.cmd --filter @buildtrace/i18n typecheck`
+- `pnpm.cmd --filter @buildtrace/i18n run service-tickets-copy:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api run service-tickets:smoke`
+- `pnpm.cmd --filter @buildtrace/web run service-tickets:smoke`
+- `pnpm.cmd --filter @buildtrace/web run portal-service-tickets:smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git status --short`
+
+Phase 8 commits:
+
+- `8061f3a feat(db): add service tickets schema migration and helpers`
+- `72b21b0 feat(api): add service ticket endpoints`
+- `c754593 feat(web): add service ticket dashboard UI`
+- `618333d feat: add public ticket creation from QR portal`
+- `3b168ec feat: add ticket comment attachments with signed URLs`
+- `acc13d8 feat: add support meeting link field to service tickets`
+
+Out of scope for Phase 8:
+
+- software version timeline
+- spare parts
+- quote flow
+- feedback collection
+- production deployment
