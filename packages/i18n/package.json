@@ -12,7 +12,8 @@
     "document-labels:smoke": "tsx src/document-labels-smoke-check.ts",
     "handover-completeness-copy:smoke": "tsx src/handover-completeness-copy-smoke-check.ts",
     "qr-portal-copy:smoke": "tsx src/qr-portal-copy-smoke-check.ts",
-    "qr-portal-builder-copy:smoke": "tsx src/qr-portal-builder-copy-smoke-check.ts"
+    "qr-portal-builder-copy:smoke": "tsx src/qr-portal-builder-copy-smoke-check.ts",
+    "service-tickets-copy:smoke": "tsx src/service-tickets-copy-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/shared": "workspace:*"

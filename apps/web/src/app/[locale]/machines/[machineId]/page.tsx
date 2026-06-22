@@ -4,15 +4,19 @@ import {
   handoverCompletenessCopy,
   isSupportedLocale,
   qrPortalBuilderCopy,
+  serviceTicketsCopy,
   type DocumentLabels,
   type HandoverCompletenessCopy,
   type QrPortalBuilderCopy,
+  type ServiceTicketsCopy,
 } from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  ticketPriorities,
+  ticketStatuses,
   type CustomerHandoverCompleteness,
   type DocumentClassificationStatus,
   type DocumentVisibilityLevel,
@@ -21,18 +25,21 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
+  addTicketCommentAction,
   assignMachineQrTokenAction,
   confirmMachineDocumentClassificationSuggestionAction,
   createCustomerHandoverExportAction,
   createCustomerHandoverExportDownloadUrlAction,
   createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
+  createServiceTicketAction,
   disableMachineQrPortalAction,
   refreshMachineDocumentClassificationSuggestionAction,
   rotateMachineQrTokenAction,
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
+  updateTicketStatusAction,
   uploadMachineDocumentAction,
 } from '../actions';
 import {
@@ -42,6 +49,12 @@ import {
 import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
 import { getHandoverCompleteness } from '@/handover-completeness-api';
 import { getMachineQrToken } from '@/qr-portal-builder-api';
+import {
+  listServiceTickets,
+  listTicketComments,
+  type ServiceTicketApiModel,
+  type TicketCommentApiModel,
+} from '@/service-tickets-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -80,6 +93,9 @@ type MachineDetailSearchParams = {
   readonly handoverExportSensitiveCategories?: string;
   readonly qrPortalAction?: string;
   readonly qrPortalError?: string;
+  readonly ticketAction?: string;
+  readonly ticketError?: string;
+  readonly ticketId?: string;
 };
 
 type PageProps = {
@@ -108,6 +124,8 @@ type MachineDetailLoadState =
       readonly handoverCompleteness: CustomerHandoverCompleteness;
       readonly exportHistory: ListCustomerHandoverExportsResponse['exports'];
       readonly qrToken: string | null;
+      readonly tickets: readonly ServiceTicketApiModel[];
+      readonly ticketComments: readonly TicketCommentApiModel[];
     };
 
 const statusClassNames = {
@@ -188,6 +206,9 @@ function normalizeSearchParams(
   );
   const qrPortalAction = readStringSearchParam(searchParams, 'qrPortalAction');
   const qrPortalError = readStringSearchParam(searchParams, 'qrPortalError');
+  const ticketAction = readStringSearchParam(searchParams, 'ticketAction');
+  const ticketError = readStringSearchParam(searchParams, 'ticketError');
+  const ticketId = readStringSearchParam(searchParams, 'ticketId');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -210,6 +231,9 @@ function normalizeSearchParams(
     ...(handoverExportSensitiveCategories ? { handoverExportSensitiveCategories } : {}),
     ...(qrPortalAction ? { qrPortalAction } : {}),
     ...(qrPortalError ? { qrPortalError } : {}),
+    ...(ticketAction ? { ticketAction } : {}),
+    ...(ticketError ? { ticketError } : {}),
+    ...(ticketId ? { ticketId } : {}),
   };
 }
 
@@ -1075,6 +1099,233 @@ function renderQrPortalSection({
   );
 }
 
+function renderServiceTicketsSection({
+  machine,
+  tickets,
+  ticketComments,
+  ticketId,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly tickets: readonly ServiceTicketApiModel[];
+  readonly ticketComments: readonly TicketCommentApiModel[];
+  readonly ticketId: string | undefined;
+  readonly locale: string;
+  readonly copy: ServiceTicketsCopy;
+}) {
+  return (
+    <section
+      id="service-tickets"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {copy.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">{copy.sectionDescription}</p>
+
+      <div className="mt-6 grid gap-6">
+        <div className="rounded-lg border border-stone-700 bg-black/20 p-5">
+          <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.newTicketTitle}
+          </p>
+          <form action={createServiceTicketAction} className="mt-4 grid gap-4">
+            <input type="hidden" name="machineId" value={machine.id} />
+            <input type="hidden" name="locale" value={locale} />
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                {copy.titleLabel}
+              </label>
+              <input
+                name="title"
+                required
+                className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                {copy.descriptionLabel}
+              </label>
+              <textarea
+                name="description"
+                required
+                rows={3}
+                className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                {copy.priorityLabel}
+              </label>
+              <select
+                name="priority"
+                defaultValue="normal"
+                className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+              >
+                {ticketPriorities.map((p) => (
+                  <option key={p} value={p}>
+                    {copy.priorityLabels[p]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+            >
+              {copy.submitButtonLabel}
+            </button>
+          </form>
+        </div>
+
+        {tickets.length === 0 ? (
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            {copy.noTicketsMessage}
+          </p>
+        ) : (
+          <div className="grid gap-4">
+            {tickets.map((ticket) => {
+              const isSelected = ticketId === ticket.id;
+              return (
+                <article
+                  key={ticket.id}
+                  className="rounded-lg border border-stone-700 bg-black/20 p-5"
+                >
+                  <div className="flex flex-wrap items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-stone-100">{ticket.title}</p>
+                      <p className="mt-1 text-xs text-stone-400">
+                        {formatDate(ticket.createdAt, locale, '')}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full border border-sky-500/40 bg-sky-950/30 px-2 py-0.5 text-xs font-semibold text-sky-200">
+                        {copy.statusLabels[ticket.status]}
+                      </span>
+                      <span className="inline-flex items-center rounded-full border border-stone-600 bg-stone-900 px-2 py-0.5 text-xs font-semibold text-stone-300">
+                        {copy.priorityLabels[ticket.priority]}
+                      </span>
+                      {ticket.createdFromPortal ? (
+                        <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-950/30 px-2 py-0.5 text-xs font-semibold text-amber-200">
+                          {copy.createdFromPortalBadgeLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-sm leading-6 text-stone-300">{ticket.description}</p>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-4">
+                    <form action={updateTicketStatusAction} className="flex items-center gap-2">
+                      <input type="hidden" name="machineId" value={machine.id} />
+                      <input type="hidden" name="locale" value={locale} />
+                      <input type="hidden" name="ticketId" value={ticket.id} />
+                      <select
+                        name="status"
+                        defaultValue={ticket.status}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-1.5 text-xs text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+                      >
+                        {ticketStatuses.map((s) => (
+                          <option key={s} value={s}>
+                            {copy.statusLabels[s]}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="inline-flex items-center rounded-md border border-stone-700 px-3 py-1.5 text-xs font-semibold text-stone-200 transition hover:border-emerald-400 hover:text-white"
+                      >
+                        {copy.updateStatusLabel}
+                      </button>
+                    </form>
+
+                    <Link
+                      href={`/${locale}/machines/${encodeURIComponent(machine.id)}?ticketId=${encodeURIComponent(ticket.id)}`}
+                      className="text-xs font-semibold text-sky-300 transition hover:text-white"
+                    >
+                      {copy.commentsTitle}
+                    </Link>
+                  </div>
+
+                  {isSelected ? (
+                    <div className="mt-5 border-t border-stone-700 pt-5">
+                      <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.commentsTitle}
+                      </p>
+
+                      {ticketComments.length === 0 ? (
+                        <p className="mt-3 text-sm text-stone-400">{copy.noCommentsMessage}</p>
+                      ) : (
+                        <div className="mt-3 grid gap-3">
+                          {ticketComments.map((comment) => (
+                            <div
+                              key={comment.id}
+                              className="rounded-md border border-stone-700 bg-black/20 p-4"
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-semibold uppercase text-stone-400">
+                                  {comment.authorType}
+                                </span>
+                                {comment.internalOnly ? (
+                                  <span className="inline-flex items-center rounded-full border border-red-500/40 bg-red-950/30 px-2 py-0.5 text-xs font-semibold text-red-200">
+                                    {copy.internalBadgeLabel}
+                                  </span>
+                                ) : null}
+                                <span className="ml-auto text-xs text-stone-500">
+                                  {formatDate(comment.createdAt, locale, '')}
+                                </span>
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-stone-200">
+                                {comment.message}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <form action={addTicketCommentAction} className="mt-4 grid gap-4">
+                        <input type="hidden" name="machineId" value={machine.id} />
+                        <input type="hidden" name="locale" value={locale} />
+                        <input type="hidden" name="ticketId" value={ticket.id} />
+                        <div className="grid gap-2">
+                          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                            {copy.commentMessageLabel}
+                          </label>
+                          <textarea
+                            name="message"
+                            required
+                            rows={3}
+                            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                          />
+                        </div>
+                        <label className="flex items-center gap-2 text-sm text-stone-300">
+                          <input
+                            type="checkbox"
+                            name="internalOnly"
+                            value="on"
+                            className="rounded border-stone-600"
+                          />
+                          {copy.internalOnlyLabel}
+                        </label>
+                        <button
+                          type="submit"
+                          className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                        >
+                          {copy.addCommentButtonLabel}
+                        </button>
+                      </form>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -1091,6 +1342,10 @@ function renderMachineDetail({
   labels,
   sections,
   sectionsAriaLabel,
+  tickets,
+  ticketComments,
+  ticketId,
+  ticketsCopy,
 }: {
   readonly machine: MachineRecordApiModel;
   readonly customers: readonly CustomerRecordApiModel[];
@@ -1115,6 +1370,10 @@ function renderMachineDetail({
     };
   }[];
   readonly sectionsAriaLabel: string;
+  readonly tickets: readonly ServiceTicketApiModel[];
+  readonly ticketComments: readonly TicketCommentApiModel[];
+  readonly ticketId: string | undefined;
+  readonly ticketsCopy: ServiceTicketsCopy;
 }) {
   return (
     <>
@@ -1212,6 +1471,15 @@ function renderMachineDetail({
         qrToken,
         locale,
         copy: qrPortalCopy,
+      })}
+
+      {renderServiceTicketsSection({
+        machine,
+        tickets,
+        ticketComments,
+        ticketId,
+        locale,
+        copy: ticketsCopy,
       })}
 
       {renderMachineEditForm({
@@ -1322,6 +1590,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         handoverCompleteness,
         exportHistoryResponse,
         machineQrTokenResponse,
+        ticketsResponse,
       ] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
@@ -1356,7 +1625,27 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           machineId,
           accessToken: session.accessToken,
         }),
+        listServiceTickets({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
+
+      let ticketComments: readonly TicketCommentApiModel[] = [];
+
+      if (normalizedSearchParams.ticketId) {
+        try {
+          const commentsResponse = await listTicketComments({
+            organizationId: session.organizationId,
+            ticketId: normalizedSearchParams.ticketId,
+            accessToken: session.accessToken,
+          });
+          ticketComments = commentsResponse.comments;
+        } catch {
+          ticketComments = [];
+        }
+      }
 
       loadState = {
         status: 'ready',
@@ -1367,6 +1656,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         handoverCompleteness,
         exportHistory: exportHistoryResponse.exports,
         qrToken: machineQrTokenResponse.qrToken,
+        tickets: ticketsResponse.tickets,
+        ticketComments,
       };
     } catch (error) {
       loadState = {
@@ -1607,6 +1898,22 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.ticketAction
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: serviceTicketsCopy[locale].sectionTitle,
+            body: normalizedSearchParams.ticketAction,
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.ticketError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: serviceTicketsCopy[locale].errorTitle,
+            body: normalizedSearchParams.ticketError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -1626,6 +1933,10 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
               (section) => section.id !== 'documents' && section.id !== 'handover-readiness',
             ),
             sectionsAriaLabel: messages.sectionsAriaLabel,
+            tickets: loadState.tickets,
+            ticketComments: loadState.ticketComments,
+            ticketId: normalizedSearchParams.ticketId,
+            ticketsCopy: serviceTicketsCopy[locale],
           })
         : null}
     </div>

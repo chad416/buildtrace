@@ -1,0 +1,262 @@
+import type { SupportedLocale, TicketPriority, TicketStatus } from '@buildtrace/shared';
+
+export type ServiceTicketsCopy = {
+  readonly sectionTitle: string;
+  readonly sectionDescription: string;
+  readonly noTicketsMessage: string;
+  readonly newTicketTitle: string;
+  readonly titleLabel: string;
+  readonly descriptionLabel: string;
+  readonly priorityLabel: string;
+  readonly submitButtonLabel: string;
+  readonly statusLabel: string;
+  readonly priorityLabels: Record<TicketPriority, string>;
+  readonly statusLabels: Record<TicketStatus, string>;
+  readonly commentsTitle: string;
+  readonly noCommentsMessage: string;
+  readonly commentMessageLabel: string;
+  readonly internalOnlyLabel: string;
+  readonly addCommentButtonLabel: string;
+  readonly internalBadgeLabel: string;
+  readonly createdFromPortalBadgeLabel: string;
+  readonly updateStatusLabel: string;
+  readonly errorTitle: string;
+};
+
+export const serviceTicketsCopy = {
+  en: {
+    sectionTitle: 'Service tickets',
+    sectionDescription: 'Tickets raised by machine buyers through the QR portal or by your team.',
+    noTicketsMessage: 'No service tickets have been raised for this machine yet.',
+    newTicketTitle: 'New ticket',
+    titleLabel: 'Title',
+    descriptionLabel: 'Description',
+    priorityLabel: 'Priority',
+    submitButtonLabel: 'Create ticket',
+    statusLabel: 'Status',
+    priorityLabels: {
+      low: 'Low',
+      normal: 'Normal',
+      high: 'High',
+      urgent: 'Urgent',
+    },
+    statusLabels: {
+      open: 'Open',
+      'under-review': 'Under review',
+      'waiting-for-buyer': 'Waiting for buyer',
+      'quote-sent': 'Quote sent',
+      resolved: 'Resolved',
+    },
+    commentsTitle: 'Comments',
+    noCommentsMessage: 'No comments yet.',
+    commentMessageLabel: 'Message',
+    internalOnlyLabel: 'Internal only (hidden from customer)',
+    addCommentButtonLabel: 'Add comment',
+    internalBadgeLabel: 'Internal',
+    createdFromPortalBadgeLabel: 'From portal',
+    updateStatusLabel: 'Update status',
+    errorTitle: 'Ticket action failed',
+  },
+  cs: {
+    sectionTitle: 'Servisní tikety',
+    sectionDescription: 'Tikety vytvořené kupujícími strojů přes QR portál nebo vaším týmem.',
+    noTicketsMessage: 'Pro tento stroj zatím nebyly vytvořeny žádné servisní tikety.',
+    newTicketTitle: 'Nový tiket',
+    titleLabel: 'Název',
+    descriptionLabel: 'Popis',
+    priorityLabel: 'Priorita',
+    submitButtonLabel: 'Vytvořit tiket',
+    statusLabel: 'Stav',
+    priorityLabels: {
+      low: 'Nízká',
+      normal: 'Normální',
+      high: 'Vysoká',
+      urgent: 'Urgentní',
+    },
+    statusLabels: {
+      open: 'Otevřeno',
+      'under-review': 'V přezkumu',
+      'waiting-for-buyer': 'Čeká na kupujícího',
+      'quote-sent': 'Nabídka odeslána',
+      resolved: 'Vyřešeno',
+    },
+    commentsTitle: 'Komentáře',
+    noCommentsMessage: 'Zatím žádné komentáře.',
+    commentMessageLabel: 'Zpráva',
+    internalOnlyLabel: 'Pouze interní (skryto před zákazníkem)',
+    addCommentButtonLabel: 'Přidat komentář',
+    internalBadgeLabel: 'Interní',
+    createdFromPortalBadgeLabel: 'Z portálu',
+    updateStatusLabel: 'Aktualizovat stav',
+    errorTitle: 'Akce tiketu se nezdařila',
+  },
+  sk: {
+    sectionTitle: 'Servisné tikety',
+    sectionDescription: 'Tikety vytvorené kupujúcimi strojov cez QR portál alebo vaším tímom.',
+    noTicketsMessage: 'Pre tento stroj zatiaľ neboli vytvorené žiadne servisné tikety.',
+    newTicketTitle: 'Nový tiket',
+    titleLabel: 'Názov',
+    descriptionLabel: 'Popis',
+    priorityLabel: 'Priorita',
+    submitButtonLabel: 'Vytvoriť tiket',
+    statusLabel: 'Stav',
+    priorityLabels: {
+      low: 'Nízka',
+      normal: 'Normálna',
+      high: 'Vysoká',
+      urgent: 'Urgentná',
+    },
+    statusLabels: {
+      open: 'Otvorený',
+      'under-review': 'V kontrole',
+      'waiting-for-buyer': 'Čaká na kupujúceho',
+      'quote-sent': 'Ponuka odoslaná',
+      resolved: 'Vyriešený',
+    },
+    commentsTitle: 'Komentáre',
+    noCommentsMessage: 'Zatiaľ žiadne komentáre.',
+    commentMessageLabel: 'Správa',
+    internalOnlyLabel: 'Iba interné (skryté pred zákazníkom)',
+    addCommentButtonLabel: 'Pridať komentár',
+    internalBadgeLabel: 'Interné',
+    createdFromPortalBadgeLabel: 'Z portálu',
+    updateStatusLabel: 'Aktualizovať stav',
+    errorTitle: 'Akcia tiketu zlyhala',
+  },
+  pl: {
+    sectionTitle: 'Zgłoszenia serwisowe',
+    sectionDescription:
+      'Zgłoszenia złożone przez kupujących maszyny przez portal QR lub przez Twój zespół.',
+    noTicketsMessage: 'Dla tej maszyny nie złożono jeszcze żadnych zgłoszeń serwisowych.',
+    newTicketTitle: 'Nowe zgłoszenie',
+    titleLabel: 'Tytuł',
+    descriptionLabel: 'Opis',
+    priorityLabel: 'Priorytet',
+    submitButtonLabel: 'Utwórz zgłoszenie',
+    statusLabel: 'Status',
+    priorityLabels: {
+      low: 'Niski',
+      normal: 'Normalny',
+      high: 'Wysoki',
+      urgent: 'Pilny',
+    },
+    statusLabels: {
+      open: 'Otwarte',
+      'under-review': 'W przeglądzie',
+      'waiting-for-buyer': 'Oczekuje na kupującego',
+      'quote-sent': 'Oferta wysłana',
+      resolved: 'Rozwiązane',
+    },
+    commentsTitle: 'Komentarze',
+    noCommentsMessage: 'Brak komentarzy.',
+    commentMessageLabel: 'Wiadomość',
+    internalOnlyLabel: 'Tylko wewnętrzne (ukryte przed klientem)',
+    addCommentButtonLabel: 'Dodaj komentarz',
+    internalBadgeLabel: 'Wewnętrzne',
+    createdFromPortalBadgeLabel: 'Z portalu',
+    updateStatusLabel: 'Aktualizuj status',
+    errorTitle: 'Działanie na zgłoszeniu nie powiodło się',
+  },
+  de: {
+    sectionTitle: 'Serviceanfragen',
+    sectionDescription:
+      'Anfragen, die von Maschinenkäufern über das QR-Portal oder von Ihrem Team erstellt wurden.',
+    noTicketsMessage: 'Für diese Maschine wurden noch keine Serviceanfragen gestellt.',
+    newTicketTitle: 'Neue Anfrage',
+    titleLabel: 'Titel',
+    descriptionLabel: 'Beschreibung',
+    priorityLabel: 'Priorität',
+    submitButtonLabel: 'Anfrage erstellen',
+    statusLabel: 'Status',
+    priorityLabels: {
+      low: 'Niedrig',
+      normal: 'Normal',
+      high: 'Hoch',
+      urgent: 'Dringend',
+    },
+    statusLabels: {
+      open: 'Offen',
+      'under-review': 'In Prüfung',
+      'waiting-for-buyer': 'Warte auf Käufer',
+      'quote-sent': 'Angebot gesendet',
+      resolved: 'Gelöst',
+    },
+    commentsTitle: 'Kommentare',
+    noCommentsMessage: 'Noch keine Kommentare.',
+    commentMessageLabel: 'Nachricht',
+    internalOnlyLabel: 'Nur intern (verborgen vor dem Kunden)',
+    addCommentButtonLabel: 'Kommentar hinzufügen',
+    internalBadgeLabel: 'Intern',
+    createdFromPortalBadgeLabel: 'Aus Portal',
+    updateStatusLabel: 'Status aktualisieren',
+    errorTitle: 'Ticket-Aktion fehlgeschlagen',
+  },
+  fr: {
+    sectionTitle: 'Tickets de service',
+    sectionDescription:
+      'Tickets créés par les acheteurs de la machine via le portail QR ou par votre équipe.',
+    noTicketsMessage: "Aucun ticket de service n'a encore été créé pour cette machine.",
+    newTicketTitle: 'Nouveau ticket',
+    titleLabel: 'Titre',
+    descriptionLabel: 'Description',
+    priorityLabel: 'Priorité',
+    submitButtonLabel: 'Créer le ticket',
+    statusLabel: 'Statut',
+    priorityLabels: {
+      low: 'Faible',
+      normal: 'Normal',
+      high: 'Élevé',
+      urgent: 'Urgent',
+    },
+    statusLabels: {
+      open: 'Ouvert',
+      'under-review': 'En cours de révision',
+      'waiting-for-buyer': "En attente de l'acheteur",
+      'quote-sent': 'Devis envoyé',
+      resolved: 'Résolu',
+    },
+    commentsTitle: 'Commentaires',
+    noCommentsMessage: 'Pas encore de commentaires.',
+    commentMessageLabel: 'Message',
+    internalOnlyLabel: 'Interne uniquement (masqué au client)',
+    addCommentButtonLabel: 'Ajouter un commentaire',
+    internalBadgeLabel: 'Interne',
+    createdFromPortalBadgeLabel: 'Du portail',
+    updateStatusLabel: 'Mettre à jour le statut',
+    errorTitle: "Échec de l'action du ticket",
+  },
+  es: {
+    sectionTitle: 'Tickets de servicio',
+    sectionDescription:
+      'Tickets creados por los compradores de la máquina a través del portal QR o por su equipo.',
+    noTicketsMessage: 'Aún no se han creado tickets de servicio para esta máquina.',
+    newTicketTitle: 'Nuevo ticket',
+    titleLabel: 'Título',
+    descriptionLabel: 'Descripción',
+    priorityLabel: 'Prioridad',
+    submitButtonLabel: 'Crear ticket',
+    statusLabel: 'Estado',
+    priorityLabels: {
+      low: 'Baja',
+      normal: 'Normal',
+      high: 'Alta',
+      urgent: 'Urgente',
+    },
+    statusLabels: {
+      open: 'Abierto',
+      'under-review': 'En revisión',
+      'waiting-for-buyer': 'Esperando al comprador',
+      'quote-sent': 'Presupuesto enviado',
+      resolved: 'Resuelto',
+    },
+    commentsTitle: 'Comentarios',
+    noCommentsMessage: 'Aún no hay comentarios.',
+    commentMessageLabel: 'Mensaje',
+    internalOnlyLabel: 'Solo interno (oculto al cliente)',
+    addCommentButtonLabel: 'Añadir comentario',
+    internalBadgeLabel: 'Interno',
+    createdFromPortalBadgeLabel: 'Del portal',
+    updateStatusLabel: 'Actualizar estado',
+    errorTitle: 'Error en la acción del ticket',
+  },
+} as const satisfies Record<SupportedLocale, ServiceTicketsCopy>;

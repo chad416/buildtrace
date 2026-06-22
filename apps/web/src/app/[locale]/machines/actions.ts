@@ -6,11 +6,15 @@ import {
   documentVisibilityLevels,
   machineStatuses,
   supportedLocales,
+  ticketPriorities,
+  ticketStatuses,
   type DocumentCategory,
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
   type MachineStatus,
   type SupportedLocale,
+  type TicketPriority,
+  type TicketStatus,
 } from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
@@ -48,6 +52,7 @@ import {
   disableMachineQrPortal,
   rotateMachineQrToken,
 } from '@/qr-portal-builder-api';
+import { addTicketComment, createServiceTicket, updateTicketStatus } from '@/service-tickets-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
 function formatActionError(error: unknown): string {
@@ -846,4 +851,124 @@ export async function disableMachineQrPortalAction(formData: FormData): Promise<
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?qrPortalAction=disabled`);
+}
+
+function redirectMachineTicketActionWithError(
+  locale: string,
+  machineId: string,
+  error: unknown,
+): never {
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent(formatActionError(error))}`,
+  );
+}
+
+function readLocaleFromForm(formData: FormData): SupportedLocale {
+  const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
+  return supportedLocales.includes(requestedLocale as SupportedLocale)
+    ? (requestedLocale as SupportedLocale)
+    : 'en';
+}
+
+export async function createServiceTicketAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const title = readRequiredFormText(formData, 'title', 'Title');
+    const description = readRequiredFormText(formData, 'description', 'Description');
+    const priorityValue = readOptionalFormText(formData, 'priority');
+
+    let priority: TicketPriority | undefined;
+
+    if (priorityValue !== undefined) {
+      if (!(ticketPriorities as readonly string[]).includes(priorityValue)) {
+        throw new Error(`Invalid priority: ${priorityValue}`);
+      }
+
+      priority = priorityValue as TicketPriority;
+    }
+
+    await createServiceTicket({
+      organizationId: session.organizationId,
+      machineId,
+      title,
+      description,
+      ...(priority !== undefined ? { priority } : {}),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineTicketActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=created`);
+}
+
+export async function updateTicketStatusAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const ticketId = readRequiredFormText(formData, 'ticketId', 'Ticket ID');
+    const statusValue = readRequiredFormText(formData, 'status', 'Status');
+
+    if (!(ticketStatuses as readonly string[]).includes(statusValue)) {
+      throw new Error(`Invalid status: ${statusValue}`);
+    }
+
+    await updateTicketStatus({
+      organizationId: session.organizationId,
+      ticketId,
+      status: statusValue as TicketStatus,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineTicketActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=status-updated`);
+}
+
+export async function addTicketCommentAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const ticketId = readRequiredFormText(formData, 'ticketId', 'Ticket ID');
+    const message = readRequiredFormText(formData, 'message', 'Message');
+    const internalOnly = formData.get('internalOnly') === 'on';
+
+    await addTicketComment({
+      organizationId: session.organizationId,
+      ticketId,
+      message,
+      internalOnly,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineTicketActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=comment-added`);
 }
