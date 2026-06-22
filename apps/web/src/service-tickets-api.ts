@@ -18,10 +18,12 @@ export type ServiceTicketApiModel = {
 
 export type TicketCommentApiModel = {
   readonly id: string;
+  readonly organizationId: string;
   readonly ticketId: string;
   readonly authorType: TicketAuthorType;
   readonly message: string;
   readonly internalOnly: boolean;
+  readonly attachmentStoragePath: string | null;
   readonly createdAt: string;
 };
 
@@ -67,6 +69,19 @@ export type ListTicketCommentsInput = {
   readonly organizationId: string;
   readonly ticketId: string;
   readonly accessToken: string;
+};
+
+export type CreateTicketCommentAttachmentDownloadUrlInput = {
+  readonly organizationId: string;
+  readonly ticketId: string;
+  readonly commentId: string;
+  readonly accessToken: string;
+};
+
+export type TicketCommentAttachmentDownloadUrlResponse = {
+  readonly commentId: string;
+  readonly downloadUrl: string;
+  readonly expiresInSeconds: number;
 };
 
 export type ServiceTicketsFetcher = Fetcher;
@@ -218,4 +233,29 @@ export async function listTicketComments(
   });
 
   return parseJsonResponse<ListTicketCommentsResponse>(response);
+}
+
+export async function createTicketCommentAttachmentDownloadUrl(
+  input: CreateTicketCommentAttachmentDownloadUrlInput,
+  fetcher: ServiceTicketsFetcher = fetch,
+): Promise<TicketCommentAttachmentDownloadUrlResponse> {
+  const ticketId = normalizeRequiredText('Ticket ID', input.ticketId);
+  const commentId = normalizeRequiredText('Comment ID', input.commentId);
+  const url = new URL(
+    `/service-tickets/${encodeURIComponent(ticketId)}/comments/${encodeURIComponent(commentId)}/attachment-url`,
+    apiBaseUrl,
+  );
+
+  const response = await fetcher(url, {
+    method: 'POST',
+    headers: {
+      authorization: createAuthorizationHeader(input.accessToken),
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+    }),
+  });
+
+  return parseJsonResponse<TicketCommentAttachmentDownloadUrlResponse>(response);
 }

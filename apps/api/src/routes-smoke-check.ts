@@ -97,6 +97,18 @@ const routeProbes: readonly RouteProbe[] = [
     expectedStatusCode: 400,
     payload: {},
   },
+  {
+    method: 'POST',
+    url: '/service-tickets/ticket-1/comments/with-attachment',
+    expectedStatusCode: 400,
+    payload: {},
+  },
+  {
+    method: 'POST',
+    url: '/service-tickets/ticket-1/comments/comment-1/attachment-url',
+    expectedStatusCode: 400,
+    payload: {},
+  },
 ];
 
 function assertStatusCode(

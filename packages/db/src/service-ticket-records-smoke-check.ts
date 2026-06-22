@@ -1,10 +1,11 @@
 import {
   createServiceTicket,
-  listServiceTickets,
   getServiceTicket,
-  updateServiceTicketStatus,
-  addTicketComment,
+  getTicketComment,
+  listServiceTickets,
   listTicketComments,
+  addTicketComment,
+  updateServiceTicketStatus,
 } from './service-ticket-records.js';
 import type { PrismaClient } from './generated/prisma/client';
 
@@ -156,6 +157,35 @@ function createMockPrismaClient(
     findMany: async (args: unknown): Promise<unknown> => {
       capturedOperations.push({ model: 'ticketComment', operation: 'findMany', args });
       return mockData.ticketComments || [];
+    },
+    findFirst: async (args: unknown): Promise<unknown> => {
+      capturedOperations.push({ model: 'ticketComment', operation: 'findFirst', args });
+      if (mockData.ticketComment === null) {
+        return null;
+      }
+      const where =
+        (
+          args as {
+            readonly where?: {
+              readonly id?: string;
+              readonly ticketId?: string;
+              readonly organizationId?: string;
+            };
+          }
+        ).where ?? {};
+      return (
+        mockData.ticketComment || {
+          id: where.id || 'comment-1',
+          organizationId: where.organizationId || 'organization-1',
+          ticketId: where.ticketId || 'ticket-1',
+          authorType: 'builder',
+          message: 'Mock comment',
+          internalOnly: false,
+          attachmentUrl: null,
+          attachmentStoragePath: null,
+          createdAt: new Date('2026-06-21T00:00:00.000Z'),
+        }
+      );
     },
   };
 
@@ -340,6 +370,39 @@ async function runServiceTicketRecordsSmokeCheck(): Promise<void> {
 
   if (getOpWhere.id !== 'ticket-1' || getOpWhere.organizationId !== 'organization-1') {
     throw new Error('getServiceTicket() findFirst arguments were incorrect.');
+  }
+
+  // Test getTicketComment
+  const getCommentOps: CapturedOperation[] = [];
+  const getCommentDb = createMockPrismaClient(getCommentOps);
+  const getComment = await getTicketComment({
+    db: getCommentDb,
+    organizationId: ' organization-1 ',
+    ticketId: ' ticket-1 ',
+    commentId: ' comment-1 ',
+  });
+
+  if (!getComment || getComment.id !== 'comment-1') {
+    throw new Error('getTicketComment() did not return expected comment.');
+  }
+
+  const getCommentOp = findOperation(getCommentOps, 'ticketComment', 'findFirst');
+  const getCommentWhere = (
+    getCommentOp.args as {
+      readonly where: {
+        readonly id: string;
+        readonly ticketId: string;
+        readonly organizationId: string;
+      };
+    }
+  ).where;
+
+  if (
+    getCommentWhere.id !== 'comment-1' ||
+    getCommentWhere.ticketId !== 'ticket-1' ||
+    getCommentWhere.organizationId !== 'organization-1'
+  ) {
+    throw new Error('getTicketComment() findFirst arguments were incorrect.');
   }
 
   // Test updateServiceTicketStatus

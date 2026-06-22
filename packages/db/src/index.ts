@@ -41,6 +41,7 @@ export {
 } from './qr-portal-records';
 export {
   createServiceTicket,
+  getTicketComment,
   listServiceTickets,
   getServiceTicket,
   updateServiceTicketStatus,
@@ -90,6 +91,7 @@ export type {
   CreateServiceTicketInput,
   ListServiceTicketsInput,
   GetServiceTicketInput,
+  GetTicketCommentInput,
   UpdateServiceTicketStatusInput,
   AddTicketCommentInput,
   ListTicketCommentsInput,

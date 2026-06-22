@@ -17,6 +17,7 @@ export type ServiceTicketsCopy = {
   readonly commentMessageLabel: string;
   readonly internalOnlyLabel: string;
   readonly addCommentButtonLabel: string;
+  readonly downloadAttachmentLabel: string;
   readonly internalBadgeLabel: string;
   readonly createdFromPortalBadgeLabel: string;
   readonly updateStatusLabel: string;
@@ -52,6 +53,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Message',
     internalOnlyLabel: 'Internal only (hidden from customer)',
     addCommentButtonLabel: 'Add comment',
+    downloadAttachmentLabel: 'Download attachment',
     internalBadgeLabel: 'Internal',
     createdFromPortalBadgeLabel: 'From portal',
     updateStatusLabel: 'Update status',
@@ -85,6 +87,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Zpráva',
     internalOnlyLabel: 'Pouze interní (skryto před zákazníkem)',
     addCommentButtonLabel: 'Přidat komentář',
+    downloadAttachmentLabel: 'Stáhnout přílohu',
     internalBadgeLabel: 'Interní',
     createdFromPortalBadgeLabel: 'Z portálu',
     updateStatusLabel: 'Aktualizovat stav',
@@ -118,6 +121,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Správa',
     internalOnlyLabel: 'Iba interné (skryté pred zákazníkom)',
     addCommentButtonLabel: 'Pridať komentár',
+    downloadAttachmentLabel: 'Stiahnuť prílohu',
     internalBadgeLabel: 'Interné',
     createdFromPortalBadgeLabel: 'Z portálu',
     updateStatusLabel: 'Aktualizovať stav',
@@ -152,6 +156,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Wiadomość',
     internalOnlyLabel: 'Tylko wewnętrzne (ukryte przed klientem)',
     addCommentButtonLabel: 'Dodaj komentarz',
+    downloadAttachmentLabel: 'Pobierz załącznik',
     internalBadgeLabel: 'Wewnętrzne',
     createdFromPortalBadgeLabel: 'Z portalu',
     updateStatusLabel: 'Aktualizuj status',
@@ -186,6 +191,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Nachricht',
     internalOnlyLabel: 'Nur intern (verborgen vor dem Kunden)',
     addCommentButtonLabel: 'Kommentar hinzufügen',
+    downloadAttachmentLabel: 'Anhang herunterladen',
     internalBadgeLabel: 'Intern',
     createdFromPortalBadgeLabel: 'Aus Portal',
     updateStatusLabel: 'Status aktualisieren',
@@ -220,6 +226,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Message',
     internalOnlyLabel: 'Interne uniquement (masqué au client)',
     addCommentButtonLabel: 'Ajouter un commentaire',
+    downloadAttachmentLabel: 'Télécharger la pièce jointe',
     internalBadgeLabel: 'Interne',
     createdFromPortalBadgeLabel: 'Du portail',
     updateStatusLabel: 'Mettre à jour le statut',
@@ -254,6 +261,7 @@ export const serviceTicketsCopy = {
     commentMessageLabel: 'Mensaje',
     internalOnlyLabel: 'Solo interno (oculto al cliente)',
     addCommentButtonLabel: 'Añadir comentario',
+    downloadAttachmentLabel: 'Descargar archivo adjunto',
     internalBadgeLabel: 'Interno',
     createdFromPortalBadgeLabel: 'Del portal',
     updateStatusLabel: 'Actualizar estado',

@@ -52,7 +52,12 @@ import {
   disableMachineQrPortal,
   rotateMachineQrToken,
 } from '@/qr-portal-builder-api';
-import { addTicketComment, createServiceTicket, updateTicketStatus } from '@/service-tickets-api';
+import {
+  addTicketComment,
+  createServiceTicket,
+  createTicketCommentAttachmentDownloadUrl,
+  updateTicketStatus,
+} from '@/service-tickets-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
 function formatActionError(error: unknown): string {
@@ -971,4 +976,38 @@ export async function addTicketCommentAction(formData: FormData): Promise<void> 
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=comment-added`);
+}
+
+export async function createTicketCommentAttachmentDownloadUrlAction(
+  formData: FormData,
+): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  let downloadUrl: string;
+
+  try {
+    const ticketId = readRequiredFormText(formData, 'ticketId', 'Ticket ID');
+    const commentId = readRequiredFormText(formData, 'commentId', 'Comment ID');
+    const result = await createTicketCommentAttachmentDownloadUrl({
+      organizationId: session.organizationId,
+      ticketId,
+      commentId,
+      accessToken: session.accessToken,
+    });
+    downloadUrl = result.downloadUrl;
+  } catch (error) {
+    redirectMachineTicketActionWithError(locale, machineId, error);
+  }
+
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?handoverExportDownloadUrl=${encodeURIComponent(downloadUrl)}`,
+  );
 }

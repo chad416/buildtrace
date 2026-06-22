@@ -1,5 +1,6 @@
 import {
   addTicketComment,
+  createTicketCommentAttachmentDownloadUrl,
   createServiceTicket,
   listServiceTickets,
   listTicketComments,
@@ -78,10 +79,12 @@ const fakeTicket = {
 
 const fakeComment = {
   id: 'comment-1',
+  organizationId: 'org-1',
   ticketId: 'ticket-1',
   authorType: 'builder',
   message: 'Investigating now.',
   internalOnly: false,
+  attachmentStoragePath: null,
   createdAt: '2026-06-21T00:00:00.000Z',
 };
 
@@ -321,10 +324,69 @@ async function runListCommentsCheck(): Promise<void> {
   );
 }
 
+async function runCreateCommentAttachmentDownloadUrlCheck(): Promise<void> {
+  const calls: CapturedRequest[] = [];
+  const result = await createTicketCommentAttachmentDownloadUrl(
+    {
+      organizationId: ' org-1 ',
+      ticketId: ' ticket-1 ',
+      commentId: ' comment-1 ',
+      accessToken: ' token-1 ',
+    },
+    createFetcher(calls, () =>
+      createJsonResponse({
+        commentId: 'comment-1',
+        downloadUrl: 'https://storage.test/ticket-attachment',
+        expiresInSeconds: 300,
+      }),
+    ),
+  );
+
+  assert(result.commentId === 'comment-1', 'Attachment download comment ID was wrong.');
+  assert(
+    result.downloadUrl === 'https://storage.test/ticket-attachment',
+    'Attachment download URL was wrong.',
+  );
+
+  const call = calls[0];
+  assert(call !== undefined, 'Attachment download request was not captured.');
+  const url = readUrl(call.input);
+  assert(
+    url.pathname === '/service-tickets/ticket-1/comments/comment-1/attachment-url',
+    'Attachment download URL path was wrong.',
+  );
+  assert(call.init?.method === 'POST', 'Attachment download must use POST.');
+  assert(
+    readHeaders(call.init).authorization === 'Bearer token-1',
+    'Attachment download authorization was not normalized.',
+  );
+  assert(
+    readHeaders(call.init)['content-type'] === 'application/json',
+    'Attachment download must set content-type.',
+  );
+  assert(
+    readBody(call.init).organizationId === 'org-1',
+    'Attachment download organizationId was not normalized.',
+  );
+
+  await expectThrows('attachment download with failed response', () =>
+    createTicketCommentAttachmentDownloadUrl(
+      {
+        organizationId: 'org-1',
+        ticketId: 'ticket-1',
+        commentId: 'comment-1',
+        accessToken: 'token-1',
+      },
+      async () => new Response('nope', { status: 404 }),
+    ),
+  );
+}
+
 await runCreateTicketCheck();
 await runListTicketsCheck();
 await runUpdateStatusCheck();
 await runAddCommentCheck();
 await runListCommentsCheck();
+await runCreateCommentAttachmentDownloadUrlCheck();
 
 console.info('Service tickets web API smoke check passed.');

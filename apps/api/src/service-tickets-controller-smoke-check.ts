@@ -5,8 +5,10 @@ import { activityLogActions } from '@buildtrace/shared';
 
 import {
   addTicketCommentFromRequest,
+  addTicketCommentAttachmentFromRequest,
   createPortalServiceTicketFromRequest,
   createServiceTicketFromRequest,
+  createTicketCommentAttachmentDownloadUrlFromRequest,
   getServiceTicketFromRequest,
   listServiceTicketsFromRequest,
   listTicketCommentsFromRequest,
@@ -64,6 +66,11 @@ const fakeComment: TicketCommentRecord = {
   createdAt: now,
 };
 
+const fakeAttachmentComment: TicketCommentRecord = {
+  ...fakeComment,
+  attachmentStoragePath: 'organizations/org-1/tickets/ticket-1/attachments/report.pdf',
+};
+
 type ResolveInput = Parameters<
   ServiceTicketsEndpointDependencies['resolveAuthenticatedTenantContext']
 >[0];
@@ -73,12 +80,19 @@ type GetQrPortalMachineInput = Parameters<
 >[0];
 type ListTicketsInput = Parameters<ServiceTicketsEndpointDependencies['listServiceTickets']>[0];
 type GetTicketInput = Parameters<ServiceTicketsEndpointDependencies['getServiceTicket']>[0];
+type GetCommentInput = Parameters<ServiceTicketsEndpointDependencies['getTicketComment']>[0];
 type UpdateStatusInput = Parameters<
   ServiceTicketsEndpointDependencies['updateServiceTicketStatus']
 >[0];
 type AddCommentInput = Parameters<ServiceTicketsEndpointDependencies['addTicketComment']>[0];
 type ListCommentsInput = Parameters<ServiceTicketsEndpointDependencies['listTicketComments']>[0];
 type ActivityInput = Parameters<ServiceTicketsEndpointDependencies['createActivityLog']>[0];
+type UploadAttachmentInput = Parameters<
+  ServiceTicketsEndpointDependencies['uploadTicketAttachment']
+>[0];
+type CreateAttachmentSignedUrlInput = Parameters<
+  ServiceTicketsEndpointDependencies['createTicketAttachmentSignedUrl']
+>[0];
 
 type CapturedCalls = {
   readonly resolveInputs: ResolveInput[];
@@ -86,10 +100,13 @@ type CapturedCalls = {
   readonly getQrPortalMachineInputs: GetQrPortalMachineInput[];
   readonly listTicketsInputs: ListTicketsInput[];
   readonly getTicketInputs: GetTicketInput[];
+  readonly getCommentInputs: GetCommentInput[];
   readonly updateStatusInputs: UpdateStatusInput[];
   readonly addCommentInputs: AddCommentInput[];
   readonly listCommentsInputs: ListCommentsInput[];
   readonly activityInputs: ActivityInput[];
+  readonly uploadAttachmentInputs: UploadAttachmentInput[];
+  readonly createAttachmentSignedUrlInputs: CreateAttachmentSignedUrlInput[];
 };
 
 function createCapturedCalls(): CapturedCalls {
@@ -99,10 +116,13 @@ function createCapturedCalls(): CapturedCalls {
     getQrPortalMachineInputs: [],
     listTicketsInputs: [],
     getTicketInputs: [],
+    getCommentInputs: [],
     updateStatusInputs: [],
     addCommentInputs: [],
     listCommentsInputs: [],
     activityInputs: [],
+    uploadAttachmentInputs: [],
+    createAttachmentSignedUrlInputs: [],
   };
 }
 
@@ -111,6 +131,8 @@ function createDependencies(
   options: {
     readonly ticketNotFound?: boolean;
     readonly portalMachineNotFound?: boolean;
+    readonly commentNotFound?: boolean;
+    readonly commentWithoutAttachment?: boolean;
   } = {},
 ): ServiceTicketsEndpointDependencies {
   return {
@@ -146,13 +168,28 @@ function createDependencies(
       capturedCalls.getTicketInputs.push(input);
       return options.ticketNotFound ? null : fakeTicket;
     },
+    getTicketComment: async (input) => {
+      capturedCalls.getCommentInputs.push(input);
+
+      if (options.commentNotFound) {
+        return null;
+      }
+
+      return options.commentWithoutAttachment ? fakeComment : fakeAttachmentComment;
+    },
     updateServiceTicketStatus: async (input) => {
       capturedCalls.updateStatusInputs.push(input);
       return { ...fakeTicket, status: input.status, updatedAt: now };
     },
     addTicketComment: async (input) => {
       capturedCalls.addCommentInputs.push(input);
-      return { ...fakeComment, message: input.message, internalOnly: input.internalOnly ?? false };
+      return {
+        ...fakeComment,
+        message: input.message,
+        internalOnly: input.internalOnly ?? false,
+        attachmentUrl: input.attachmentUrl ?? null,
+        attachmentStoragePath: input.attachmentStoragePath ?? null,
+      };
     },
     listTicketComments: async (input) => {
       capturedCalls.listCommentsInputs.push(input);
@@ -172,6 +209,27 @@ function createDependencies(
         createdAt: now,
       };
     },
+    uploadTicketAttachment: async (input) => {
+      capturedCalls.uploadAttachmentInputs.push(input);
+      return {
+        storagePath: `organizations/${input.organizationId}/tickets/${input.ticketId}/attachments/${input.fileName}`,
+      };
+    },
+    createTicketAttachmentSignedUrl: async (input) => {
+      capturedCalls.createAttachmentSignedUrlInputs.push(input);
+      return {
+        signedUrl: 'https://storage.test/ticket-attachment',
+        expiresInSeconds: input.config.signedUrlTtlSeconds,
+      };
+    },
+    readDocumentStorageConfig: () => ({
+      supabaseUrl: 'https://supabase.test',
+      serviceRoleKey: 'service-role-key',
+      bucketName: 'documents-private',
+      signedUrlTtlSeconds: 300,
+    }),
+    createDocumentStorageAdapter: () =>
+      ({}) as ReturnType<ServiceTicketsEndpointDependencies['createDocumentStorageAdapter']>,
   };
 }
 
@@ -459,6 +517,122 @@ async function runAddCommentCheck(): Promise<void> {
   );
 }
 
+async function runAddCommentAttachmentCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const response = await addTicketCommentAttachmentFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    ticketId: ' ticket-1 ',
+    request: {
+      file: async () => ({
+        filename: ' report.pdf ',
+        fields: {
+          organizationId: { value: ' org-1 ' },
+          message: { value: ' Attached diagnostic report. ' },
+          internalOnly: { value: 'true' },
+        },
+        file: (async function* () {
+          yield new Uint8Array([1, 2, 3]);
+        })(),
+      }),
+    },
+    dependencies: createDependencies(calls),
+  });
+
+  assert(response.id === 'comment-1', 'Attachment comment ID was wrong.');
+  assert(
+    response.attachmentStoragePath ===
+      'organizations/org-1/tickets/ticket-1/attachments/report.pdf',
+    'Attachment comment storage path was wrong.',
+  );
+  assert(calls.resolveInputs.length === 1, 'Attachment comment auth was not called.');
+  assert(
+    calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN|MEMBER',
+    'Attachment comment roles were incorrect.',
+  );
+  assert(calls.getTicketInputs.length === 1, 'Attachment comment ticket lookup was not called.');
+  assert(calls.uploadAttachmentInputs.length === 1, 'Attachment upload was not called.');
+  assert(
+    calls.uploadAttachmentInputs[0]?.fileName === 'report.pdf',
+    'Attachment file name was not normalized.',
+  );
+  assert(calls.addCommentInputs.length === 1, 'Attachment comment was not created.');
+  assert(
+    calls.addCommentInputs[0]?.attachmentUrl === null,
+    'Attachment comment must not store a signed URL.',
+  );
+  assert(
+    calls.addCommentInputs[0]?.attachmentStoragePath ===
+      'organizations/org-1/tickets/ticket-1/attachments/report.pdf',
+    'Attachment storage path was wrong.',
+  );
+  assert(
+    calls.addCommentInputs[0]?.internalOnly === true,
+    'Attachment comment internalOnly was wrong.',
+  );
+  assert(
+    calls.activityInputs[0]?.action === activityLogActions.ticketCommentAdded,
+    'Attachment comment activity action was wrong.',
+  );
+}
+
+async function runCreateCommentAttachmentDownloadUrlCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const response = await createTicketCommentAttachmentDownloadUrlFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    ticketId: ' ticket-1 ',
+    commentId: ' comment-1 ',
+    body: { organizationId: ' org-1 ' },
+    dependencies: createDependencies(calls),
+  });
+
+  assert(response.commentId === 'comment-1', 'Attachment download comment ID was wrong.');
+  assert(
+    response.downloadUrl === 'https://storage.test/ticket-attachment',
+    'Attachment download URL was wrong.',
+  );
+  assert(response.expiresInSeconds === 300, 'Attachment download expiry was wrong.');
+  assert(calls.resolveInputs.length === 1, 'Attachment download auth was not called.');
+  assert(calls.getTicketInputs.length === 1, 'Attachment download ticket lookup was not called.');
+  assert(calls.getCommentInputs.length === 1, 'Attachment download comment lookup was not called.');
+  assert(
+    calls.createAttachmentSignedUrlInputs[0]?.storagePath ===
+      fakeAttachmentComment.attachmentStoragePath,
+    'Attachment signed URL storage path was wrong.',
+  );
+  assert(
+    calls.activityInputs[0]?.action === activityLogActions.documentDownloadUrlIssued,
+    'Attachment download activity action was wrong.',
+  );
+  assert(
+    calls.activityInputs[0]?.targetType === 'ticket_comment',
+    'Attachment download activity target type was wrong.',
+  );
+
+  await expectException('comment not found', NotFoundException, () =>
+    createTicketCommentAttachmentDownloadUrlFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      ticketId: 'ticket-1',
+      commentId: 'comment-404',
+      body: { organizationId: 'org-1' },
+      dependencies: createDependencies(createCapturedCalls(), {
+        commentNotFound: true,
+      }),
+    }),
+  );
+
+  await expectException('comment without attachment', NotFoundException, () =>
+    createTicketCommentAttachmentDownloadUrlFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      ticketId: 'ticket-1',
+      commentId: 'comment-1',
+      body: { organizationId: 'org-1' },
+      dependencies: createDependencies(createCapturedCalls(), {
+        commentWithoutAttachment: true,
+      }),
+    }),
+  );
+}
+
 async function runListCommentsCheck(): Promise<void> {
   const calls = createCapturedCalls();
   const response = await listTicketCommentsFromRequest({
@@ -489,6 +663,8 @@ await runListTicketsCheck();
 await runGetTicketCheck();
 await runUpdateStatusCheck();
 await runAddCommentCheck();
+await runAddCommentAttachmentCheck();
+await runCreateCommentAttachmentDownloadUrlCheck();
 await runListCommentsCheck();
 
 console.info('Service tickets controller smoke check passed.');

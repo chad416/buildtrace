@@ -19,6 +19,7 @@ const flatRequiredKeys: readonly FlatStringKey[] = [
   'commentMessageLabel',
   'internalOnlyLabel',
   'addCommentButtonLabel',
+  'downloadAttachmentLabel',
   'internalBadgeLabel',
   'createdFromPortalBadgeLabel',
   'updateStatusLabel',

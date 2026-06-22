@@ -33,6 +33,7 @@ import {
   createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
   createServiceTicketAction,
+  createTicketCommentAttachmentDownloadUrlAction,
   disableMachineQrPortalAction,
   refreshMachineDocumentClassificationSuggestionAction,
   rotateMachineQrTokenAction,
@@ -1278,6 +1279,23 @@ function renderServiceTicketsSection({
                               <p className="mt-2 text-sm leading-6 text-stone-200">
                                 {comment.message}
                               </p>
+                              {comment.attachmentStoragePath ? (
+                                <form
+                                  action={createTicketCommentAttachmentDownloadUrlAction}
+                                  className="mt-3"
+                                >
+                                  <input type="hidden" name="machineId" value={machine.id} />
+                                  <input type="hidden" name="locale" value={locale} />
+                                  <input type="hidden" name="ticketId" value={ticket.id} />
+                                  <input type="hidden" name="commentId" value={comment.id} />
+                                  <button
+                                    type="submit"
+                                    className="inline-flex items-center rounded-md border border-stone-700 px-3 py-1.5 text-xs font-semibold text-stone-200 transition hover:border-emerald-400 hover:text-white"
+                                  >
+                                    {copy.downloadAttachmentLabel}
+                                  </button>
+                                </form>
+                              ) : null}
                             </div>
                           ))}
                         </div>

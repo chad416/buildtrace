@@ -6,11 +6,13 @@ import {
   Controller,
   Get,
   Headers,
+  InternalServerErrorException,
   NotFoundException,
   Param,
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import type { OrganizationRole, PrismaClient } from '@buildtrace/db';
 import {
@@ -20,6 +22,7 @@ import {
   createServiceTicket,
   getQrPortalMachine,
   getServiceTicket,
+  getTicketComment,
   listServiceTickets,
   listTicketComments,
   updateServiceTicketStatus,
@@ -37,6 +40,16 @@ import {
   resolveAuthenticatedTenantContext,
   type AuthenticatedTenantContext,
 } from './authenticated-tenant-context.js';
+import {
+  createSupabaseDocumentStorageAdapter,
+  readDocumentStorageConfig,
+  type DocumentStorageSignedUrlResult,
+} from './document-storage.js';
+import { MAX_DOCUMENT_UPLOAD_BYTES } from './document-upload-endpoint.js';
+import {
+  createTicketAttachmentSignedUrl,
+  uploadTicketAttachment,
+} from './ticket-attachment-storage.js';
 
 export type ServiceTicketsQuery = {
   readonly organizationId?: unknown;
@@ -66,6 +79,25 @@ export type AddTicketCommentBody = {
   readonly internalOnly?: unknown;
 };
 
+export type CreateTicketAttachmentDownloadUrlBody = {
+  readonly organizationId?: unknown;
+};
+
+type MultipartField = {
+  readonly value?: unknown;
+};
+
+export type TicketAttachmentMultipartFile = {
+  readonly filename?: unknown;
+  readonly file?: AsyncIterable<Uint8Array>;
+  readonly fields?: Record<string, unknown>;
+};
+
+export type TicketAttachmentUploadHttpRequest = {
+  readonly body?: unknown;
+  readonly file?: () => Promise<TicketAttachmentMultipartFile | undefined>;
+};
+
 type ResolveAuthenticatedTenantContextDependency = (input: {
   readonly authorizationHeader: string | undefined;
   readonly organizationId: string;
@@ -80,10 +112,15 @@ export type ServiceTicketsEndpointDependencies = {
   readonly getQrPortalMachine: typeof getQrPortalMachine;
   readonly listServiceTickets: typeof listServiceTickets;
   readonly getServiceTicket: typeof getServiceTicket;
+  readonly getTicketComment: typeof getTicketComment;
   readonly updateServiceTicketStatus: typeof updateServiceTicketStatus;
   readonly addTicketComment: typeof addTicketComment;
   readonly listTicketComments: typeof listTicketComments;
   readonly createActivityLog: typeof createActivityLog;
+  readonly uploadTicketAttachment: typeof uploadTicketAttachment;
+  readonly createTicketAttachmentSignedUrl: typeof createTicketAttachmentSignedUrl;
+  readonly readDocumentStorageConfig: typeof readDocumentStorageConfig;
+  readonly createDocumentStorageAdapter: typeof createSupabaseDocumentStorageAdapter;
 };
 
 export type ListServiceTicketsResponse = {
@@ -97,6 +134,12 @@ export type ListTicketCommentsResponse = {
 export type CreatePortalServiceTicketResponse = {
   readonly ticketId: string;
   readonly customerAccessToken: string;
+};
+
+export type TicketAttachmentDownloadUrlResponse = {
+  readonly commentId: string;
+  readonly downloadUrl: string;
+  readonly expiresInSeconds: number;
 };
 
 const memberRoles: readonly OrganizationRole[] = ['OWNER', 'ADMIN', 'MEMBER'];
@@ -131,10 +174,15 @@ function createRealDependencies(): ServiceTicketsEndpointDependencies {
     getQrPortalMachine,
     listServiceTickets,
     getServiceTicket,
+    getTicketComment,
     updateServiceTicketStatus,
     addTicketComment,
     listTicketComments,
     createActivityLog,
+    uploadTicketAttachment,
+    createTicketAttachmentSignedUrl,
+    readDocumentStorageConfig,
+    createDocumentStorageAdapter: createSupabaseDocumentStorageAdapter,
   };
 }
 
@@ -180,12 +228,169 @@ type AddCommentRequestInput = {
   readonly dependencies: ServiceTicketsEndpointDependencies;
 };
 
+type AddCommentAttachmentRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly ticketId: string | undefined;
+  readonly request: TicketAttachmentUploadHttpRequest;
+  readonly dependencies: ServiceTicketsEndpointDependencies;
+};
+
 type ListCommentsRequestInput = {
   readonly authorizationHeader: string | undefined;
   readonly ticketId: string | undefined;
   readonly query: ServiceTicketsQuery | undefined;
   readonly dependencies: ServiceTicketsEndpointDependencies;
 };
+
+type CreateCommentAttachmentDownloadUrlRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly ticketId: string | undefined;
+  readonly commentId: string | undefined;
+  readonly body: CreateTicketAttachmentDownloadUrlBody | undefined;
+  readonly dependencies: ServiceTicketsEndpointDependencies;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function unwrapMultipartField(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    throw new BadRequestException('Repeated ticket attachment fields are not supported.');
+  }
+
+  if (isRecord(value) && 'value' in value) {
+    return (value as MultipartField).value;
+  }
+
+  return value;
+}
+
+function readOptionalMultipartField(
+  name: string,
+  body: unknown,
+  multipartFields: Record<string, unknown> | undefined,
+): unknown {
+  const bodyValue = isRecord(body) ? unwrapMultipartField(body[name]) : undefined;
+  const multipartValue = multipartFields ? unwrapMultipartField(multipartFields[name]) : undefined;
+
+  return bodyValue ?? multipartValue;
+}
+
+function readRequiredMultipartTextField(
+  name: string,
+  body: unknown,
+  multipartFields: Record<string, unknown> | undefined,
+): string {
+  const value = readOptionalMultipartField(name, body, multipartFields);
+
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new BadRequestException(`${name} is required.`);
+  }
+
+  return value.trim();
+}
+
+function readOptionalMultipartBooleanField(
+  name: string,
+  body: unknown,
+  multipartFields: Record<string, unknown> | undefined,
+): boolean {
+  const value = readOptionalMultipartField(name, body, multipartFields);
+
+  if (value === undefined || value === null || value === '') {
+    return false;
+  }
+
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalizedValue = value.trim().toLowerCase();
+
+    if (['true', '1', 'on'].includes(normalizedValue)) {
+      return true;
+    }
+
+    if (['false', '0', 'off'].includes(normalizedValue)) {
+      return false;
+    }
+  }
+
+  throw new BadRequestException(`${name} must be a boolean.`);
+}
+
+function normalizeTicketAttachmentFileName(fileName: unknown): string {
+  if (typeof fileName !== 'string') {
+    throw new BadRequestException('Uploaded ticket attachment file name is required.');
+  }
+
+  const normalizedFileName = fileName.trim().replace(/\s+/g, ' ');
+
+  if (!normalizedFileName) {
+    throw new BadRequestException('Uploaded ticket attachment file name is required.');
+  }
+
+  if (
+    normalizedFileName === '.' ||
+    normalizedFileName === '..' ||
+    normalizedFileName.includes('/') ||
+    normalizedFileName.includes('\\')
+  ) {
+    throw new BadRequestException('Uploaded ticket attachment file name is not safe.');
+  }
+
+  return normalizedFileName;
+}
+
+async function readTicketAttachmentMultipartFile(
+  request: TicketAttachmentUploadHttpRequest,
+): Promise<TicketAttachmentMultipartFile> {
+  if (typeof request.file !== 'function') {
+    throw new BadRequestException('Uploaded ticket attachment file is required.');
+  }
+
+  const file = await request.file();
+
+  if (!file) {
+    throw new BadRequestException('Uploaded ticket attachment file is required.');
+  }
+
+  return file;
+}
+
+async function readTicketAttachmentFileBody(
+  file: TicketAttachmentMultipartFile,
+): Promise<ArrayBuffer> {
+  if (!file.file) {
+    throw new BadRequestException('Uploaded ticket attachment file stream is required.');
+  }
+
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  for await (const chunk of file.file) {
+    const buffer = Buffer.from(chunk);
+    totalBytes += buffer.byteLength;
+
+    if (totalBytes > MAX_DOCUMENT_UPLOAD_BYTES) {
+      throw new BadRequestException(
+        `Uploaded ticket attachment must be ${MAX_DOCUMENT_UPLOAD_BYTES} bytes or smaller.`,
+      );
+    }
+
+    chunks.push(buffer);
+  }
+
+  if (totalBytes === 0) {
+    throw new BadRequestException('Uploaded ticket attachment file must not be empty.');
+  }
+
+  const body = Buffer.concat(chunks, totalBytes);
+
+  return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+}
 
 function readTicketPriority(value: unknown): TicketPriority | undefined {
   if (value === undefined || value === null || value === '') {
@@ -428,6 +633,88 @@ export async function addTicketCommentFromRequest({
   return comment;
 }
 
+export async function addTicketCommentAttachmentFromRequest({
+  authorizationHeader,
+  ticketId,
+  request,
+  dependencies,
+}: AddCommentAttachmentRequestInput): Promise<TicketCommentRecord> {
+  const normalizedTicketId = readRequiredString('ticketId', ticketId);
+  const uploadedFile = await readTicketAttachmentMultipartFile(request);
+  const multipartFields = uploadedFile.fields;
+  const organizationId = readRequiredMultipartTextField(
+    'organizationId',
+    request.body,
+    multipartFields,
+  );
+  const message = readRequiredMultipartTextField('message', request.body, multipartFields);
+  const internalOnly = readOptionalMultipartBooleanField(
+    'internalOnly',
+    request.body,
+    multipartFields,
+  );
+  const fileName = normalizeTicketAttachmentFileName(uploadedFile.filename);
+
+  const { currentUser } = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: memberRoles,
+  });
+
+  const ticket = await dependencies.getServiceTicket({
+    db: dependencies.db,
+    organizationId,
+    ticketId: normalizedTicketId,
+  });
+
+  if (!ticket) {
+    throw new NotFoundException('Ticket was not found.');
+  }
+
+  const fileBody = await readTicketAttachmentFileBody(uploadedFile);
+  let attachmentStoragePath: string;
+
+  try {
+    const config = dependencies.readDocumentStorageConfig();
+    const storage = dependencies.createDocumentStorageAdapter(config);
+    const uploadResult = await dependencies.uploadTicketAttachment({
+      config,
+      storage,
+      organizationId,
+      ticketId: normalizedTicketId,
+      fileName,
+      fileBody,
+    });
+
+    attachmentStoragePath = uploadResult.storagePath;
+  } catch {
+    throw new InternalServerErrorException('Ticket attachment could not be uploaded.');
+  }
+
+  const comment = await dependencies.addTicketComment({
+    db: dependencies.db,
+    organizationId,
+    ticketId: normalizedTicketId,
+    authorType: 'builder',
+    message,
+    internalOnly,
+    attachmentUrl: null,
+    attachmentStoragePath,
+  });
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.ticketCommentAdded,
+    actorUserId: currentUser.appUserId,
+    targetType: 'ticket',
+    targetId: normalizedTicketId,
+  });
+
+  return comment;
+}
+
 export async function listTicketCommentsFromRequest({
   authorizationHeader,
   ticketId,
@@ -452,6 +739,82 @@ export async function listTicketCommentsFromRequest({
   });
 
   return { comments };
+}
+
+export async function createTicketCommentAttachmentDownloadUrlFromRequest({
+  authorizationHeader,
+  ticketId,
+  commentId,
+  body,
+  dependencies,
+}: CreateCommentAttachmentDownloadUrlRequestInput): Promise<TicketAttachmentDownloadUrlResponse> {
+  const organizationId = readRequiredString('organizationId', body?.organizationId);
+  const normalizedTicketId = readRequiredString('ticketId', ticketId);
+  const normalizedCommentId = readRequiredString('commentId', commentId);
+
+  const { currentUser } = await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: memberRoles,
+  });
+
+  const ticket = await dependencies.getServiceTicket({
+    db: dependencies.db,
+    organizationId,
+    ticketId: normalizedTicketId,
+  });
+
+  if (!ticket) {
+    throw new NotFoundException('Ticket was not found.');
+  }
+
+  const comment = await dependencies.getTicketComment({
+    db: dependencies.db,
+    organizationId,
+    ticketId: normalizedTicketId,
+    commentId: normalizedCommentId,
+  });
+
+  if (!comment) {
+    throw new NotFoundException('Ticket comment was not found.');
+  }
+
+  if (!comment.attachmentStoragePath) {
+    throw new NotFoundException('Ticket comment attachment was not found.');
+  }
+
+  let signedUrlResult: DocumentStorageSignedUrlResult;
+
+  try {
+    const config = dependencies.readDocumentStorageConfig();
+    const storage = dependencies.createDocumentStorageAdapter(config);
+
+    signedUrlResult = await dependencies.createTicketAttachmentSignedUrl({
+      config,
+      storage,
+      organizationId,
+      ticketId: normalizedTicketId,
+      storagePath: comment.attachmentStoragePath,
+    });
+  } catch {
+    throw new InternalServerErrorException('Ticket attachment download URL could not be created.');
+  }
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId,
+    action: activityLogActions.documentDownloadUrlIssued,
+    actorUserId: currentUser.appUserId,
+    targetType: 'ticket_comment',
+    targetId: normalizedCommentId,
+  });
+
+  return {
+    commentId: normalizedCommentId,
+    downloadUrl: signedUrlResult.signedUrl,
+    expiresInSeconds: signedUrlResult.expiresInSeconds,
+  };
 }
 
 @Controller('service-tickets')
@@ -535,6 +898,36 @@ export class ServiceTicketsController {
     return addTicketCommentFromRequest({
       authorizationHeader,
       ticketId,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Post(':ticketId/comments/with-attachment')
+  async addCommentAttachment(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('ticketId') ticketId: string | undefined,
+    @Req() request: TicketAttachmentUploadHttpRequest,
+  ): Promise<TicketCommentRecord> {
+    return addTicketCommentAttachmentFromRequest({
+      authorizationHeader,
+      ticketId,
+      request,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Post(':ticketId/comments/:commentId/attachment-url')
+  async createCommentAttachmentDownloadUrl(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('ticketId') ticketId: string | undefined,
+    @Param('commentId') commentId: string | undefined,
+    @Body() body: CreateTicketAttachmentDownloadUrlBody | undefined,
+  ): Promise<TicketAttachmentDownloadUrlResponse> {
+    return createTicketCommentAttachmentDownloadUrlFromRequest({
+      authorizationHeader,
+      ticketId,
+      commentId,
       body,
       dependencies: createRealDependencies(),
     });

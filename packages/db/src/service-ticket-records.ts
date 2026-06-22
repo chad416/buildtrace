@@ -56,6 +56,13 @@ export type GetServiceTicketInput = {
   readonly ticketId: string;
 };
 
+export type GetTicketCommentInput = {
+  readonly db: ServiceTicketRecordsDatabase;
+  readonly organizationId: string;
+  readonly ticketId: string;
+  readonly commentId: string;
+};
+
 export type UpdateServiceTicketStatusInput = {
   readonly db: ServiceTicketRecordsDatabase;
   readonly organizationId: string;
@@ -222,6 +229,27 @@ export async function getServiceTicket({
   });
 
   return ticket ? toServiceTicketRecord(ticket) : null;
+}
+
+export async function getTicketComment({
+  db,
+  organizationId,
+  ticketId,
+  commentId,
+}: GetTicketCommentInput): Promise<TicketCommentRecord | null> {
+  const normalizedOrgId = requireNonEmptyText(organizationId, 'Organization ID');
+  const normalizedTicketId = requireNonEmptyText(ticketId, 'Ticket ID');
+  const normalizedCommentId = requireNonEmptyText(commentId, 'Comment ID');
+
+  const comment = await db.ticketComment.findFirst({
+    where: {
+      id: normalizedCommentId,
+      ticketId: normalizedTicketId,
+      organizationId: normalizedOrgId,
+    },
+  });
+
+  return comment ? toTicketCommentRecord(comment) : null;
 }
 
 export async function updateServiceTicketStatus({
