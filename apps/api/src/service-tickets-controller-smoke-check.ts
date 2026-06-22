@@ -1,10 +1,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { PrismaClient } from '@buildtrace/db';
+import type { PrismaClient, QrPortalMachineRecord } from '@buildtrace/db';
 import type { ServiceTicketRecord, TicketCommentRecord } from '@buildtrace/db';
 import { activityLogActions } from '@buildtrace/shared';
 
 import {
   addTicketCommentFromRequest,
+  createPortalServiceTicketFromRequest,
   createServiceTicketFromRequest,
   getServiceTicketFromRequest,
   listServiceTicketsFromRequest,
@@ -32,6 +33,25 @@ const fakeTicket: ServiceTicketRecord = {
   updatedAt: now,
 };
 
+const fakePortalMachine: QrPortalMachineRecord = {
+  id: 'machine-1',
+  organizationId: 'org-1',
+  customerId: 'customer-1',
+  machineModelId: 'machine-model-1',
+  machineName: 'Press One',
+  serialNumber: 'SN-100',
+  deliveryDate: null,
+  plcType: null,
+  hmiType: null,
+  status: 'ACTIVE',
+  qrToken: 'qr-token-1',
+  qrPinEnabled: false,
+  qrPinHash: null,
+  portalDefaultLocale: 'en',
+  createdAt: now,
+  updatedAt: now,
+};
+
 const fakeComment: TicketCommentRecord = {
   id: 'comment-1',
   organizationId: 'org-1',
@@ -48,6 +68,9 @@ type ResolveInput = Parameters<
   ServiceTicketsEndpointDependencies['resolveAuthenticatedTenantContext']
 >[0];
 type CreateTicketInput = Parameters<ServiceTicketsEndpointDependencies['createServiceTicket']>[0];
+type GetQrPortalMachineInput = Parameters<
+  ServiceTicketsEndpointDependencies['getQrPortalMachine']
+>[0];
 type ListTicketsInput = Parameters<ServiceTicketsEndpointDependencies['listServiceTickets']>[0];
 type GetTicketInput = Parameters<ServiceTicketsEndpointDependencies['getServiceTicket']>[0];
 type UpdateStatusInput = Parameters<
@@ -60,6 +83,7 @@ type ActivityInput = Parameters<ServiceTicketsEndpointDependencies['createActivi
 type CapturedCalls = {
   readonly resolveInputs: ResolveInput[];
   readonly createTicketInputs: CreateTicketInput[];
+  readonly getQrPortalMachineInputs: GetQrPortalMachineInput[];
   readonly listTicketsInputs: ListTicketsInput[];
   readonly getTicketInputs: GetTicketInput[];
   readonly updateStatusInputs: UpdateStatusInput[];
@@ -72,6 +96,7 @@ function createCapturedCalls(): CapturedCalls {
   return {
     resolveInputs: [],
     createTicketInputs: [],
+    getQrPortalMachineInputs: [],
     listTicketsInputs: [],
     getTicketInputs: [],
     updateStatusInputs: [],
@@ -85,6 +110,7 @@ function createDependencies(
   capturedCalls: CapturedCalls,
   options: {
     readonly ticketNotFound?: boolean;
+    readonly portalMachineNotFound?: boolean;
   } = {},
 ): ServiceTicketsEndpointDependencies {
   return {
@@ -107,6 +133,10 @@ function createDependencies(
     createServiceTicket: async (input) => {
       capturedCalls.createTicketInputs.push(input);
       return fakeTicket;
+    },
+    getQrPortalMachine: async (input) => {
+      capturedCalls.getQrPortalMachineInputs.push(input);
+      return options.portalMachineNotFound ? null : fakePortalMachine;
     },
     listServiceTickets: async (input) => {
       capturedCalls.listTicketsInputs.push(input);
@@ -143,6 +173,86 @@ function createDependencies(
       };
     },
   };
+}
+
+async function runCreatePortalTicketCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const response = await createPortalServiceTicketFromRequest({
+    qrToken: ' qr-token-1 ',
+    machineId: ' machine-1 ',
+    body: {
+      title: 'Press fault',
+      description: 'Machine stopped',
+      priority: 'high',
+    },
+    dependencies: createDependencies(calls),
+  });
+
+  assert(response.ticketId === 'ticket-1', 'Portal ticket ID was wrong.');
+  assert(response.customerAccessToken.length > 0, 'Customer access token was not returned.');
+  assert(calls.resolveInputs.length === 0, 'Portal ticket creation must not call auth.');
+  assert(calls.getQrPortalMachineInputs.length === 1, 'Portal machine lookup was not called once.');
+  assert(
+    calls.getQrPortalMachineInputs[0]?.qrToken === 'qr-token-1',
+    'Portal machine lookup token was wrong.',
+  );
+  assert(calls.createTicketInputs.length === 1, 'Portal ticket was not created once.');
+  assert(
+    calls.createTicketInputs[0]?.organizationId === 'org-1',
+    'Portal ticket organization was wrong.',
+  );
+  assert(
+    calls.createTicketInputs[0]?.machineId === 'machine-1',
+    'Portal ticket machine was wrong.',
+  );
+  assert(
+    calls.createTicketInputs[0]?.createdFromPortal === true,
+    'Portal ticket was not marked as created from portal.',
+  );
+  assert(calls.createTicketInputs[0]?.priority === 'high', 'Portal ticket priority was wrong.');
+  assert(
+    calls.createTicketInputs[0]?.customerAccessToken === response.customerAccessToken,
+    'Created ticket did not receive the returned customer access token.',
+  );
+  assert(calls.activityInputs.length === 1, 'Portal ticket activity was not created.');
+  assert(
+    calls.activityInputs[0]?.action === activityLogActions.ticketCreated,
+    'Portal ticket activity action was wrong.',
+  );
+  assert(
+    calls.activityInputs[0]?.actorUserId === undefined,
+    'Portal ticket activity must not have an actor user.',
+  );
+
+  await expectException('unknown QR portal', NotFoundException, () =>
+    createPortalServiceTicketFromRequest({
+      qrToken: 'unknown-token',
+      machineId: 'machine-1',
+      body: {
+        title: 'Press fault',
+        description: 'Machine stopped',
+      },
+      dependencies: createDependencies(createCapturedCalls(), { portalMachineNotFound: true }),
+    }),
+  );
+
+  const mismatchCalls = createCapturedCalls();
+  await expectException('portal machine mismatch', BadRequestException, () =>
+    createPortalServiceTicketFromRequest({
+      qrToken: 'qr-token-1',
+      machineId: 'machine-2',
+      body: {
+        title: 'Press fault',
+        description: 'Machine stopped',
+      },
+      dependencies: createDependencies(mismatchCalls),
+    }),
+  );
+  assert(mismatchCalls.resolveInputs.length === 0, 'Machine mismatch must not call auth.');
+  assert(
+    mismatchCalls.createTicketInputs.length === 0,
+    'Machine mismatch must not create a ticket.',
+  );
 }
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -374,6 +484,7 @@ async function runListCommentsCheck(): Promise<void> {
 }
 
 await runCreateTicketCheck();
+await runCreatePortalTicketCheck();
 await runListTicketsCheck();
 await runGetTicketCheck();
 await runUpdateStatusCheck();

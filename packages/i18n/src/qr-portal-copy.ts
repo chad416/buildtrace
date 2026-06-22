@@ -1,4 +1,4 @@
-import type { SupportedLocale } from '@buildtrace/shared';
+import type { SupportedLocale, TicketPriority } from '@buildtrace/shared';
 
 export type QrPortalCopy = {
   readonly title: string;
@@ -13,6 +13,14 @@ export type QrPortalCopy = {
   readonly errorMessage: string;
   readonly languageSwitcherLabel: string;
   readonly downloadButtonLabel: string;
+  readonly ticketSectionTitle: string;
+  readonly ticketTitleLabel: string;
+  readonly ticketDescriptionLabel: string;
+  readonly ticketPriorityLabel: string;
+  readonly ticketSubmitLabel: string;
+  readonly ticketCreatedMessage: string;
+  readonly ticketErrorTitle: string;
+  readonly priorityLabels: Readonly<Record<TicketPriority, string>>;
 };
 
 export const qrPortalCopy = {
@@ -30,6 +38,19 @@ export const qrPortalCopy = {
     errorMessage: 'Portal could not be loaded.',
     languageSwitcherLabel: 'Language',
     downloadButtonLabel: 'Download',
+    ticketSectionTitle: 'Raise a service ticket',
+    ticketTitleLabel: 'Title',
+    ticketDescriptionLabel: 'Describe the issue',
+    ticketPriorityLabel: 'Priority',
+    ticketSubmitLabel: 'Submit ticket',
+    ticketCreatedMessage: 'Your ticket has been submitted. Reference: ',
+    ticketErrorTitle: 'Ticket could not be submitted',
+    priorityLabels: {
+      low: 'Low',
+      normal: 'Normal',
+      high: 'High',
+      urgent: 'Urgent',
+    },
   },
   cs: {
     title: 'Portál stroje',
@@ -45,6 +66,19 @@ export const qrPortalCopy = {
     errorMessage: 'Portál se nepodařilo načíst.',
     languageSwitcherLabel: 'Jazyk',
     downloadButtonLabel: 'Stáhnout',
+    ticketSectionTitle: 'Vytvořit servisní požadavek',
+    ticketTitleLabel: 'Název',
+    ticketDescriptionLabel: 'Popište problém',
+    ticketPriorityLabel: 'Priorita',
+    ticketSubmitLabel: 'Odeslat požadavek',
+    ticketCreatedMessage: 'Váš požadavek byl odeslán. Reference: ',
+    ticketErrorTitle: 'Servisní požadavek se nepodařilo odeslat',
+    priorityLabels: {
+      low: 'Nízká',
+      normal: 'Normální',
+      high: 'Vysoká',
+      urgent: 'Naléhavá',
+    },
   },
   sk: {
     title: 'Portál stroja',
@@ -60,6 +94,19 @@ export const qrPortalCopy = {
     errorMessage: 'Portál sa nepodarilo načítať.',
     languageSwitcherLabel: 'Jazyk',
     downloadButtonLabel: 'Stiahnuť',
+    ticketSectionTitle: 'Vytvoriť servisnú požiadavku',
+    ticketTitleLabel: 'Názov',
+    ticketDescriptionLabel: 'Opíšte problém',
+    ticketPriorityLabel: 'Priorita',
+    ticketSubmitLabel: 'Odoslať požiadavku',
+    ticketCreatedMessage: 'Vaša požiadavka bola odoslaná. Referencia: ',
+    ticketErrorTitle: 'Servisnú požiadavku sa nepodarilo odoslať',
+    priorityLabels: {
+      low: 'Nízka',
+      normal: 'Normálna',
+      high: 'Vysoká',
+      urgent: 'Naliehavá',
+    },
   },
   pl: {
     title: 'Portal maszyny',
@@ -75,6 +122,19 @@ export const qrPortalCopy = {
     errorMessage: 'Nie udało się załadować portalu.',
     languageSwitcherLabel: 'Język',
     downloadButtonLabel: 'Pobierz',
+    ticketSectionTitle: 'Zgłoś potrzebę serwisu',
+    ticketTitleLabel: 'Tytuł',
+    ticketDescriptionLabel: 'Opisz problem',
+    ticketPriorityLabel: 'Priorytet',
+    ticketSubmitLabel: 'Wyślij zgłoszenie',
+    ticketCreatedMessage: 'Twoje zgłoszenie zostało wysłane. Numer referencyjny: ',
+    ticketErrorTitle: 'Nie udało się wysłać zgłoszenia',
+    priorityLabels: {
+      low: 'Niski',
+      normal: 'Normalny',
+      high: 'Wysoki',
+      urgent: 'Pilny',
+    },
   },
   de: {
     title: 'Maschinenportal',
@@ -90,6 +150,19 @@ export const qrPortalCopy = {
     errorMessage: 'Das Portal konnte nicht geladen werden.',
     languageSwitcherLabel: 'Sprache',
     downloadButtonLabel: 'Herunterladen',
+    ticketSectionTitle: 'Serviceanfrage stellen',
+    ticketTitleLabel: 'Titel',
+    ticketDescriptionLabel: 'Problem beschreiben',
+    ticketPriorityLabel: 'Priorität',
+    ticketSubmitLabel: 'Anfrage senden',
+    ticketCreatedMessage: 'Ihre Anfrage wurde übermittelt. Referenz: ',
+    ticketErrorTitle: 'Serviceanfrage konnte nicht gesendet werden',
+    priorityLabels: {
+      low: 'Niedrig',
+      normal: 'Normal',
+      high: 'Hoch',
+      urgent: 'Dringend',
+    },
   },
   fr: {
     title: 'Portail de la machine',
@@ -105,6 +178,19 @@ export const qrPortalCopy = {
     errorMessage: 'Le portail n’a pas pu être chargé.',
     languageSwitcherLabel: 'Langue',
     downloadButtonLabel: 'Télécharger',
+    ticketSectionTitle: 'Créer une demande de service',
+    ticketTitleLabel: 'Titre',
+    ticketDescriptionLabel: 'Décrivez le problème',
+    ticketPriorityLabel: 'Priorité',
+    ticketSubmitLabel: 'Envoyer la demande',
+    ticketCreatedMessage: 'Votre demande a été envoyée. Référence : ',
+    ticketErrorTitle: 'La demande de service n’a pas pu être envoyée',
+    priorityLabels: {
+      low: 'Faible',
+      normal: 'Normale',
+      high: 'Élevée',
+      urgent: 'Urgente',
+    },
   },
   es: {
     title: 'Portal de la máquina',
@@ -120,5 +206,18 @@ export const qrPortalCopy = {
     errorMessage: 'No se pudo cargar el portal.',
     languageSwitcherLabel: 'Idioma',
     downloadButtonLabel: 'Descargar',
+    ticketSectionTitle: 'Crear una solicitud de servicio',
+    ticketTitleLabel: 'Título',
+    ticketDescriptionLabel: 'Describa el problema',
+    ticketPriorityLabel: 'Prioridad',
+    ticketSubmitLabel: 'Enviar solicitud',
+    ticketCreatedMessage: 'Su solicitud ha sido enviada. Referencia: ',
+    ticketErrorTitle: 'No se pudo enviar la solicitud de servicio',
+    priorityLabels: {
+      low: 'Baja',
+      normal: 'Normal',
+      high: 'Alta',
+      urgent: 'Urgente',
+    },
   },
 } as const satisfies Record<SupportedLocale, QrPortalCopy>;

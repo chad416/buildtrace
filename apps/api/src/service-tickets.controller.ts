@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import {
   BadRequestException,
   Body,
@@ -16,6 +18,7 @@ import {
   createActivityLog,
   createPrismaClient,
   createServiceTicket,
+  getQrPortalMachine,
   getServiceTicket,
   listServiceTickets,
   listTicketComments,
@@ -46,6 +49,12 @@ export type CreateServiceTicketBody = {
   readonly priority?: unknown;
 };
 
+export type CreatePortalServiceTicketBody = {
+  readonly title?: unknown;
+  readonly description?: unknown;
+  readonly priority?: unknown;
+};
+
 export type UpdateTicketStatusBody = {
   readonly organizationId?: unknown;
   readonly status?: unknown;
@@ -68,6 +77,7 @@ export type ServiceTicketsEndpointDependencies = {
   readonly db: PrismaClient;
   readonly resolveAuthenticatedTenantContext: ResolveAuthenticatedTenantContextDependency;
   readonly createServiceTicket: typeof createServiceTicket;
+  readonly getQrPortalMachine: typeof getQrPortalMachine;
   readonly listServiceTickets: typeof listServiceTickets;
   readonly getServiceTicket: typeof getServiceTicket;
   readonly updateServiceTicketStatus: typeof updateServiceTicketStatus;
@@ -82,6 +92,11 @@ export type ListServiceTicketsResponse = {
 
 export type ListTicketCommentsResponse = {
   readonly comments: readonly TicketCommentRecord[];
+};
+
+export type CreatePortalServiceTicketResponse = {
+  readonly ticketId: string;
+  readonly customerAccessToken: string;
 };
 
 const memberRoles: readonly OrganizationRole[] = ['OWNER', 'ADMIN', 'MEMBER'];
@@ -113,6 +128,7 @@ function createRealDependencies(): ServiceTicketsEndpointDependencies {
     db: getDatabase(),
     resolveAuthenticatedTenantContext,
     createServiceTicket,
+    getQrPortalMachine,
     listServiceTickets,
     getServiceTicket,
     updateServiceTicketStatus,
@@ -126,6 +142,13 @@ type CreateTicketRequestInput = {
   readonly authorizationHeader: string | undefined;
   readonly machineId: string | undefined;
   readonly body: CreateServiceTicketBody | undefined;
+  readonly dependencies: ServiceTicketsEndpointDependencies;
+};
+
+type CreatePortalTicketRequestInput = {
+  readonly qrToken: string | undefined;
+  readonly machineId: string | undefined;
+  readonly body: CreatePortalServiceTicketBody | undefined;
   readonly dependencies: ServiceTicketsEndpointDependencies;
 };
 
@@ -164,6 +187,18 @@ type ListCommentsRequestInput = {
   readonly dependencies: ServiceTicketsEndpointDependencies;
 };
 
+function readTicketPriority(value: unknown): TicketPriority | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value !== 'string' || !(ticketPriorities as readonly string[]).includes(value)) {
+    throw new BadRequestException(`priority must be one of: ${ticketPriorities.join(', ')}`);
+  }
+
+  return value as TicketPriority;
+}
+
 export async function createServiceTicketFromRequest({
   authorizationHeader,
   machineId,
@@ -175,20 +210,7 @@ export async function createServiceTicketFromRequest({
   const title = readRequiredString('title', body?.title);
   const description = readRequiredString('description', body?.description);
 
-  let priority: TicketPriority | undefined;
-
-  if (body?.priority !== undefined && body.priority !== null && body.priority !== '') {
-    const rawPriority = body.priority;
-
-    if (
-      typeof rawPriority !== 'string' ||
-      !(ticketPriorities as readonly string[]).includes(rawPriority)
-    ) {
-      throw new BadRequestException(`priority must be one of: ${ticketPriorities.join(', ')}`);
-    }
-
-    priority = rawPriority as TicketPriority;
-  }
+  const priority = readTicketPriority(body?.priority);
 
   const { currentUser } = await dependencies.resolveAuthenticatedTenantContext({
     authorizationHeader,
@@ -216,6 +238,59 @@ export async function createServiceTicketFromRequest({
   });
 
   return ticket;
+}
+
+export async function createPortalServiceTicketFromRequest({
+  qrToken,
+  machineId,
+  body,
+  dependencies,
+}: CreatePortalTicketRequestInput): Promise<CreatePortalServiceTicketResponse> {
+  const normalizedQrToken = readRequiredString('qrToken', qrToken);
+  const normalizedMachineId = readRequiredString('machineId', machineId);
+  const title = readRequiredString('title', body?.title);
+  const description = readRequiredString('description', body?.description);
+  const priority = readTicketPriority(body?.priority);
+
+  const machine = await dependencies.getQrPortalMachine({
+    db: dependencies.db,
+    qrToken: normalizedQrToken,
+  });
+
+  if (!machine) {
+    throw new NotFoundException('QR portal was not found.');
+  }
+
+  if (machine.id !== normalizedMachineId) {
+    throw new BadRequestException('Machine ID does not match the QR portal.');
+  }
+
+  const customerAccessToken = randomBytes(32).toString('base64url');
+
+  // Rate limit consideration: this public endpoint should be rate-limited in production.
+  const ticket = await dependencies.createServiceTicket({
+    db: dependencies.db,
+    organizationId: machine.organizationId,
+    machineId: machine.id,
+    title,
+    description,
+    ...(priority !== undefined ? { priority } : {}),
+    createdFromPortal: true,
+    customerAccessToken,
+  });
+
+  await dependencies.createActivityLog({
+    db: dependencies.db,
+    organizationId: machine.organizationId,
+    action: activityLogActions.ticketCreated,
+    targetType: 'ticket',
+    targetId: ticket.id,
+  });
+
+  return {
+    ticketId: ticket.id,
+    customerAccessToken,
+  };
 }
 
 export async function listServiceTicketsFromRequest({
@@ -381,6 +456,20 @@ export async function listTicketCommentsFromRequest({
 
 @Controller('service-tickets')
 export class ServiceTicketsController {
+  @Post('portal/:qrToken/machines/:machineId')
+  async createPortalTicket(
+    @Param('qrToken') qrToken: string | undefined,
+    @Param('machineId') machineId: string | undefined,
+    @Body() body: CreatePortalServiceTicketBody | undefined,
+  ): Promise<CreatePortalServiceTicketResponse> {
+    return createPortalServiceTicketFromRequest({
+      qrToken,
+      machineId,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
   @Post('machines/:machineId')
   async createTicket(
     @Headers('authorization') authorizationHeader: string | undefined,

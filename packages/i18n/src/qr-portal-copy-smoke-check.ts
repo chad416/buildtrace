@@ -2,7 +2,7 @@ import { supportedLocales } from '@buildtrace/shared';
 
 import { qrPortalCopy, type QrPortalCopy } from './qr-portal-copy.js';
 
-const requiredKeys = [
+const requiredStringKeys = [
   'title',
   'serialLabel',
   'portalDescription',
@@ -15,6 +15,13 @@ const requiredKeys = [
   'errorMessage',
   'languageSwitcherLabel',
   'downloadButtonLabel',
+  'ticketSectionTitle',
+  'ticketTitleLabel',
+  'ticketDescriptionLabel',
+  'ticketPriorityLabel',
+  'ticketSubmitLabel',
+  'ticketCreatedMessage',
+  'ticketErrorTitle',
 ] as const satisfies readonly (keyof QrPortalCopy)[];
 
 function assert(condition: boolean, message: string): asserts condition {
@@ -28,15 +35,22 @@ for (const locale of supportedLocales) {
 
   assert(copy !== undefined, `QR portal copy is missing for ${locale}.`);
 
-  for (const key of requiredKeys) {
+  for (const key of requiredStringKeys) {
     assert(
       typeof copy[key] === 'string' && copy[key].trim().length > 0,
       `QR portal copy ${locale}.${key} is missing.`,
     );
   }
 
+  for (const priority of ['low', 'normal', 'high', 'urgent'] as const) {
+    assert(
+      copy.priorityLabels[priority].trim().length > 0,
+      `QR portal copy ${locale}.priorityLabels.${priority} is missing.`,
+    );
+  }
+
   assert(
-    Object.keys(copy).length === requiredKeys.length,
+    Object.keys(copy).length === requiredStringKeys.length + 1,
     `QR portal copy ${locale} has unexpected keys.`,
   );
 }

@@ -5,9 +5,10 @@ import {
   qrPortalCopy,
   type Locale,
 } from '@buildtrace/i18n';
-import type { DocumentCategory } from '@buildtrace/shared';
+import { ticketPriorities, type DocumentCategory } from '@buildtrace/shared';
 import Link from 'next/link';
 
+import { createPortalServiceTicketAction } from '../actions';
 import {
   getQrPortalMachine,
   listQrPortalDocuments,
@@ -22,6 +23,9 @@ type PortalPageProps = {
   searchParams?: Promise<{
     lang?: string | readonly string[];
     downloadError?: string | readonly string[];
+    ticketCreated?: string | readonly string[];
+    ticketError?: string | readonly string[];
+    ticketRef?: string | readonly string[];
   }>;
 };
 
@@ -69,6 +73,18 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
   const downloadError =
     typeof resolvedSearchParams?.downloadError === 'string'
       ? resolvedSearchParams.downloadError
+      : undefined;
+  const ticketCreated =
+    typeof resolvedSearchParams?.ticketCreated === 'string'
+      ? resolvedSearchParams.ticketCreated
+      : undefined;
+  const ticketError =
+    typeof resolvedSearchParams?.ticketError === 'string'
+      ? resolvedSearchParams.ticketError
+      : undefined;
+  const ticketRef =
+    typeof resolvedSearchParams?.ticketRef === 'string'
+      ? resolvedSearchParams.ticketRef
       : undefined;
 
   let machine: QrPortalMachineApiModel | null = null;
@@ -213,6 +229,96 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
         >
           {copy.feedbackButtonLabel}
         </Link>
+      </section>
+
+      <section
+        id="ticket"
+        aria-labelledby="portal-ticket-title"
+        className="mt-6 rounded-2xl border border-stone-800 bg-neutral-900/70 p-5 shadow-xl shadow-black/20 sm:p-7"
+      >
+        <h2 id="portal-ticket-title" className="text-xl font-semibold text-white sm:text-2xl">
+          {copy.ticketSectionTitle}
+        </h2>
+
+        {ticketCreated ? (
+          <div className="mt-5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-sm text-emerald-100">
+            {copy.ticketCreatedMessage}
+            <span className="break-all font-semibold">{ticketRef}</span>
+          </div>
+        ) : null}
+
+        {ticketError ? (
+          <div className="mt-5 rounded-xl border border-red-500/25 bg-red-950/20 p-4 text-sm text-red-200">
+            <p className="font-semibold">{copy.ticketErrorTitle}</p>
+            <p className="mt-1 break-words">{ticketError}</p>
+          </div>
+        ) : null}
+
+        <form action={createPortalServiceTicketAction} className="mt-5 grid gap-5">
+          <input type="hidden" name="qrToken" value={qrToken} />
+          <input type="hidden" name="machineId" value={machine.machineId} />
+          <input type="hidden" name="locale" value={locale} />
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-ticket-title-input"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {copy.ticketTitleLabel}
+            </label>
+            <input
+              id="portal-ticket-title-input"
+              name="title"
+              type="text"
+              required
+              className="rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-ticket-description"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {copy.ticketDescriptionLabel}
+            </label>
+            <textarea
+              id="portal-ticket-description"
+              name="description"
+              required
+              rows={5}
+              className="resize-y rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-ticket-priority"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {copy.ticketPriorityLabel}
+            </label>
+            <select
+              id="portal-ticket-priority"
+              name="priority"
+              defaultValue="normal"
+              className="rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            >
+              {ticketPriorities.map((priority) => (
+                <option key={priority} value={priority}>
+                  {copy.priorityLabels[priority]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300 sm:w-fit"
+          >
+            {copy.ticketSubmitLabel}
+          </button>
+        </form>
       </section>
     </main>
   );
