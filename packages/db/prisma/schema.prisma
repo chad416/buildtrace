@@ -284,8 +284,8 @@ model DataExport {
 
 model ServiceTicket {
   id                  String    @id @default(dbgenerated("gen_random_uuid()::text"))
-  organizationId      String    @map("organization_id")
-  machineId           String    @map("machine_id")
+  organizationId      String    @map("organization_id") @db.Uuid
+  machineId           String    @map("machine_id") @db.Uuid
   customerId          String?   @map("customer_id")
   title               String
   description         String
@@ -305,7 +305,7 @@ model ServiceTicket {
 
 model TicketComment {
   id                    String   @id @default(dbgenerated("gen_random_uuid()::text"))
-  organizationId        String   @map("organization_id")
+  organizationId        String   @map("organization_id") @db.Uuid
   ticketId              String   @map("ticket_id")
   authorType            String   @map("author_type")
   message               String

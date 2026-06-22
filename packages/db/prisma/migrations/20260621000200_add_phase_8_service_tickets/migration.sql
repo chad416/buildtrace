@@ -1,7 +1,7 @@
 CREATE TABLE service_tickets (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  organization_id TEXT NOT NULL,
-  machine_id TEXT NOT NULL,
+  organization_id UUID NOT NULL,
+  machine_id UUID NOT NULL,
   customer_id TEXT,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
@@ -22,7 +22,7 @@ CREATE INDEX service_tickets_machine_id_idx ON service_tickets(machine_id);
 
 CREATE TABLE ticket_comments (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  organization_id TEXT NOT NULL,
+  organization_id UUID NOT NULL,
   ticket_id TEXT NOT NULL,
   author_type TEXT NOT NULL,
   message TEXT NOT NULL,
