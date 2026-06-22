@@ -56,6 +56,7 @@ import {
   addTicketComment,
   createServiceTicket,
   createTicketCommentAttachmentDownloadUrl,
+  updateTicketMeetingLink,
   updateTicketStatus,
 } from '@/service-tickets-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
@@ -946,6 +947,36 @@ export async function updateTicketStatusAction(formData: FormData): Promise<void
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=status-updated`);
+}
+
+export async function updateTicketMeetingLinkAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?ticketError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const ticketId = readRequiredFormText(formData, 'ticketId', 'Ticket ID');
+    const meetingLink = readOptionalFormText(formData, 'meetingLink') ?? null;
+    const meetingNotes = readOptionalFormText(formData, 'meetingNotes') ?? null;
+
+    await updateTicketMeetingLink({
+      organizationId: session.organizationId,
+      ticketId,
+      meetingLink,
+      meetingNotes,
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineTicketActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?ticketAction=meeting-updated`);
 }
 
 export async function addTicketCommentAction(formData: FormData): Promise<void> {

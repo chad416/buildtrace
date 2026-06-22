@@ -70,6 +70,14 @@ export type UpdateServiceTicketStatusInput = {
   readonly status: TicketStatus;
 };
 
+export type UpdateTicketMeetingLinkInput = {
+  readonly db: ServiceTicketRecordsDatabase;
+  readonly organizationId: string;
+  readonly ticketId: string;
+  readonly meetingLink: string | null;
+  readonly meetingNotes: string | null;
+};
+
 export type AddTicketCommentInput = {
   readonly db: ServiceTicketRecordsDatabase;
   readonly organizationId: string;
@@ -278,6 +286,43 @@ export async function updateServiceTicketStatus({
     },
     data: {
       status,
+      updatedAt: new Date(),
+    },
+  });
+
+  return toServiceTicketRecord(updated);
+}
+
+export async function updateTicketMeetingLink({
+  db,
+  organizationId,
+  ticketId,
+  meetingLink,
+  meetingNotes,
+}: UpdateTicketMeetingLinkInput): Promise<ServiceTicketRecord> {
+  const normalizedOrgId = requireNonEmptyText(organizationId, 'Organization ID');
+  const normalizedTicketId = requireNonEmptyText(ticketId, 'Ticket ID');
+  const normalizedMeetingLink = meetingLink?.trim() || null;
+  const normalizedMeetingNotes = meetingNotes?.trim() || null;
+
+  const existing = await db.serviceTicket.findFirst({
+    where: {
+      id: normalizedTicketId,
+      organizationId: normalizedOrgId,
+    },
+  });
+
+  if (!existing) {
+    throw new Error(`Ticket with ID ${normalizedTicketId} not found in this organization.`);
+  }
+
+  const updated = await db.serviceTicket.update({
+    where: {
+      id: normalizedTicketId,
+    },
+    data: {
+      meetingLink: normalizedMeetingLink,
+      meetingNotes: normalizedMeetingNotes,
       updatedAt: new Date(),
     },
   });

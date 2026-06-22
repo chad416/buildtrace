@@ -40,6 +40,7 @@ import {
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
+  updateTicketMeetingLinkAction,
   updateTicketStatusAction,
   uploadMachineDocumentAction,
 } from '../actions';
@@ -1247,6 +1248,44 @@ function renderServiceTicketsSection({
                       {copy.commentsTitle}
                     </Link>
                   </div>
+
+                  <form
+                    action={updateTicketMeetingLinkAction}
+                    className="mt-4 grid gap-4 rounded-md border border-stone-700 bg-black/20 p-4"
+                  >
+                    <input type="hidden" name="machineId" value={machine.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="ticketId" value={ticket.id} />
+                    <div className="grid gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.meetingLinkLabel}
+                      </label>
+                      <input
+                        name="meetingLink"
+                        type="url"
+                        defaultValue={ticket.meetingLink ?? ''}
+                        placeholder={copy.meetingLinkPlaceholder}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.meetingNotesLabel}
+                      </label>
+                      <textarea
+                        name="meetingNotes"
+                        defaultValue={ticket.meetingNotes ?? ''}
+                        rows={3}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                    >
+                      {copy.saveMeetingLinkLabel}
+                    </button>
+                  </form>
 
                   {isSelected ? (
                     <div className="mt-5 border-t border-stone-700 pt-5">

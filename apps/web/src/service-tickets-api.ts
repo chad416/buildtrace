@@ -12,6 +12,8 @@ export type ServiceTicketApiModel = {
   readonly status: TicketStatus;
   readonly priority: TicketPriority;
   readonly createdFromPortal: boolean;
+  readonly meetingLink: string | null;
+  readonly meetingNotes: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 };
@@ -54,6 +56,14 @@ export type UpdateTicketStatusInput = {
   readonly organizationId: string;
   readonly ticketId: string;
   readonly status: TicketStatus;
+  readonly accessToken: string;
+};
+
+export type UpdateTicketMeetingLinkInput = {
+  readonly organizationId: string;
+  readonly ticketId: string;
+  readonly meetingLink?: string | null;
+  readonly meetingNotes?: string | null;
   readonly accessToken: string;
 };
 
@@ -100,6 +110,16 @@ function normalizeRequiredText(name: string, value: string): string {
 
 function createAuthorizationHeader(accessToken: string): string {
   return `Bearer ${normalizeRequiredText('Access token', accessToken)}`;
+}
+
+function normalizeOptionalNullableText(
+  value: string | null | undefined,
+): string | null | undefined {
+  if (value === undefined || value === null) {
+    return value;
+  }
+
+  return value.trim() || null;
 }
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -180,6 +200,38 @@ export async function updateTicketStatus(
       organizationId: normalizeRequiredText('Organization ID', input.organizationId),
       status: input.status,
     }),
+  });
+
+  return parseJsonResponse<ServiceTicketApiModel>(response);
+}
+
+export async function updateTicketMeetingLink(
+  input: UpdateTicketMeetingLinkInput,
+  fetcher: ServiceTicketsFetcher = fetch,
+): Promise<ServiceTicketApiModel> {
+  const ticketId = normalizeRequiredText('Ticket ID', input.ticketId);
+  const url = new URL(`/service-tickets/${encodeURIComponent(ticketId)}/meeting`, apiBaseUrl);
+  const body: Record<string, unknown> = {
+    organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+  };
+  const meetingLink = normalizeOptionalNullableText(input.meetingLink);
+  const meetingNotes = normalizeOptionalNullableText(input.meetingNotes);
+
+  if (meetingLink !== undefined) {
+    body.meetingLink = meetingLink;
+  }
+
+  if (meetingNotes !== undefined) {
+    body.meetingNotes = meetingNotes;
+  }
+
+  const response = await fetcher(url, {
+    method: 'PATCH',
+    headers: {
+      authorization: createAuthorizationHeader(input.accessToken),
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
   });
 
   return parseJsonResponse<ServiceTicketApiModel>(response);

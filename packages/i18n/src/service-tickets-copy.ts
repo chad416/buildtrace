@@ -21,6 +21,10 @@ export type ServiceTicketsCopy = {
   readonly internalBadgeLabel: string;
   readonly createdFromPortalBadgeLabel: string;
   readonly updateStatusLabel: string;
+  readonly meetingLinkLabel: string;
+  readonly meetingNotesLabel: string;
+  readonly saveMeetingLinkLabel: string;
+  readonly meetingLinkPlaceholder: string;
   readonly errorTitle: string;
 };
 
@@ -57,6 +61,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Internal',
     createdFromPortalBadgeLabel: 'From portal',
     updateStatusLabel: 'Update status',
+    meetingLinkLabel: 'Support meeting link',
+    meetingNotesLabel: 'Meeting notes',
+    saveMeetingLinkLabel: 'Save meeting details',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Ticket action failed',
   },
   cs: {
@@ -91,6 +99,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Interní',
     createdFromPortalBadgeLabel: 'Z portálu',
     updateStatusLabel: 'Aktualizovat stav',
+    meetingLinkLabel: 'Odkaz na servisní schůzku',
+    meetingNotesLabel: 'Poznámky ke schůzce',
+    saveMeetingLinkLabel: 'Uložit údaje schůzky',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Akce tiketu se nezdařila',
   },
   sk: {
@@ -125,6 +137,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Interné',
     createdFromPortalBadgeLabel: 'Z portálu',
     updateStatusLabel: 'Aktualizovať stav',
+    meetingLinkLabel: 'Odkaz na servisné stretnutie',
+    meetingNotesLabel: 'Poznámky zo stretnutia',
+    saveMeetingLinkLabel: 'Uložiť údaje stretnutia',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Akcia tiketu zlyhala',
   },
   pl: {
@@ -160,6 +176,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Wewnętrzne',
     createdFromPortalBadgeLabel: 'Z portalu',
     updateStatusLabel: 'Aktualizuj status',
+    meetingLinkLabel: 'Link do spotkania serwisowego',
+    meetingNotesLabel: 'Notatki ze spotkania',
+    saveMeetingLinkLabel: 'Zapisz szczegóły spotkania',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Działanie na zgłoszeniu nie powiodło się',
   },
   de: {
@@ -195,6 +215,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Intern',
     createdFromPortalBadgeLabel: 'Aus Portal',
     updateStatusLabel: 'Status aktualisieren',
+    meetingLinkLabel: 'Link zum Support-Termin',
+    meetingNotesLabel: 'Besprechungsnotizen',
+    saveMeetingLinkLabel: 'Termindetails speichern',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Ticket-Aktion fehlgeschlagen',
   },
   fr: {
@@ -230,6 +254,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Interne',
     createdFromPortalBadgeLabel: 'Du portail',
     updateStatusLabel: 'Mettre à jour le statut',
+    meetingLinkLabel: 'Lien de la réunion d’assistance',
+    meetingNotesLabel: 'Notes de réunion',
+    saveMeetingLinkLabel: 'Enregistrer les détails de la réunion',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: "Échec de l'action du ticket",
   },
   es: {
@@ -265,6 +293,10 @@ export const serviceTicketsCopy = {
     internalBadgeLabel: 'Interno',
     createdFromPortalBadgeLabel: 'Del portal',
     updateStatusLabel: 'Actualizar estado',
+    meetingLinkLabel: 'Enlace de la reunión de soporte',
+    meetingNotesLabel: 'Notas de la reunión',
+    saveMeetingLinkLabel: 'Guardar detalles de la reunión',
+    meetingLinkPlaceholder: 'https://meet.example.com/...',
     errorTitle: 'Error en la acción del ticket',
   },
 } as const satisfies Record<SupportedLocale, ServiceTicketsCopy>;

@@ -4,6 +4,7 @@ import {
   createServiceTicket,
   listServiceTickets,
   listTicketComments,
+  updateTicketMeetingLink,
   updateTicketStatus,
   type ServiceTicketsFetcher,
 } from './service-tickets-api.js';
@@ -73,6 +74,8 @@ const fakeTicket = {
   status: 'open',
   priority: 'normal',
   createdFromPortal: false,
+  meetingLink: null,
+  meetingNotes: null,
   createdAt: '2026-06-21T00:00:00.000Z',
   updatedAt: '2026-06-21T00:00:00.000Z',
 };
@@ -234,6 +237,52 @@ async function runUpdateStatusCheck(): Promise<void> {
   );
 }
 
+async function runUpdateMeetingCheck(): Promise<void> {
+  const calls: CapturedRequest[] = [];
+  const result = await updateTicketMeetingLink(
+    {
+      organizationId: ' org-1 ',
+      ticketId: ' ticket-1 ',
+      meetingLink: ' https://meet.example.com/support ',
+      meetingNotes: ' Buyer and technician invited. ',
+      accessToken: ' token-1 ',
+    },
+    createFetcher(calls, () =>
+      createJsonResponse({
+        ...fakeTicket,
+        meetingLink: 'https://meet.example.com/support',
+        meetingNotes: 'Buyer and technician invited.',
+      }),
+    ),
+  );
+
+  assert(
+    result.meetingLink === 'https://meet.example.com/support',
+    'Update meeting response link was wrong.',
+  );
+
+  const call = calls[0];
+  assert(call !== undefined, 'Update meeting request was not captured.');
+  const url = readUrl(call.input);
+  assert(url.pathname === '/service-tickets/ticket-1/meeting', 'Update meeting URL was wrong.');
+  assert(call.init?.method === 'PATCH', 'Update meeting must use PATCH.');
+  assert(
+    readHeaders(call.init).authorization === 'Bearer token-1',
+    'Update meeting authorization was not normalized.',
+  );
+
+  const body = readBody(call.init);
+  assert(body.organizationId === 'org-1', 'Update meeting organizationId was not normalized.');
+  assert(
+    body.meetingLink === 'https://meet.example.com/support',
+    'Update meeting link body was wrong.',
+  );
+  assert(
+    body.meetingNotes === 'Buyer and technician invited.',
+    'Update meeting notes body was wrong.',
+  );
+}
+
 async function runAddCommentCheck(): Promise<void> {
   const calls: CapturedRequest[] = [];
   const result = await addTicketComment(
@@ -385,6 +434,7 @@ async function runCreateCommentAttachmentDownloadUrlCheck(): Promise<void> {
 await runCreateTicketCheck();
 await runListTicketsCheck();
 await runUpdateStatusCheck();
+await runUpdateMeetingCheck();
 await runAddCommentCheck();
 await runListCommentsCheck();
 await runCreateCommentAttachmentDownloadUrlCheck();

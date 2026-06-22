@@ -25,6 +25,7 @@ import {
   getTicketComment,
   listServiceTickets,
   listTicketComments,
+  updateTicketMeetingLink,
   updateServiceTicketStatus,
 } from '@buildtrace/db';
 import type { ServiceTicketRecord, TicketCommentRecord } from '@buildtrace/db';
@@ -73,6 +74,12 @@ export type UpdateTicketStatusBody = {
   readonly status?: unknown;
 };
 
+export type UpdateTicketMeetingBody = {
+  readonly organizationId?: unknown;
+  readonly meetingLink?: unknown;
+  readonly meetingNotes?: unknown;
+};
+
 export type AddTicketCommentBody = {
   readonly organizationId?: unknown;
   readonly message?: unknown;
@@ -113,6 +120,7 @@ export type ServiceTicketsEndpointDependencies = {
   readonly listServiceTickets: typeof listServiceTickets;
   readonly getServiceTicket: typeof getServiceTicket;
   readonly getTicketComment: typeof getTicketComment;
+  readonly updateTicketMeetingLink: typeof updateTicketMeetingLink;
   readonly updateServiceTicketStatus: typeof updateServiceTicketStatus;
   readonly addTicketComment: typeof addTicketComment;
   readonly listTicketComments: typeof listTicketComments;
@@ -175,6 +183,7 @@ function createRealDependencies(): ServiceTicketsEndpointDependencies {
     listServiceTickets,
     getServiceTicket,
     getTicketComment,
+    updateTicketMeetingLink,
     updateServiceTicketStatus,
     addTicketComment,
     listTicketComments,
@@ -218,6 +227,13 @@ type UpdateStatusRequestInput = {
   readonly authorizationHeader: string | undefined;
   readonly ticketId: string | undefined;
   readonly body: UpdateTicketStatusBody | undefined;
+  readonly dependencies: ServiceTicketsEndpointDependencies;
+};
+
+type UpdateMeetingRequestInput = {
+  readonly authorizationHeader: string | undefined;
+  readonly ticketId: string | undefined;
+  readonly body: UpdateTicketMeetingBody | undefined;
   readonly dependencies: ServiceTicketsEndpointDependencies;
 };
 
@@ -402,6 +418,18 @@ function readTicketPriority(value: unknown): TicketPriority | undefined {
   }
 
   return value as TicketPriority;
+}
+
+function readOptionalNullableString(name: string, value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw new BadRequestException(`${name} must be a string or null.`);
+  }
+
+  return value.trim() || null;
 }
 
 export async function createServiceTicketFromRequest({
@@ -592,6 +620,33 @@ export async function updateTicketStatusFromRequest({
   });
 
   return ticket;
+}
+
+export async function updateTicketMeetingLinkFromRequest({
+  authorizationHeader,
+  ticketId,
+  body,
+  dependencies,
+}: UpdateMeetingRequestInput): Promise<ServiceTicketRecord> {
+  const organizationId = readRequiredString('organizationId', body?.organizationId);
+  const normalizedTicketId = readRequiredString('ticketId', ticketId);
+  const meetingLink = readOptionalNullableString('meetingLink', body?.meetingLink);
+  const meetingNotes = readOptionalNullableString('meetingNotes', body?.meetingNotes);
+
+  await dependencies.resolveAuthenticatedTenantContext({
+    authorizationHeader,
+    organizationId,
+    db: dependencies.db,
+    allowedRoles: adminRoles,
+  });
+
+  return dependencies.updateTicketMeetingLink({
+    db: dependencies.db,
+    organizationId,
+    ticketId: normalizedTicketId,
+    meetingLink,
+    meetingNotes,
+  });
 }
 
 export async function addTicketCommentFromRequest({
@@ -882,6 +937,20 @@ export class ServiceTicketsController {
     @Body() body: UpdateTicketStatusBody | undefined,
   ): Promise<ServiceTicketRecord> {
     return updateTicketStatusFromRequest({
+      authorizationHeader,
+      ticketId,
+      body,
+      dependencies: createRealDependencies(),
+    });
+  }
+
+  @Patch(':ticketId/meeting')
+  async updateTicketMeeting(
+    @Headers('authorization') authorizationHeader: string | undefined,
+    @Param('ticketId') ticketId: string | undefined,
+    @Body() body: UpdateTicketMeetingBody | undefined,
+  ): Promise<ServiceTicketRecord> {
+    return updateTicketMeetingLinkFromRequest({
       authorizationHeader,
       ticketId,
       body,

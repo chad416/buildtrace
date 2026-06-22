@@ -5,6 +5,7 @@ import {
   listServiceTickets,
   listTicketComments,
   addTicketComment,
+  updateTicketMeetingLink,
   updateServiceTicketStatus,
 } from './service-ticket-records.js';
 import type { PrismaClient } from './generated/prisma/client';
@@ -101,7 +102,16 @@ function createMockPrismaClient(
     update: async (args: unknown): Promise<unknown> => {
       capturedOperations.push({ model: 'serviceTicket', operation: 'update', args });
       const where = (args as { readonly where?: { readonly id?: string } }).where ?? {};
-      const data = (args as { readonly data?: { readonly status?: string } }).data ?? {};
+      const data =
+        (
+          args as {
+            readonly data?: {
+              readonly status?: string;
+              readonly meetingLink?: string | null;
+              readonly meetingNotes?: string | null;
+            };
+          }
+        ).data ?? {};
       return (
         mockData.serviceTicket || {
           id: where.id || 'ticket-1',
@@ -114,8 +124,8 @@ function createMockPrismaClient(
           priority: 'normal',
           createdFromPortal: false,
           customerAccessToken: null,
-          meetingLink: null,
-          meetingNotes: null,
+          meetingLink: data.meetingLink ?? null,
+          meetingNotes: data.meetingNotes ?? null,
           createdAt: new Date('2026-06-21T00:00:00.000Z'),
           updatedAt: new Date('2026-06-21T00:00:00.000Z'),
         }
@@ -437,6 +447,41 @@ async function runServiceTicketRecordsSmokeCheck(): Promise<void> {
       status: 'resolved',
     }),
   );
+
+  // Test updateTicketMeetingLink
+  const meetingOps: CapturedOperation[] = [];
+  const meetingDb = createMockPrismaClient(meetingOps);
+  const meetingTicket = await updateTicketMeetingLink({
+    db: meetingDb,
+    organizationId: ' organization-1 ',
+    ticketId: ' ticket-1 ',
+    meetingLink: ' https://meet.example.com/support ',
+    meetingNotes: ' Buyer and technician invited. ',
+  });
+
+  if (
+    meetingTicket.meetingLink !== 'https://meet.example.com/support' ||
+    meetingTicket.meetingNotes !== 'Buyer and technician invited.'
+  ) {
+    throw new Error('updateTicketMeetingLink() did not normalize meeting details.');
+  }
+
+  const meetingUpdateOp = findOperation(meetingOps, 'serviceTicket', 'update');
+  const meetingUpdateData = (
+    meetingUpdateOp.args as {
+      readonly data: {
+        readonly meetingLink: string | null;
+        readonly meetingNotes: string | null;
+      };
+    }
+  ).data;
+
+  if (
+    meetingUpdateData.meetingLink !== 'https://meet.example.com/support' ||
+    meetingUpdateData.meetingNotes !== 'Buyer and technician invited.'
+  ) {
+    throw new Error('updateTicketMeetingLink() update arguments were incorrect.');
+  }
 
   // Test addTicketComment validation & success
   await expectThrows('empty message for addTicketComment', () =>

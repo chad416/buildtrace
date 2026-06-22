@@ -23,6 +23,10 @@ const flatRequiredKeys: readonly FlatStringKey[] = [
   'internalBadgeLabel',
   'createdFromPortalBadgeLabel',
   'updateStatusLabel',
+  'meetingLinkLabel',
+  'meetingNotesLabel',
+  'saveMeetingLinkLabel',
+  'meetingLinkPlaceholder',
   'errorTitle',
 ];
 

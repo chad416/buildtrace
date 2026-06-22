@@ -12,6 +12,7 @@ import {
   getServiceTicketFromRequest,
   listServiceTicketsFromRequest,
   listTicketCommentsFromRequest,
+  updateTicketMeetingLinkFromRequest,
   updateTicketStatusFromRequest,
   type ServiceTicketsEndpointDependencies,
 } from './service-tickets.controller.js';
@@ -84,6 +85,9 @@ type GetCommentInput = Parameters<ServiceTicketsEndpointDependencies['getTicketC
 type UpdateStatusInput = Parameters<
   ServiceTicketsEndpointDependencies['updateServiceTicketStatus']
 >[0];
+type UpdateMeetingInput = Parameters<
+  ServiceTicketsEndpointDependencies['updateTicketMeetingLink']
+>[0];
 type AddCommentInput = Parameters<ServiceTicketsEndpointDependencies['addTicketComment']>[0];
 type ListCommentsInput = Parameters<ServiceTicketsEndpointDependencies['listTicketComments']>[0];
 type ActivityInput = Parameters<ServiceTicketsEndpointDependencies['createActivityLog']>[0];
@@ -102,6 +106,7 @@ type CapturedCalls = {
   readonly getTicketInputs: GetTicketInput[];
   readonly getCommentInputs: GetCommentInput[];
   readonly updateStatusInputs: UpdateStatusInput[];
+  readonly updateMeetingInputs: UpdateMeetingInput[];
   readonly addCommentInputs: AddCommentInput[];
   readonly listCommentsInputs: ListCommentsInput[];
   readonly activityInputs: ActivityInput[];
@@ -118,6 +123,7 @@ function createCapturedCalls(): CapturedCalls {
     getTicketInputs: [],
     getCommentInputs: [],
     updateStatusInputs: [],
+    updateMeetingInputs: [],
     addCommentInputs: [],
     listCommentsInputs: [],
     activityInputs: [],
@@ -180,6 +186,15 @@ function createDependencies(
     updateServiceTicketStatus: async (input) => {
       capturedCalls.updateStatusInputs.push(input);
       return { ...fakeTicket, status: input.status, updatedAt: now };
+    },
+    updateTicketMeetingLink: async (input) => {
+      capturedCalls.updateMeetingInputs.push(input);
+      return {
+        ...fakeTicket,
+        meetingLink: input.meetingLink,
+        meetingNotes: input.meetingNotes,
+        updatedAt: now,
+      };
     },
     addTicketComment: async (input) => {
       capturedCalls.addCommentInputs.push(input);
@@ -466,6 +481,41 @@ async function runUpdateStatusCheck(): Promise<void> {
   );
 }
 
+async function runUpdateMeetingCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+  const ticket = await updateTicketMeetingLinkFromRequest({
+    authorizationHeader: 'Bearer token-1',
+    ticketId: ' ticket-1 ',
+    body: {
+      organizationId: ' org-1 ',
+      meetingLink: ' https://meet.example.com/support ',
+      meetingNotes: ' Buyer and technician invited. ',
+    },
+    dependencies: createDependencies(calls),
+  });
+
+  assert(ticket.id === 'ticket-1', 'Update meeting ticket ID was wrong.');
+  assert(
+    ticket.meetingLink === 'https://meet.example.com/support',
+    'Update meeting link response was wrong.',
+  );
+  assert(calls.resolveInputs.length === 1, 'Update meeting auth was not called.');
+  assert(
+    calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN',
+    'Update meeting roles were incorrect.',
+  );
+  assert(calls.updateMeetingInputs.length === 1, 'updateTicketMeetingLink was not called.');
+  assert(
+    calls.updateMeetingInputs[0]?.meetingLink === 'https://meet.example.com/support',
+    'Update meeting link input was wrong.',
+  );
+  assert(
+    calls.updateMeetingInputs[0]?.meetingNotes === 'Buyer and technician invited.',
+    'Update meeting notes input was wrong.',
+  );
+  assert(calls.activityInputs.length === 0, 'Update meeting must not create activity.');
+}
+
 async function runAddCommentCheck(): Promise<void> {
   const calls = createCapturedCalls();
   const comment = await addTicketCommentFromRequest({
@@ -662,6 +712,7 @@ await runCreatePortalTicketCheck();
 await runListTicketsCheck();
 await runGetTicketCheck();
 await runUpdateStatusCheck();
+await runUpdateMeetingCheck();
 await runAddCommentCheck();
 await runAddCommentAttachmentCheck();
 await runCreateCommentAttachmentDownloadUrlCheck();
