@@ -20,6 +20,7 @@ export type SoftwareVersionsCopy = {
   readonly markAsDeliveredLabel: string;
   readonly uploadedLabel: string;
   readonly changedSinceDeliveryLabel: string;
+  readonly unchangedSinceDeliveryLabel: string;
   readonly errorTitle: string;
 };
 
@@ -51,6 +52,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Mark as delivered',
     uploadedLabel: 'Added',
     changedSinceDeliveryLabel: 'Changed since delivery',
+    unchangedSinceDeliveryLabel: 'Unchanged since delivery',
     errorTitle: 'Version action failed',
   },
   cs: {
@@ -80,6 +82,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Označit jako dodané',
     uploadedLabel: 'Přidáno',
     changedSinceDeliveryLabel: 'Změněno od dodání',
+    unchangedSinceDeliveryLabel: 'Nezměněno od předání',
     errorTitle: 'Akce verze selhala',
   },
   sk: {
@@ -109,6 +112,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Označiť ako dodané',
     uploadedLabel: 'Pridané',
     changedSinceDeliveryLabel: 'Zmenené od dodania',
+    unchangedSinceDeliveryLabel: 'Nezmenené od odovzdania',
     errorTitle: 'Akcia verzie zlyhala',
   },
   pl: {
@@ -138,6 +142,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Oznacz jako dostarczoną',
     uploadedLabel: 'Dodano',
     changedSinceDeliveryLabel: 'Zmieniono od dostawy',
+    unchangedSinceDeliveryLabel: 'Niezmienione od przekazania',
     errorTitle: 'Akcja wersji nie powiodła się',
   },
   de: {
@@ -167,6 +172,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Als geliefert markieren',
     uploadedLabel: 'Hinzugefügt',
     changedSinceDeliveryLabel: 'Seit Lieferung geändert',
+    unchangedSinceDeliveryLabel: 'Unverändert seit Übergabe',
     errorTitle: 'Versionsaktion fehlgeschlagen',
   },
   fr: {
@@ -196,6 +202,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Marquer comme livrée',
     uploadedLabel: 'Ajoutée',
     changedSinceDeliveryLabel: 'Modifiée depuis la livraison',
+    unchangedSinceDeliveryLabel: 'Inchangé depuis la livraison',
     errorTitle: "Échec de l'action sur la version",
   },
   es: {
@@ -225,6 +232,7 @@ export const softwareVersionsCopy = {
     markAsDeliveredLabel: 'Marcar como entregada',
     uploadedLabel: 'Añadida',
     changedSinceDeliveryLabel: 'Cambiada desde la entrega',
+    unchangedSinceDeliveryLabel: 'Sin cambios desde la entrega',
     errorTitle: 'Error en la acción de versión',
   },
 } as const satisfies Record<SupportedLocale, SoftwareVersionsCopy>;
