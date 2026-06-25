@@ -5,16 +5,19 @@ import {
   isSupportedLocale,
   qrPortalBuilderCopy,
   serviceTicketsCopy,
+  softwareVersionsCopy,
   type DocumentLabels,
   type HandoverCompletenessCopy,
   type QrPortalBuilderCopy,
   type ServiceTicketsCopy,
+  type SoftwareVersionsCopy,
 } from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  softwareTypes,
   ticketPriorities,
   ticketStatuses,
   type CustomerHandoverCompleteness,
@@ -33,8 +36,11 @@ import {
   createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
   createServiceTicketAction,
+  createSoftwareVersionAction,
   createTicketCommentAttachmentDownloadUrlAction,
   disableMachineQrPortalAction,
+  markVersionAsCurrentAction,
+  markVersionAsDeliveredAction,
   refreshMachineDocumentClassificationSuggestionAction,
   rotateMachineQrTokenAction,
   updateMachineDocumentCategoryAction,
@@ -57,6 +63,7 @@ import {
   type ServiceTicketApiModel,
   type TicketCommentApiModel,
 } from '@/service-tickets-api';
+import { listSoftwareVersions, type SoftwareVersionApiModel } from '@/software-versions-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -98,6 +105,8 @@ type MachineDetailSearchParams = {
   readonly ticketAction?: string;
   readonly ticketError?: string;
   readonly ticketId?: string;
+  readonly versionAction?: string;
+  readonly versionError?: string;
 };
 
 type PageProps = {
@@ -128,6 +137,7 @@ type MachineDetailLoadState =
       readonly qrToken: string | null;
       readonly tickets: readonly ServiceTicketApiModel[];
       readonly ticketComments: readonly TicketCommentApiModel[];
+      readonly softwareVersions: readonly SoftwareVersionApiModel[];
     };
 
 const statusClassNames = {
@@ -211,6 +221,8 @@ function normalizeSearchParams(
   const ticketAction = readStringSearchParam(searchParams, 'ticketAction');
   const ticketError = readStringSearchParam(searchParams, 'ticketError');
   const ticketId = readStringSearchParam(searchParams, 'ticketId');
+  const versionAction = readStringSearchParam(searchParams, 'versionAction');
+  const versionError = readStringSearchParam(searchParams, 'versionError');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -236,6 +248,8 @@ function normalizeSearchParams(
     ...(ticketAction ? { ticketAction } : {}),
     ...(ticketError ? { ticketError } : {}),
     ...(ticketId ? { ticketId } : {}),
+    ...(versionAction ? { versionAction } : {}),
+    ...(versionError ? { versionError } : {}),
   };
 }
 
@@ -269,6 +283,22 @@ function formatArchiveBytes(bytes: number): string {
   }
 
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatSoftwareVersionActionMessage(
+  versionAction: string,
+  copy: SoftwareVersionsCopy,
+): string {
+  switch (versionAction) {
+    case 'created':
+      return copy.submitButtonLabel;
+    case 'marked-current':
+      return copy.markAsCurrentLabel;
+    case 'marked-delivered':
+      return copy.markAsDeliveredLabel;
+    default:
+      return copy.sectionTitle;
+  }
 }
 
 function buildPortalLink(qrToken: string): string {
@@ -1383,6 +1413,193 @@ function renderServiceTicketsSection({
   );
 }
 
+function renderSoftwareVersionsSection({
+  machine,
+  softwareVersions,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly softwareVersions: readonly SoftwareVersionApiModel[];
+  readonly locale: string;
+  readonly copy: SoftwareVersionsCopy;
+}) {
+  const groupedVersions = softwareTypes
+    .map((softwareType) => ({
+      softwareType,
+      versions: softwareVersions.filter((version) => version.softwareType === softwareType),
+    }))
+    .filter(({ versions }) => versions.length > 0);
+
+  return (
+    <section
+      id="software-versions"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {copy.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">{copy.sectionDescription}</p>
+
+      <div className="mt-6 grid gap-6">
+        <div className="rounded-lg border border-stone-700 bg-black/20 p-5">
+          <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.newVersionTitle}
+          </p>
+          <form action={createSoftwareVersionAction} className="mt-4 grid gap-4">
+            <input type="hidden" name="machineId" value={machine.id} />
+            <input type="hidden" name="locale" value={locale} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.versionNameLabel}
+                </label>
+                <input
+                  name="versionName"
+                  required
+                  className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.softwareTypeLabel}
+                </label>
+                <select
+                  name="softwareType"
+                  defaultValue="plc"
+                  className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+                >
+                  {softwareTypes.map((softwareType) => (
+                    <option key={softwareType} value={softwareType}>
+                      {copy.typeLabels[softwareType]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                {copy.notesLabel}
+              </label>
+              <textarea
+                name="notes"
+                rows={3}
+                className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 text-sm text-stone-300">
+                <input
+                  type="checkbox"
+                  name="isDeliveredVersion"
+                  value="on"
+                  className="rounded border-stone-600"
+                />
+                {copy.isDeliveredVersionLabel}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-stone-300">
+                <input
+                  type="checkbox"
+                  name="isCurrentKnownVersion"
+                  value="on"
+                  className="rounded border-stone-600"
+                />
+                {copy.isCurrentKnownVersionLabel}
+              </label>
+            </div>
+            <button
+              type="submit"
+              className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+            >
+              {copy.submitButtonLabel}
+            </button>
+          </form>
+        </div>
+
+        {softwareVersions.length === 0 ? (
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            {copy.noVersionsMessage}
+          </p>
+        ) : (
+          <div className="grid gap-5">
+            {groupedVersions.map(({ softwareType, versions }) => (
+              <div key={softwareType} className="grid gap-3">
+                <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.typeLabels[softwareType]}
+                </p>
+                <div className="grid gap-4">
+                  {versions.map((version) => (
+                    <article
+                      key={version.id}
+                      className="rounded-lg border border-stone-700 bg-black/20 p-5"
+                    >
+                      <div className="flex flex-wrap items-start gap-3">
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                            {copy.typeLabels[version.softwareType]}
+                          </p>
+                          <h3 className="mt-1 text-base font-semibold text-stone-100">
+                            {version.versionName}
+                          </h3>
+                          <p className="mt-1 text-xs text-stone-400">
+                            {copy.uploadedLabel}: {formatDate(version.uploadedAt, locale, '')}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {version.isDeliveredVersion ? (
+                            <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-950/30 px-2 py-0.5 text-xs font-semibold text-emerald-200">
+                              {copy.deliveredBadgeLabel}
+                            </span>
+                          ) : null}
+                          {version.isCurrentKnownVersion ? (
+                            <span className="inline-flex items-center rounded-full border border-sky-500/40 bg-sky-950/30 px-2 py-0.5 text-xs font-semibold text-sky-200">
+                              {copy.currentBadgeLabel}
+                            </span>
+                          ) : null}
+                          {version.isCurrentKnownVersion && !version.isDeliveredVersion ? (
+                            <span className="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-950/30 px-2 py-0.5 text-xs font-semibold text-amber-200">
+                              {copy.changedSinceDeliveryLabel}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <form action={markVersionAsCurrentAction}>
+                          <input type="hidden" name="machineId" value={machine.id} />
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="versionId" value={version.id} />
+                          <button
+                            type="submit"
+                            className="inline-flex min-h-10 items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                          >
+                            {copy.markAsCurrentLabel}
+                          </button>
+                        </form>
+                        <form action={markVersionAsDeliveredAction}>
+                          <input type="hidden" name="machineId" value={machine.id} />
+                          <input type="hidden" name="locale" value={locale} />
+                          <input type="hidden" name="versionId" value={version.id} />
+                          <button
+                            type="submit"
+                            className="inline-flex min-h-10 items-center justify-center rounded-md border border-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                          >
+                            {copy.markAsDeliveredLabel}
+                          </button>
+                        </form>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -1403,6 +1620,8 @@ function renderMachineDetail({
   ticketComments,
   ticketId,
   ticketsCopy,
+  softwareVersions,
+  softwareCopy,
 }: {
   readonly machine: MachineRecordApiModel;
   readonly customers: readonly CustomerRecordApiModel[];
@@ -1431,6 +1650,8 @@ function renderMachineDetail({
   readonly ticketComments: readonly TicketCommentApiModel[];
   readonly ticketId: string | undefined;
   readonly ticketsCopy: ServiceTicketsCopy;
+  readonly softwareVersions: readonly SoftwareVersionApiModel[];
+  readonly softwareCopy: SoftwareVersionsCopy;
 }) {
   return (
     <>
@@ -1539,6 +1760,13 @@ function renderMachineDetail({
         copy: ticketsCopy,
       })}
 
+      {renderSoftwareVersionsSection({
+        machine,
+        softwareVersions,
+        locale,
+        copy: softwareCopy,
+      })}
+
       {renderMachineEditForm({
         machine,
         customers,
@@ -1595,6 +1823,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
   const labels = documentLabels[locale];
   const handoverCopy = handoverCompletenessCopy[locale];
   const qrPortalCopy = qrPortalBuilderCopy[locale];
+  const softwareCopy = softwareVersionsCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -1648,6 +1877,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         exportHistoryResponse,
         machineQrTokenResponse,
         ticketsResponse,
+        softwareVersionsResponse,
       ] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
@@ -1687,6 +1917,11 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           machineId,
           accessToken: session.accessToken,
         }),
+        listSoftwareVersions({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
 
       let ticketComments: readonly TicketCommentApiModel[] = [];
@@ -1715,6 +1950,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         qrToken: machineQrTokenResponse.qrToken,
         tickets: ticketsResponse.tickets,
         ticketComments,
+        softwareVersions: softwareVersionsResponse.versions,
       };
     } catch (error) {
       loadState = {
@@ -1971,6 +2207,25 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.versionAction
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: softwareCopy.sectionTitle,
+            body: formatSoftwareVersionActionMessage(
+              normalizedSearchParams.versionAction,
+              softwareCopy,
+            ),
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.versionError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: softwareCopy.errorTitle,
+            body: normalizedSearchParams.versionError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -1987,13 +2242,18 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             qrPortalCopy,
             labels,
             sections: sections.filter(
-              (section) => section.id !== 'documents' && section.id !== 'handover-readiness',
+              (section) =>
+                section.id !== 'documents' &&
+                section.id !== 'handover-readiness' &&
+                section.id !== 'software-timeline',
             ),
             sectionsAriaLabel: messages.sectionsAriaLabel,
             tickets: loadState.tickets,
             ticketComments: loadState.ticketComments,
             ticketId: normalizedSearchParams.ticketId,
             ticketsCopy: serviceTicketsCopy[locale],
+            softwareVersions: loadState.softwareVersions,
+            softwareCopy,
           })
         : null}
     </div>

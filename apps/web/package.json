@@ -14,6 +14,7 @@
     "qr-portal:smoke": "tsx src/qr-portal-api-smoke-check.ts",
     "qr-portal-builder:smoke": "tsx src/qr-portal-builder-api-smoke-check.ts",
     "service-tickets:smoke": "tsx src/service-tickets-api-smoke-check.ts",
+    "software-versions:smoke": "tsx src/software-versions-api-smoke-check.ts",
     "portal-service-tickets:smoke": "tsx src/portal-service-tickets-api-smoke-check.ts",
     "build": "next build",
     "lint": "eslint .",

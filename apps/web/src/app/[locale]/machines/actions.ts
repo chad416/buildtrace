@@ -5,6 +5,7 @@ import {
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  softwareTypes,
   supportedLocales,
   ticketPriorities,
   ticketStatuses,
@@ -12,6 +13,7 @@ import {
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
   type MachineStatus,
+  type SoftwareType,
   type SupportedLocale,
   type TicketPriority,
   type TicketStatus,
@@ -59,6 +61,11 @@ import {
   updateTicketMeetingLink,
   updateTicketStatus,
 } from '@/service-tickets-api';
+import {
+  createSoftwareVersion,
+  markVersionAsCurrent,
+  markVersionAsDelivered,
+} from '@/software-versions-api';
 import { readMachineRecordsSession } from '@/machine-records-session';
 
 function formatActionError(error: unknown): string {
@@ -874,6 +881,107 @@ function readLocaleFromForm(formData: FormData): SupportedLocale {
   return supportedLocales.includes(requestedLocale as SupportedLocale)
     ? (requestedLocale as SupportedLocale)
     : 'en';
+}
+
+function redirectMachineSoftwareVersionActionWithError(
+  locale: string,
+  machineId: string,
+  error: unknown,
+): never {
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?versionError=${encodeURIComponent(formatActionError(error))}`,
+  );
+}
+
+function readRequiredSoftwareType(formData: FormData): SoftwareType {
+  const softwareType = readRequiredFormText(formData, 'softwareType', 'Software type');
+
+  if (!(softwareTypes as readonly string[]).includes(softwareType)) {
+    throw new Error(`Invalid software type: ${softwareType}`);
+  }
+
+  return softwareType as SoftwareType;
+}
+
+export async function createSoftwareVersionAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?versionError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const notes = readOptionalFormText(formData, 'notes');
+
+    await createSoftwareVersion({
+      organizationId: session.organizationId,
+      machineId: readRequiredFormText(formData, 'machineId', 'Machine ID'),
+      versionName: readRequiredFormText(formData, 'versionName', 'Version name'),
+      softwareType: readRequiredSoftwareType(formData),
+      ...(notes !== undefined ? { notes } : {}),
+      isDeliveredVersion: formData.get('isDeliveredVersion') === 'on',
+      isCurrentKnownVersion: formData.get('isCurrentKnownVersion') === 'on',
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineSoftwareVersionActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?versionAction=created`);
+}
+
+export async function markVersionAsCurrentAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?versionError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    await markVersionAsCurrent({
+      organizationId: session.organizationId,
+      machineId: readRequiredFormText(formData, 'machineId', 'Machine ID'),
+      versionId: readRequiredFormText(formData, 'versionId', 'Version ID'),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineSoftwareVersionActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?versionAction=marked-current`);
+}
+
+export async function markVersionAsDeliveredAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?versionError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    await markVersionAsDelivered({
+      organizationId: session.organizationId,
+      machineId: readRequiredFormText(formData, 'machineId', 'Machine ID'),
+      versionId: readRequiredFormText(formData, 'versionId', 'Version ID'),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineSoftwareVersionActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?versionAction=marked-delivered`);
 }
 
 export async function createServiceTicketAction(formData: FormData): Promise<void> {
