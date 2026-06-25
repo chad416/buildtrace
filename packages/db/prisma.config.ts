@@ -1,6 +1,16 @@
-import 'dotenv/config';
+import { config as loadDotenv } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'prisma/config';
+
+const packageDirectory = dirname(fileURLToPath(import.meta.url));
+
+loadDotenv();
+loadDotenv({
+  path: resolve(packageDirectory, '../../.env'),
+  override: false,
+});
 
 function readRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();

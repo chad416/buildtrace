@@ -1,27 +1,38 @@
-import 'dotenv/config';
-
 import { randomUUID } from 'node:crypto';
+import { config as loadDotenv } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createPrismaClient } from './client.js';
 import type { PrismaClient } from './generated/prisma/client';
-import { MachineStatus, OrganizationRole } from './generated/prisma/enums';
+import { MachineStatus } from './generated/prisma/enums';
+import {
+  createCustomer,
+  createMachine,
+  createMachineModel,
+  getMachineByOrganization,
+  listMachinesByOrganization,
+  updateMachine,
+} from './machine-records.js';
+
+const sourceDirectory = dirname(fileURLToPath(import.meta.url));
+
+loadDotenv();
+loadDotenv({
+  path: resolve(sourceDirectory, '../../../.env'),
+  override: false,
+});
 
 type IsolationFixtureInput = {
   readonly label: 'A' | 'B';
   readonly organizationSlug: string;
-  readonly authUserId: string;
-  readonly userEmail: string;
 };
 
 type IsolationFixture = {
   readonly organizationId: string;
+  readonly customerId: string;
+  readonly machineModelId: string;
   readonly machineId: string;
-  readonly serialNumber: string;
-};
-
-type MachineRecord = {
-  readonly id: string;
-  readonly organizationId: string;
   readonly serialNumber: string;
 };
 
@@ -29,6 +40,22 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function assertEqual<T>(actual: T, expected: T, message: string): void {
+  if (actual !== expected) {
+    throw new Error(`${message} Expected ${String(expected)}, received ${String(actual)}.`);
+  }
+}
+
+async function expectThrows(name: string, action: () => Promise<unknown>): Promise<void> {
+  try {
+    await action();
+  } catch {
+    return;
+  }
+
+  throw new Error(`${name} should throw.`);
 }
 
 function assertNonProductionEnvironment(): void {
@@ -40,7 +67,6 @@ function assertNonProductionEnvironment(): void {
 async function cleanupIsolationFixtures(
   db: PrismaClient,
   organizationSlugs: readonly string[],
-  authUserIds: readonly string[],
 ): Promise<void> {
   const organizations = await db.organization.findMany({
     where: {
@@ -55,60 +81,46 @@ async function cleanupIsolationFixtures(
 
   const organizationIds = organizations.map((organization) => organization.id);
 
-  if (organizationIds.length > 0) {
-    await db.machine.deleteMany({
-      where: {
-        organizationId: {
-          in: organizationIds,
-        },
-      },
-    });
-
-    await db.activityLog.deleteMany({
-      where: {
-        organizationId: {
-          in: organizationIds,
-        },
-      },
-    });
-
-    await db.organizationMembership.deleteMany({
-      where: {
-        organizationId: {
-          in: organizationIds,
-        },
-      },
-    });
-
-    await db.customer.deleteMany({
-      where: {
-        organizationId: {
-          in: organizationIds,
-        },
-      },
-    });
-
-    await db.machineModel.deleteMany({
-      where: {
-        organizationId: {
-          in: organizationIds,
-        },
-      },
-    });
-
-    await db.organization.deleteMany({
-      where: {
-        id: {
-          in: organizationIds,
-        },
-      },
-    });
+  if (organizationIds.length === 0) {
+    return;
   }
 
-  await db.appUser.deleteMany({
+  await db.activityLog.deleteMany({
     where: {
-      authUserId: {
-        in: [...authUserIds],
+      organizationId: {
+        in: organizationIds,
+      },
+    },
+  });
+
+  await db.machine.deleteMany({
+    where: {
+      organizationId: {
+        in: organizationIds,
+      },
+    },
+  });
+
+  await db.customer.deleteMany({
+    where: {
+      organizationId: {
+        in: organizationIds,
+      },
+    },
+  });
+
+  await db.machineModel.deleteMany({
+    where: {
+      organizationId: {
+        in: organizationIds,
+      },
+    },
+  });
+
+  await db.organization.deleteMany({
+    where: {
+      id: {
+        in: organizationIds,
       },
     },
   });
@@ -125,80 +137,44 @@ async function createIsolationFixture(
     },
   });
 
-  const appUser = await db.appUser.create({
-    data: {
-      authUserId: fixtureInput.authUserId,
-      email: fixtureInput.userEmail,
-      displayName: `Tenant Isolation User ${fixtureInput.label}`,
-    },
+  const customer = await createCustomer({
+    db,
+    organizationId: organization.id,
+    companyName: `Tenant Isolation Customer ${fixtureInput.label}`,
+    contactName: `Tenant Contact ${fixtureInput.label}`,
+    email: `customer-${fixtureInput.label.toLowerCase()}-${randomUUID()}@buildtrace.test`,
+    phone: `+42000000000${fixtureInput.label === 'A' ? '1' : '2'}`,
+    country: 'CZ',
+    preferredLocale: 'en',
   });
 
-  await db.organizationMembership.create({
-    data: {
-      organizationId: organization.id,
-      appUserId: appUser.id,
-      role: OrganizationRole.OWNER,
-    },
+  const machineModel = await createMachineModel({
+    db,
+    organizationId: organization.id,
+    modelName: `Tenant Isolation Model ${fixtureInput.label}`,
+    description: `Tenant isolation model fixture ${fixtureInput.label}`,
   });
 
-  const customer = await db.customer.create({
-    data: {
-      organizationId: organization.id,
-      companyName: `Tenant Isolation Customer ${fixtureInput.label}`,
-      contactName: `Tenant Contact ${fixtureInput.label}`,
-      email: `customer-${fixtureInput.label.toLowerCase()}-${fixtureInput.authUserId}@buildtrace.test`,
-      phone: `+42000000000${fixtureInput.label === 'A' ? '1' : '2'}`,
-      country: 'CZ',
-      preferredLocale: 'en',
-    },
-  });
-
-  const machineModel = await db.machineModel.create({
-    data: {
-      organizationId: organization.id,
-      modelName: `Tenant Isolation Model ${fixtureInput.label}`,
-      description: `Tenant isolation model fixture ${fixtureInput.label}`,
-    },
-  });
-
-  const machine = await db.machine.create({
-    data: {
-      organizationId: organization.id,
-      customerId: customer.id,
-      machineModelId: machineModel.id,
-      machineName: `Tenant Isolation Machine ${fixtureInput.label}`,
-      serialNumber: `TENANT-${fixtureInput.label}-${fixtureInput.authUserId}`,
-      deliveryDate: new Date('2026-06-12T00:00:00.000Z'),
-      plcType: `PLC ${fixtureInput.label}`,
-      hmiType: `HMI ${fixtureInput.label}`,
-      status: MachineStatus.ACTIVE,
-    },
+  const machine = await createMachine({
+    db,
+    organizationId: organization.id,
+    customerId: customer.id,
+    machineModelId: machineModel.id,
+    machineName: `Tenant Isolation Machine ${fixtureInput.label}`,
+    serialNumber: `TENANT-${fixtureInput.label}-${randomUUID()}`,
+    deliveryDate: new Date('2026-06-12T00:00:00.000Z'),
+    plcType: `PLC ${fixtureInput.label}`,
+    hmiType: `HMI ${fixtureInput.label}`,
+    status: MachineStatus.ACTIVE,
   });
 
   return {
     organizationId: organization.id,
+    customerId: customer.id,
+    machineModelId: machineModel.id,
     machineId: machine.id,
     serialNumber: machine.serialNumber,
   };
-}
-
-async function listMachineRecordsForOrganization(
-  db: PrismaClient,
-  organizationId: string,
-): Promise<readonly MachineRecord[]> {
-  return db.machine.findMany({
-    where: {
-      organizationId,
-    },
-    select: {
-      id: true,
-      organizationId: true,
-      serialNumber: true,
-    },
-    orderBy: {
-      serialNumber: 'asc',
-    },
-  });
 }
 
 async function runMachineRecordIsolationCheck(): Promise<void> {
@@ -206,86 +182,185 @@ async function runMachineRecordIsolationCheck(): Promise<void> {
 
   const db = createPrismaClient();
   const runId = randomUUID();
-
   const fixtureInputs = [
     {
       label: 'A',
       organizationSlug: `tenant-isolation-a-${runId}`,
-      authUserId: randomUUID(),
-      userEmail: `tenant-isolation-a-${runId}@buildtrace.test`,
     },
     {
       label: 'B',
       organizationSlug: `tenant-isolation-b-${runId}`,
-      authUserId: randomUUID(),
-      userEmail: `tenant-isolation-b-${runId}@buildtrace.test`,
     },
   ] as const;
-
   const organizationSlugs = fixtureInputs.map((fixtureInput) => fixtureInput.organizationSlug);
-  const authUserIds = fixtureInputs.map((fixtureInput) => fixtureInput.authUserId);
 
   try {
     const fixtureA = await createIsolationFixture(db, fixtureInputs[0]);
     const fixtureB = await createIsolationFixture(db, fixtureInputs[1]);
 
-    const allFixtureMachines = await db.machine.findMany({
+    const organizationAMachines = await listMachinesByOrganization({
+      db,
+      organizationId: fixtureA.organizationId,
+    });
+    const organizationBMachines = await listMachinesByOrganization({
+      db,
+      organizationId: fixtureB.organizationId,
+    });
+
+    assertEqual(
+      organizationAMachines.length,
+      1,
+      'Organization A must list exactly its fixture machine.',
+    );
+    assertEqual(
+      organizationBMachines.length,
+      1,
+      'Organization B must list exactly its fixture machine.',
+    );
+    assertEqual(
+      organizationAMachines[0]?.serialNumber,
+      fixtureA.serialNumber,
+      'Organization A list must return its own machine.',
+    );
+    assertEqual(
+      organizationBMachines[0]?.serialNumber,
+      fixtureB.serialNumber,
+      'Organization B list must return its own machine.',
+    );
+    assert(
+      organizationAMachines.every((machine) => machine.organizationId === fixtureA.organizationId),
+      'Organization A list leaked a machine from another tenant.',
+    );
+    assert(
+      organizationBMachines.every((machine) => machine.organizationId === fixtureB.organizationId),
+      'Organization B list leaked a machine from another tenant.',
+    );
+
+    const organizationAReadsOwnMachine = await getMachineByOrganization({
+      db,
+      organizationId: fixtureA.organizationId,
+      machineId: fixtureA.machineId,
+    });
+    const organizationBReadsMachineA = await getMachineByOrganization({
+      db,
+      organizationId: fixtureB.organizationId,
+      machineId: fixtureA.machineId,
+    });
+
+    assert(
+      organizationAReadsOwnMachine !== null,
+      'Organization A must be able to read its own machine.',
+    );
+    assertEqual(
+      organizationBReadsMachineA,
+      null,
+      'Organization B must not read Organization A machine by ID.',
+    );
+
+    await expectThrows('cross-tenant machine update', () =>
+      updateMachine({
+        db,
+        organizationId: fixtureB.organizationId,
+        machineId: fixtureA.machineId,
+        customerId: fixtureB.customerId,
+        machineModelId: fixtureB.machineModelId,
+        machineName: 'Cross Tenant Update',
+        serialNumber: `CROSS-${runId}`,
+        status: MachineStatus.MAINTENANCE,
+      }),
+    );
+
+    await expectThrows('cross-tenant customer create', () =>
+      createMachine({
+        db,
+        organizationId: fixtureB.organizationId,
+        customerId: fixtureA.customerId,
+        machineModelId: fixtureB.machineModelId,
+        machineName: 'Invalid Cross Tenant Customer Machine',
+        serialNumber: `INVALID-CUSTOMER-${runId}`,
+        status: MachineStatus.ACTIVE,
+      }),
+    );
+
+    await expectThrows('cross-tenant model create', () =>
+      createMachine({
+        db,
+        organizationId: fixtureB.organizationId,
+        customerId: fixtureB.customerId,
+        machineModelId: fixtureA.machineModelId,
+        machineName: 'Invalid Cross Tenant Model Machine',
+        serialNumber: `INVALID-MODEL-${runId}`,
+        status: MachineStatus.ACTIVE,
+      }),
+    );
+
+    const updatedMachineA = await updateMachine({
+      db,
+      organizationId: fixtureA.organizationId,
+      machineId: fixtureA.machineId,
+      customerId: fixtureA.customerId,
+      machineModelId: fixtureA.machineModelId,
+      machineName: 'Tenant Isolation Machine A Updated',
+      serialNumber: `${fixtureA.serialNumber}-UPDATED`,
+      deliveryDate: new Date('2026-06-13T00:00:00.000Z'),
+      plcType: 'PLC A Updated',
+      hmiType: 'HMI A Updated',
+      status: MachineStatus.MAINTENANCE,
+    });
+
+    assertEqual(
+      updatedMachineA.organizationId,
+      fixtureA.organizationId,
+      'Valid update must keep the machine in its tenant.',
+    );
+    assertEqual(
+      updatedMachineA.status,
+      MachineStatus.MAINTENANCE,
+      'Valid update must apply status changes.',
+    );
+
+    const organizationBAfterFailedWrites = await listMachinesByOrganization({
+      db,
+      organizationId: fixtureB.organizationId,
+    });
+
+    assertEqual(
+      organizationBAfterFailedWrites.length,
+      1,
+      'Failed cross-tenant writes must not create Organization B machines.',
+    );
+    assertEqual(
+      organizationBAfterFailedWrites[0]?.id,
+      fixtureB.machineId,
+      'Organization B machine list must remain unchanged after failed cross-tenant writes.',
+    );
+
+    const activityLogs = await db.activityLog.findMany({
       where: {
-        id: {
-          in: [fixtureA.machineId, fixtureB.machineId],
+        organizationId: {
+          in: [fixtureA.organizationId, fixtureB.organizationId],
         },
       },
       select: {
-        id: true,
+        organizationId: true,
+        targetId: true,
       },
     });
 
-    assert(allFixtureMachines.length === 2, 'Isolation fixture setup did not create two machines.');
-
-    const organizationAMachines = await listMachineRecordsForOrganization(
-      db,
-      fixtureA.organizationId,
-    );
-    const organizationBMachines = await listMachineRecordsForOrganization(
-      db,
-      fixtureB.organizationId,
-    );
-
     assert(
-      organizationAMachines.length === 1,
-      'Organization A query returned the wrong machine count.',
-    );
-
-    assert(
-      organizationBMachines.length === 1,
-      'Organization B query returned the wrong machine count.',
-    );
-
-    assert(
-      organizationAMachines[0]?.serialNumber === fixtureA.serialNumber,
-      'Organization A query did not return its own machine.',
-    );
-
-    assert(
-      organizationBMachines[0]?.serialNumber === fixtureB.serialNumber,
-      'Organization B query did not return its own machine.',
-    );
-
-    assert(
-      organizationAMachines.every((machine) => machine.organizationId === fixtureA.organizationId),
-      'Organization A query leaked a machine from another organization.',
-    );
-
-    assert(
-      organizationBMachines.every((machine) => machine.organizationId === fixtureB.organizationId),
-      'Organization B query leaked a machine from another organization.',
+      activityLogs.every(
+        (log) =>
+          log.organizationId === fixtureA.organizationId ||
+          log.organizationId === fixtureB.organizationId,
+      ),
+      'Activity logs must remain scoped to the fixture organizations.',
     );
 
     console.info('Machine record tenant isolation check passed.');
   } finally {
-    await cleanupIsolationFixtures(db, organizationSlugs, authUserIds);
+    await cleanupIsolationFixtures(db, organizationSlugs);
     await db.$disconnect();
   }
 }
 
-void runMachineRecordIsolationCheck();
+await runMachineRecordIsolationCheck();
