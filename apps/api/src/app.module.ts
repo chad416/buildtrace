@@ -7,6 +7,7 @@ import { HealthController } from './health.controller.js';
 import { MachineRecordsController } from './machine-records.controller.js';
 import { QrPortalController } from './qr-portal.controller.js';
 import { ServiceTicketsController } from './service-tickets.controller.js';
+import { SoftwareVersionsController } from './software-versions.controller.js';
 
 @Module({
   controllers: [
@@ -17,6 +18,7 @@ import { ServiceTicketsController } from './service-tickets.controller.js';
     CustomerHandoverExportController,
     QrPortalController,
     ServiceTicketsController,
+    SoftwareVersionsController,
   ],
 })
 export class AppModule {}
