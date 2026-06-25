@@ -17,6 +17,8 @@ const flatRequiredKeys: readonly FlatStringKey[] = [
   'submitButtonLabel',
   'deliveredBadgeLabel',
   'currentBadgeLabel',
+  'downloadFileLabel',
+  'hasFileLabel',
   'markAsCurrentLabel',
   'markAsDeliveredLabel',
   'uploadedLabel',

@@ -1,5 +1,6 @@
 import {
   createSoftwareVersion,
+  createSoftwareVersionFileDownloadUrl,
   listSoftwareVersions,
   markVersionAsCurrent,
   markVersionAsDelivered,
@@ -70,7 +71,7 @@ const fakeVersion = {
   notes: 'Commissioning baseline',
   isDeliveredVersion: true,
   isCurrentKnownVersion: true,
-  storagePath: null,
+  hasFile: false,
   checksum: null,
   uploadedByUserId: 'user-1',
   uploadedAt: '2026-06-25T00:00:00.000Z',
@@ -276,9 +277,62 @@ async function runMarkVersionAsDeliveredCheck(): Promise<void> {
   );
 }
 
+async function runCreateSoftwareVersionFileDownloadUrlCheck(): Promise<void> {
+  const calls: CapturedRequest[] = [];
+  const result = await createSoftwareVersionFileDownloadUrl(
+    {
+      organizationId: ' org-1 ',
+      versionId: ' version-1 ',
+      accessToken: ' token-1 ',
+    },
+    createFetcher(calls, () =>
+      createJsonResponse({
+        versionId: 'version-1',
+        downloadUrl: 'https://storage.test/software-version-file',
+        expiresInSeconds: 300,
+      }),
+    ),
+  );
+
+  assert(
+    result.downloadUrl === 'https://storage.test/software-version-file',
+    'File download URL response was wrong.',
+  );
+  assert(result.expiresInSeconds === 300, 'File download URL expiry was wrong.');
+
+  const call = calls[0];
+  assert(call !== undefined, 'File download URL request was not captured.');
+
+  const url = readUrl(call.input);
+  assert(
+    url.pathname === '/software-versions/version-1/file-download-url',
+    'File download URL endpoint path was wrong.',
+  );
+  assert(call.init?.method === 'POST', 'File download URL must use POST.');
+  assert(
+    readHeaders(call.init).authorization === 'Bearer token-1',
+    'File download URL authorization was not normalized.',
+  );
+  assert(
+    readHeaders(call.init)['content-type'] === 'application/json',
+    'File download URL must set content-type.',
+  );
+
+  const body = readBody(call.init);
+  assert(body.organizationId === 'org-1', 'File download URL organizationId was not normalized.');
+
+  await expectThrows('file download URL with failed response', () =>
+    createSoftwareVersionFileDownloadUrl(
+      { organizationId: 'org-1', versionId: 'version-1', accessToken: 'token-1' },
+      async () => new Response('nope', { status: 404 }),
+    ),
+  );
+}
+
 await runCreateSoftwareVersionCheck();
 await runListSoftwareVersionsCheck();
 await runMarkVersionAsCurrentCheck();
 await runMarkVersionAsDeliveredCheck();
+await runCreateSoftwareVersionFileDownloadUrlCheck();
 
 console.info('Software versions web API smoke check passed.');

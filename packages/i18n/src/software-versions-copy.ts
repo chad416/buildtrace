@@ -14,6 +14,8 @@ export type SoftwareVersionsCopy = {
   readonly typeLabels: Record<SoftwareType, string>;
   readonly deliveredBadgeLabel: string;
   readonly currentBadgeLabel: string;
+  readonly downloadFileLabel: string;
+  readonly hasFileLabel: string;
   readonly markAsCurrentLabel: string;
   readonly markAsDeliveredLabel: string;
   readonly uploadedLabel: string;
@@ -43,6 +45,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Delivered',
     currentBadgeLabel: 'Current',
+    downloadFileLabel: 'Download version file',
+    hasFileLabel: 'File attached',
     markAsCurrentLabel: 'Mark as current',
     markAsDeliveredLabel: 'Mark as delivered',
     uploadedLabel: 'Added',
@@ -70,6 +74,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Dodáno',
     currentBadgeLabel: 'Aktuální',
+    downloadFileLabel: 'Stáhnout soubor verze',
+    hasFileLabel: 'Soubor přiložen',
     markAsCurrentLabel: 'Označit jako aktuální',
     markAsDeliveredLabel: 'Označit jako dodané',
     uploadedLabel: 'Přidáno',
@@ -97,6 +103,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Dodané',
     currentBadgeLabel: 'Aktuálne',
+    downloadFileLabel: 'Stiahnuť súbor verzie',
+    hasFileLabel: 'Súbor priložený',
     markAsCurrentLabel: 'Označiť ako aktuálne',
     markAsDeliveredLabel: 'Označiť ako dodané',
     uploadedLabel: 'Pridané',
@@ -124,6 +132,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Dostarczona',
     currentBadgeLabel: 'Aktualna',
+    downloadFileLabel: 'Pobierz plik wersji',
+    hasFileLabel: 'Plik załączony',
     markAsCurrentLabel: 'Oznacz jako aktualną',
     markAsDeliveredLabel: 'Oznacz jako dostarczoną',
     uploadedLabel: 'Dodano',
@@ -151,6 +161,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Geliefert',
     currentBadgeLabel: 'Aktuell',
+    downloadFileLabel: 'Versionsdatei herunterladen',
+    hasFileLabel: 'Datei angehängt',
     markAsCurrentLabel: 'Als aktuell markieren',
     markAsDeliveredLabel: 'Als geliefert markieren',
     uploadedLabel: 'Hinzugefügt',
@@ -178,6 +190,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Livrée',
     currentBadgeLabel: 'Actuelle',
+    downloadFileLabel: 'Télécharger le fichier de version',
+    hasFileLabel: 'Fichier joint',
     markAsCurrentLabel: 'Marquer comme actuelle',
     markAsDeliveredLabel: 'Marquer comme livrée',
     uploadedLabel: 'Ajoutée',
@@ -205,6 +219,8 @@ export const softwareVersionsCopy = {
     },
     deliveredBadgeLabel: 'Entregada',
     currentBadgeLabel: 'Actual',
+    downloadFileLabel: 'Descargar archivo de versión',
+    hasFileLabel: 'Archivo adjunto',
     markAsCurrentLabel: 'Marcar como actual',
     markAsDeliveredLabel: 'Marcar como entregada',
     uploadedLabel: 'Añadida',

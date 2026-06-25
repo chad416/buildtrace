@@ -11,7 +11,7 @@ export type SoftwareVersionApiModel = {
   readonly notes: string | null;
   readonly isDeliveredVersion: boolean;
   readonly isCurrentKnownVersion: boolean;
-  readonly storagePath: string | null;
+  readonly hasFile: boolean;
   readonly checksum: string | null;
   readonly uploadedByUserId: string | null;
   readonly uploadedAt: string;
@@ -46,6 +46,18 @@ export type MarkSoftwareVersionInput = {
   readonly machineId: string;
   readonly versionId: string;
   readonly accessToken: string;
+};
+
+export type CreateSoftwareVersionFileDownloadUrlInput = {
+  readonly organizationId: string;
+  readonly versionId: string;
+  readonly accessToken: string;
+};
+
+export type SoftwareVersionFileDownloadUrlResponse = {
+  readonly versionId: string;
+  readonly downloadUrl: string;
+  readonly expiresInSeconds: number;
 };
 
 export type SoftwareVersionsFetcher = Fetcher;
@@ -197,4 +209,28 @@ export async function markVersionAsDelivered(
   });
 
   return parseJsonResponse<SoftwareVersionApiModel>(response);
+}
+
+export async function createSoftwareVersionFileDownloadUrl(
+  input: CreateSoftwareVersionFileDownloadUrlInput,
+  fetcher: SoftwareVersionsFetcher = fetch,
+): Promise<SoftwareVersionFileDownloadUrlResponse> {
+  const versionId = normalizeRequiredText('Version ID', input.versionId);
+  const url = new URL(
+    `/software-versions/${encodeURIComponent(versionId)}/file-download-url`,
+    apiBaseUrl,
+  );
+
+  const response = await fetcher(url, {
+    method: 'POST',
+    headers: {
+      authorization: createAuthorizationHeader(input.accessToken),
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      organizationId: normalizeRequiredText('Organization ID', input.organizationId),
+    }),
+  });
+
+  return parseJsonResponse<SoftwareVersionFileDownloadUrlResponse>(response);
 }

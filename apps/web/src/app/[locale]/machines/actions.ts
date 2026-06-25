@@ -63,6 +63,7 @@ import {
 } from '@/service-tickets-api';
 import {
   createSoftwareVersion,
+  createSoftwareVersionFileDownloadUrl,
   markVersionAsCurrent,
   markVersionAsDelivered,
 } from '@/software-versions-api';
@@ -982,6 +983,36 @@ export async function markVersionAsDeliveredAction(formData: FormData): Promise<
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?versionAction=marked-delivered`);
+}
+
+export async function createSoftwareVersionFileDownloadUrlAction(
+  formData: FormData,
+): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?versionError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  let downloadUrl: string;
+
+  try {
+    const result = await createSoftwareVersionFileDownloadUrl({
+      organizationId: session.organizationId,
+      versionId: readRequiredFormText(formData, 'versionId', 'Version ID'),
+      accessToken: session.accessToken,
+    });
+
+    downloadUrl = result.downloadUrl;
+  } catch (error) {
+    redirectMachineSoftwareVersionActionWithError(locale, machineId, error);
+  }
+
+  redirect(downloadUrl);
 }
 
 export async function createServiceTicketAction(formData: FormData): Promise<void> {

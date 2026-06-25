@@ -37,6 +37,7 @@ import {
   createMachineDocumentDownloadUrlAction,
   createServiceTicketAction,
   createSoftwareVersionAction,
+  createSoftwareVersionFileDownloadUrlAction,
   createTicketCommentAttachmentDownloadUrlAction,
   disableMachineQrPortalAction,
   markVersionAsCurrentAction,
@@ -1561,10 +1562,28 @@ function renderSoftwareVersionsSection({
                               {copy.changedSinceDeliveryLabel}
                             </span>
                           ) : null}
+                          {version.hasFile ? (
+                            <span className="inline-flex items-center rounded-full border border-violet-500/40 bg-violet-950/30 px-2 py-0.5 text-xs font-semibold text-violet-200">
+                              {copy.hasFileLabel}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-3">
+                        {version.hasFile ? (
+                          <form action={createSoftwareVersionFileDownloadUrlAction}>
+                            <input type="hidden" name="machineId" value={machine.id} />
+                            <input type="hidden" name="locale" value={locale} />
+                            <input type="hidden" name="versionId" value={version.id} />
+                            <button
+                              type="submit"
+                              className="inline-flex min-h-10 items-center justify-center rounded-md border border-emerald-500/50 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-300 hover:text-white"
+                            >
+                              {copy.downloadFileLabel}
+                            </button>
+                          </form>
+                        ) : null}
                         <form action={markVersionAsCurrentAction}>
                           <input type="hidden" name="machineId" value={machine.id} />
                           <input type="hidden" name="locale" value={locale} />

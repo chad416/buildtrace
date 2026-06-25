@@ -4,6 +4,7 @@ import { activityLogActions } from '@buildtrace/shared';
 
 import {
   createSoftwareVersionFromRequest,
+  createSoftwareVersionFileDownloadUrlFromRequest,
   getSoftwareVersionFromRequest,
   listSoftwareVersionsFromRequest,
   markSoftwareVersionAsCurrentFromRequest,
@@ -47,6 +48,12 @@ type MarkDeliveredInput = Parameters<
   SoftwareVersionsEndpointDependencies['markAsDeliveredVersion']
 >[0];
 type ActivityInput = Parameters<SoftwareVersionsEndpointDependencies['createActivityLog']>[0];
+type UploadFileInput = Parameters<
+  SoftwareVersionsEndpointDependencies['uploadSoftwareVersionFile']
+>[0];
+type CreateFileSignedUrlInput = Parameters<
+  SoftwareVersionsEndpointDependencies['createSoftwareVersionFileSignedUrl']
+>[0];
 
 type CapturedCalls = {
   readonly resolveInputs: ResolveInput[];
@@ -56,6 +63,8 @@ type CapturedCalls = {
   readonly markCurrentInputs: MarkCurrentInput[];
   readonly markDeliveredInputs: MarkDeliveredInput[];
   readonly activityInputs: ActivityInput[];
+  readonly uploadFileInputs: UploadFileInput[];
+  readonly signedUrlInputs: CreateFileSignedUrlInput[];
 };
 
 function createCapturedCalls(): CapturedCalls {
@@ -67,6 +76,8 @@ function createCapturedCalls(): CapturedCalls {
     markCurrentInputs: [],
     markDeliveredInputs: [],
     activityInputs: [],
+    uploadFileInputs: [],
+    signedUrlInputs: [],
   };
 }
 
@@ -151,6 +162,59 @@ function createDependencies(
         createdAt: now,
       };
     },
+    uploadSoftwareVersionFile: async (input) => {
+      capturedCalls.uploadFileInputs.push(input);
+      return {
+        storagePath: `organizations/${input.organizationId}/machines/${input.machineId}/software-versions/${input.versionId}/${input.fileName}`,
+      };
+    },
+    createSoftwareVersionFileSignedUrl: async (input) => {
+      capturedCalls.signedUrlInputs.push(input);
+      return {
+        signedUrl: 'https://storage.test/software-version-file',
+        expiresInSeconds: input.config.signedUrlTtlSeconds,
+      };
+    },
+    readDocumentStorageConfig: () => ({
+      supabaseUrl: 'https://supabase.test',
+      serviceRoleKey: 'service-role-key',
+      bucketName: 'documents-private',
+      signedUrlTtlSeconds: 300,
+    }),
+    createDocumentStorageAdapter: () => ({
+      from() {
+        return {
+          async createSignedUrl() {
+            return {
+              data: {
+                signedUrl: 'https://storage.test/software-version-file',
+              },
+              error: null,
+            };
+          },
+          async upload(storagePath) {
+            return {
+              data: {
+                path: storagePath,
+              },
+              error: null,
+            };
+          },
+          async remove() {
+            return {
+              data: [],
+              error: null,
+            };
+          },
+          async download() {
+            return {
+              data: new Blob([Uint8Array.from([1])]),
+              error: null,
+            };
+          },
+        };
+      },
+    }),
   };
 }
 
@@ -194,6 +258,8 @@ async function runCreateVersionCheck(): Promise<void> {
 
   assert(version.id === 'version-1', 'Create version ID was wrong.');
   assert(version.versionName === 'PLC v1.2.3', 'Create version name was wrong.');
+  assert(version.hasFile === false, 'Create version file flag was wrong.');
+  assert(!('storagePath' in version), 'Create version exposed raw storage path.');
   assert(calls.resolveInputs.length === 1, 'Create version auth was not called once.');
   assert(
     calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN|MEMBER',
@@ -277,6 +343,8 @@ async function runListVersionsCheck(): Promise<void> {
 
   assert(response.versions.length === 1, 'List versions count was wrong.');
   assert(response.versions[0]?.id === 'version-1', 'List versions ID was wrong.');
+  assert(response.versions[0]?.hasFile === false, 'List versions file flag was wrong.');
+  assert(!('storagePath' in response.versions[0]!), 'List versions exposed raw storage path.');
   assert(calls.resolveInputs.length === 1, 'List versions auth was not called once.');
   assert(
     calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN|MEMBER',
@@ -308,6 +376,8 @@ async function runGetVersionCheck(): Promise<void> {
   });
 
   assert(version.id === 'version-1', 'Get version ID was wrong.');
+  assert(version.hasFile === false, 'Get version file flag was wrong.');
+  assert(!('storagePath' in version), 'Get version exposed raw storage path.');
   assert(calls.resolveInputs.length === 1, 'Get version auth was not called once.');
   assert(
     calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN|MEMBER',
@@ -328,6 +398,34 @@ async function runGetVersionCheck(): Promise<void> {
       query: { organizationId: 'org-1' },
       dependencies: createDependencies(createCapturedCalls(), { versionNotFound: true }),
     }),
+  );
+}
+
+async function runFileDownloadUrlCheck(): Promise<void> {
+  const calls = createCapturedCalls();
+
+  await expectException('missing version file', NotFoundException, () =>
+    createSoftwareVersionFileDownloadUrlFromRequest({
+      authorizationHeader: 'Bearer token-1',
+      versionId: ' version-1 ',
+      body: { organizationId: ' org-1 ' },
+      dependencies: createDependencies(calls),
+    }),
+  );
+
+  assert(calls.resolveInputs.length === 1, 'File download URL auth was not called once.');
+  assert(
+    calls.resolveInputs[0]?.allowedRoles?.join('|') === 'OWNER|ADMIN|MEMBER',
+    'File download URL roles were incorrect.',
+  );
+  assert(calls.getVersionInputs.length === 1, 'File download URL did not read the version.');
+  assert(
+    calls.getVersionInputs[0]?.versionId === 'version-1',
+    'File download URL version ID was wrong.',
+  );
+  assert(
+    calls.signedUrlInputs.length === 0,
+    'File download URL must not create a signed URL when no file is attached.',
   );
 }
 
@@ -412,6 +510,7 @@ async function runMarkDeliveredCheck(): Promise<void> {
 await runCreateVersionCheck();
 await runListVersionsCheck();
 await runGetVersionCheck();
+await runFileDownloadUrlCheck();
 await runMarkCurrentCheck();
 await runMarkDeliveredCheck();
 
