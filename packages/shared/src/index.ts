@@ -132,6 +132,8 @@ export const activityLogActions = {
   ticketCreated: 'ticket.created',
   ticketStatusUpdated: 'ticket.status_updated',
   ticketCommentAdded: 'ticket.comment_added',
+  softwareVersionUploaded: 'software_version.uploaded',
+  softwareVersionCurrentChanged: 'software_version.current_changed',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];
@@ -174,3 +176,6 @@ export type TicketPriority = (typeof ticketPriorities)[number];
 
 export const ticketAuthorTypes = ['builder', 'customer'] as const;
 export type TicketAuthorType = (typeof ticketAuthorTypes)[number];
+
+export const softwareTypes = ['plc', 'hmi', 'robot', 'drive', 'other'] as const;
+export type SoftwareType = (typeof softwareTypes)[number];

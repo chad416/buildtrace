@@ -49,6 +49,13 @@ export {
   addTicketComment,
   listTicketComments,
 } from './service-ticket-records';
+export {
+  createSoftwareVersion,
+  getSoftwareVersion,
+  listSoftwareVersions,
+  markAsCurrentKnownVersion,
+  markAsDeliveredVersion,
+} from './software-version-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
   CompletedCustomerHandoverExportArtifact,
@@ -98,5 +105,6 @@ export type {
   AddTicketCommentInput,
   ListTicketCommentsInput,
 } from './service-ticket-records';
+export type { SoftwareVersionRecord } from './software-version-records';
 
 export const dbPackageStatus = 'phase-6-zip-export-lifecycle-ready';
