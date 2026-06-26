@@ -553,6 +553,19 @@ Future storage buckets must not be public.
 
 Downloads must use signed temporary URLs.
 
+### storagePath never returned to web clients for software versions
+
+Decision:
+
+- Software version API responses must never return raw `storagePath` values to web clients.
+- The API returns `hasFile: boolean` instead.
+- Signed URLs are issued on demand through a separate authenticated endpoint.
+
+Reason:
+
+- Raw storage paths expose internal bucket structure and could be used to construct unauthorized access attempts.
+- The signed URL flow follows the same pattern as document downloads.
+
 ### Phase 1 security boundary
 
 Phase 1 added visible secure-by-default positioning, but no real enforcement.

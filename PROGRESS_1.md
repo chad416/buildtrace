@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- acc13d8 feat: add support meeting link field to service tickets
+- caf748c feat(web): add software version delivered vs current indicators
 
 Current branch:
 
@@ -12,11 +12,11 @@ Current branch:
 
 Current phase:
 
-- Phase 8 complete — Phase 9 next
+- Phase 9 complete — Phase 10 next
 
 Current full beta roadmap completion:
 
-- about 81%
+- about 88%
 
 Phase 5 completion:
 
@@ -24,9 +24,9 @@ Phase 5 completion:
 
 ## Product / Roadmap Truth
 
-BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, and later QR customer portal, service tickets, software version timeline, spare parts intelligence, quotes, and feedback.
+BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, QR customer portal, service tickets, software version timeline, and later spare parts intelligence, quotes, and feedback.
 
-Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is complete. Phase 9 is next.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is complete. Phase 9 is complete. Phase 10 is next.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -168,9 +168,25 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - rate-limiting note on the public ticket creation endpoint
 - activity logging for ticket created, status updated, and comment added
 
+## Phase 9 Complete
+
+- DB software_versions schema + migration (UUID foreign keys)
+- DB helpers: createSoftwareVersion, listSoftwareVersions, getSoftwareVersion, markAsCurrentKnownVersion, markAsDeliveredVersion
+- API endpoints: create, list, get, mark-current, mark-delivered, upload (with SHA-256 checksum), file-download-url
+- Private software version file storage (sensitive-engineering by default)
+- SHA-256 checksum stored for uploaded version files
+- hasFile field in API response (never exposes raw storagePath)
+- Web software versions API client (4 functions + file download URL)
+- Software version timeline UI in machine detail page
+- Four-state delivered vs current indicator (unchanged/changed since delivery)
+- Mark as current and mark as delivered buttons (conditionally shown)
+- i18n software versions copy (all 7 locales)
+- Activity logging: softwareVersionUploaded, softwareVersionCurrentChanged
+
 ## Next Exact Engineering Step
 
-Phase 9 - Software version timeline. Start with `software_versions` schema migration.
+Phase 10 - Spare parts intelligence + quote tracking.
+Start with `spare_parts` schema migration.
 
 ## Handoff Docs
 

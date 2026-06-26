@@ -1675,3 +1675,59 @@ Out of scope for Phase 8:
 - quote flow
 - feedback collection
 - production deployment
+
+## 2026-06-22 - Phase 9 - Software version timeline closeout
+
+Phase 9 is complete.
+
+Full beta roadmap completion moved from about 81% to about 88%.
+
+Verified shipped scope:
+
+- DB software_versions schema + migration (UUID foreign keys)
+- DB helpers: createSoftwareVersion, listSoftwareVersions, getSoftwareVersion, markAsCurrentKnownVersion, markAsDeliveredVersion
+- API endpoints: create, list, get, mark-current, mark-delivered, upload (with SHA-256 checksum), file-download-url
+- Private software version file storage (sensitive-engineering by default)
+- SHA-256 checksum stored for uploaded version files
+- hasFile field in API response (never exposes raw storagePath)
+- Web software versions API client (4 functions + file download URL)
+- Software version timeline UI in machine detail page
+- Four-state delivered vs current indicator (unchanged/changed since delivery)
+- Mark as current and mark as delivered buttons (conditionally shown)
+- i18n software versions copy (all 7 locales)
+- Activity logging: softwareVersionUploaded, softwareVersionCurrentChanged
+
+Final Phase 9 verification passed:
+
+- `pnpm.cmd --filter @buildtrace/shared typecheck`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db run software-version-records:smoke`
+- `pnpm.cmd --filter @buildtrace/i18n typecheck`
+- `pnpm.cmd --filter @buildtrace/i18n run software-versions-copy:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api run software-versions:smoke`
+- `pnpm.cmd --filter @buildtrace/api run software-version-storage:smoke`
+- `pnpm.cmd --filter @buildtrace/web run software-versions:smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git status --short`
+
+Phase 9 commits:
+
+- `1fc7533 feat(db): add software versions schema migration and helpers`
+- `f65682d feat(api): add software version endpoints`
+- `2cf068c feat(web): add software version timeline UI`
+- `4ac58e6 feat: add software version file upload with checksum`
+- `caf748c feat(web): add software version delivered vs current indicators`
+
+Out of scope for Phase 9:
+
+- spare parts
+- quote flow
+- feedback
+- live PLC monitoring
+- semantic diff parser
+- production deployment
