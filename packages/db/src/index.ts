@@ -56,6 +56,12 @@ export {
   markAsCurrentKnownVersion,
   markAsDeliveredVersion,
 } from './software-version-records';
+export { createSparePart, listSpareParts, updateSparePart } from './spare-part-records';
+export {
+  createQuoteRequest,
+  listQuoteRequests,
+  updateQuoteRequestStatus,
+} from './quote-request-records';
 export type { ActivityLogRecord } from './activity-log';
 export type {
   CompletedCustomerHandoverExportArtifact,
@@ -106,5 +112,7 @@ export type {
   ListTicketCommentsInput,
 } from './service-ticket-records';
 export type { SoftwareVersionRecord } from './software-version-records';
+export type { SparePartRecord } from './spare-part-records';
+export type { QuoteRequestRecord } from './quote-request-records';
 
 export const dbPackageStatus = 'phase-6-zip-export-lifecycle-ready';

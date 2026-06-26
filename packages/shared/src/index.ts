@@ -134,6 +134,10 @@ export const activityLogActions = {
   ticketCommentAdded: 'ticket.comment_added',
   softwareVersionUploaded: 'software_version.uploaded',
   softwareVersionCurrentChanged: 'software_version.current_changed',
+  sparePartCreated: 'spare_part.created',
+  sparePartUpdated: 'spare_part.updated',
+  quoteRequestCreated: 'quote_request.created',
+  quoteRequestStatusUpdated: 'quote_request.status_updated',
 } as const;
 
 export type ActivityLogAction = (typeof activityLogActions)[keyof typeof activityLogActions];
@@ -179,3 +183,18 @@ export type TicketAuthorType = (typeof ticketAuthorTypes)[number];
 
 export const softwareTypes = ['plc', 'hmi', 'robot', 'drive', 'other'] as const;
 export type SoftwareType = (typeof softwareTypes)[number];
+
+export const sparePartCriticalities = ['critical', 'recommended', 'optional'] as const;
+export type SparePartCriticality = (typeof sparePartCriticalities)[number];
+
+export const quoteRequestStatuses = [
+  'requested',
+  'quote-sent',
+  'approved',
+  'rejected',
+  'completed',
+] as const;
+export type QuoteRequestStatus = (typeof quoteRequestStatuses)[number];
+
+export const quoteRequestTypes = ['spare-part', 'service'] as const;
+export type QuoteRequestType = (typeof quoteRequestTypes)[number];

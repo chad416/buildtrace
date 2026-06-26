@@ -94,6 +94,8 @@ model Organization {
   memberships    OrganizationMembership[]
   serviceTickets ServiceTicket[]
   softwareVersions SoftwareVersion[]
+  spareParts   SparePart[]
+  quoteRequests QuoteRequest[]
   ticketComments TicketComment[]
 
   @@map("organizations")
@@ -211,6 +213,8 @@ model Machine {
   organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   serviceTickets ServiceTicket[]
   softwareVersions SoftwareVersion[]
+  spareParts   SparePart[]
+  quoteRequests QuoteRequest[]
 
   @@unique([organizationId, serialNumber])
   @@unique([organizationId, id])
@@ -343,4 +347,47 @@ model SoftwareVersion {
   @@index([machineId])
   @@index([machineId, softwareType])
   @@map("software_versions")
+}
+
+model SparePart {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  organizationId      String    @map("organization_id") @db.Uuid
+  machineId           String    @map("machine_id") @db.Uuid
+  partName            String    @map("part_name")
+  manufacturer        String?
+  partNumber          String?   @map("part_number")
+  quantity            Int       @default(1)
+  category            String    @default("other")
+  criticality         String    @default("recommended")
+  estimatedPrice      Decimal?  @map("estimated_price") @db.Decimal(12,2)
+  currency            String    @default("EUR")
+  internalCost        Decimal?  @map("internal_cost") @db.Decimal(12,2)
+  customerVisiblePrice Decimal? @map("customer_visible_price") @db.Decimal(12,2)
+  sourceDocumentId    String?   @map("source_document_id") @db.Uuid
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  machine             Machine      @relation(fields: [machineId], references: [id])
+  @@map("spare_parts")
+}
+
+model QuoteRequest {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  organizationId      String    @map("organization_id") @db.Uuid
+  machineId           String    @map("machine_id") @db.Uuid
+  sparePartId         String?   @map("spare_part_id")
+  ticketId            String?   @map("ticket_id")
+  type                String    @default("spare-part")
+  title               String
+  description         String?
+  quotedPrice         Decimal?  @map("quoted_price") @db.Decimal(12,2)
+  currency            String    @default("EUR")
+  status              String    @default("requested")
+  customerAccessToken String?   @unique @map("customer_access_token")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  machine             Machine      @relation(fields: [machineId], references: [id])
+  @@map("quote_requests")
 }
