@@ -26,7 +26,8 @@
     "qr-portal:smoke": "tsx src/qr-portal-controller-smoke-check.ts",
     "service-tickets:smoke": "tsx src/ticket-attachment-storage-smoke-check.ts && tsx src/service-tickets-controller-smoke-check.ts",
     "software-version-storage:smoke": "tsx src/software-version-storage-smoke-check.ts",
-    "software-versions:smoke": "tsx src/software-versions-controller-smoke-check.ts"
+    "software-versions:smoke": "tsx src/software-versions-controller-smoke-check.ts",
+    "spare-parts:smoke": "tsx src/spare-parts-controller-smoke-check.ts"
   },
   "dependencies": {
     "@buildtrace/db": "workspace:*",
