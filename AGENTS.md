@@ -9,7 +9,7 @@ BuildTrace is a multi-tenant industrial SaaS platform for machine documentation 
 service management, with an EU-first data-protection posture. Tenants manage machines,
 upload and classify documents, raise service tickets, expose a public QR portal per
 machine, and track delivered/current software versions. The product is in **Beta**
-(about 88% complete; Phases 0-9 done, Phase 10 active).
+(about 95% complete; Phases 0-10 done, Phase 11 active).
 
 ## Stack
 
@@ -94,48 +94,50 @@ git diff --check      # catch whitespace / conflict markers
 4. Any warnings or errors and how they were handled
 5. Confirmation that no out-of-scope work (auth/db/storage/tenant/etc.) was added
 
-## Phase 9 Current State
+## Phase 10 Current State
 
 Phase 7 - QR customer portal is complete and closed.
 Phase 8 - Service tickets + support session is complete and closed.
 Phase 9 - Software version timeline is complete and closed.
-Phase 10 - Spare parts intelligence + quote tracking is active.
+Phase 10 - Spare parts intelligence + quote tracking is complete and closed.
+Phase 11 - Feedback, audit log, security polish, deployment is active.
 
-The full beta roadmap is about 88% complete.
+The full beta roadmap is about 95% complete.
 
-Completed Phase 9 pieces:
+Completed Phase 10 pieces:
 
-- DB software_versions schema + migration (UUID foreign keys)
-- DB software version helpers
-- authenticated builder software version endpoints
-- private software version file storage with SHA-256 checksums
-- sensitive-engineering default for uploaded version files
-- hasFile API response field instead of raw storagePath exposure
-- software version timeline UI in machine detail
-- delivered and current known version markers
-- four-state delivered vs current indicator
-- conditional mark as current / mark as delivered actions
-- software-version copy for all 7 locales
-- activity logging for software upload and current-version changes
+- DB spare_parts and quote_requests schema + migration
+- DB spare part and quote request helpers
+- authenticated spare parts API endpoints
+- authenticated quote request API endpoints
+- public QR portal quote request creation endpoint
+- internalCost never returned by API responses
+- customerAccessToken never returned in builder list/get responses
+- web spare parts API client and machine detail UI
+- web quote requests API client and machine detail UI
+- web portal quote request form
+- spare parts and quote request copy for all 7 locales
+- activity logging for spare part and quote request actions
 
-## Phase 10 Active
+## Phase 11 Active
 
-Phase 10 - Spare parts intelligence + quote tracking scope from the roadmap:
+Phase 11 - Feedback, audit log, polish, deployment scope from the roadmap:
 
-- manual spare parts list
-- basic extraction from BOM/manual text where possible
-- critical/recommended/optional
-- quote request
-- quote sent
-- approval/rejection
-- localized part categories
-- localized quote statuses
-- currency formatting by locale
-- internal cost hidden from customer
+- private feedback
+- activity log dashboard
+- demo data
+- empty states
+- loading states
+- error states
+- production deployment
+- monitoring
+- backup/export plan
+- security polish
+- final access-control checklist
 
 ## Hard Warning For Future AI Agents
 
-Do not reopen Phase 9 unless a real defect is found.
+Do not reopen Phase 10 unless a real defect is found.
 
 Do not implement AI/OCR/vector search/worker queues for Phase 5.
 

@@ -1731,3 +1731,64 @@ Out of scope for Phase 9:
 - live PLC monitoring
 - semantic diff parser
 - production deployment
+
+## 2026-06-22 - Phase 10 - Spare parts intelligence + quote tracking closeout
+
+Phase 10 is complete.
+
+Full beta roadmap completion moved from about 88% to about 95%.
+
+Verified shipped scope:
+
+- DB spare_parts and quote_requests schema + migration
+- DB helpers: createSparePart, listSpareParts, updateSparePart
+- DB helpers: createQuoteRequest, listQuoteRequests, updateQuoteRequestStatus
+- API spare parts endpoints: create, list, update
+- internalCost security rule: never returned in any API response
+- API quote request endpoints: create, list (by machine + org-wide), update status, public portal creation
+- customerAccessToken security rule: never in builder list/get responses
+- Web spare parts API client and UI in machine detail
+- Web quote requests API client and UI in machine detail
+- Web portal quote request form on QR portal page
+- i18n spare parts copy (all 7 locales)
+- i18n quote requests copy (all 7 locales)
+- Activity logging: sparePartCreated, sparePartUpdated, quoteRequestCreated, quoteRequestStatusUpdated
+
+Final Phase 10 verification passed:
+
+- `pnpm.cmd --filter @buildtrace/shared typecheck`
+- `pnpm.cmd --filter @buildtrace/db typecheck`
+- `pnpm.cmd --filter @buildtrace/db run spare-part-records:smoke`
+- `pnpm.cmd --filter @buildtrace/db run quote-request-records:smoke`
+- `pnpm.cmd --filter @buildtrace/i18n typecheck`
+- `pnpm.cmd --filter @buildtrace/i18n run spare-parts-copy:smoke`
+- `pnpm.cmd --filter @buildtrace/i18n run quote-requests-copy:smoke`
+- `pnpm.cmd --filter @buildtrace/api typecheck`
+- `pnpm.cmd --filter @buildtrace/api lint`
+- `pnpm.cmd --filter @buildtrace/api run spare-parts:smoke`
+- `pnpm.cmd --filter @buildtrace/api run quote-requests:smoke`
+- `pnpm.cmd --filter @buildtrace/web run spare-parts:smoke`
+- `pnpm.cmd --filter @buildtrace/web run quote-requests:smoke`
+- `pnpm.cmd --filter @buildtrace/web run portal-quote-requests:smoke`
+- `pnpm.cmd --filter @buildtrace/web typecheck`
+- `pnpm.cmd --filter @buildtrace/web build`
+- `pnpm.cmd format:check`
+- `git diff --check`
+- `git status --short`
+
+Phase 10 commits:
+
+- `3b52df4 feat(db): add spare parts and quote requests schema migration and helpers`
+- `123af09 feat(api): add spare parts endpoints`
+- `accf037 feat(api): add quote request endpoints`
+- `b2203ff feat(web): add spare parts UI`
+- `e33b3f0 feat(web): add quote request flow UI`
+
+Out of scope for Phase 10:
+
+- feedback collection
+- activity log dashboard
+- demo data
+- production deployment
+- billing
+- supplier marketplace

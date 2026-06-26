@@ -1445,3 +1445,16 @@ Reason:
 - NestJS `FileInterceptor` from `@nestjs/platform-express` is officially incompatible with `FastifyAdapter`.
 - Fastify native multipart handling provides the required private attachment upload boundary without introducing an incompatible Express upload stack.
 - This is consistent with the existing document upload implementation.
+
+### internalCost and customerAccessToken security rules
+
+Decision:
+
+- `internalCost` must never be returned by spare parts API responses.
+- `customerAccessToken` must never appear in builder-facing quote request list or get responses.
+- Both rules are enforced at the API controller layer and verified by smoke checks.
+
+Reason:
+
+- `internalCost` represents internal pricing that must never be visible to customers or through any public endpoint.
+- `customerAccessToken` is a bearer credential for portal access and must never appear in builder-facing list or get responses.

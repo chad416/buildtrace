@@ -4,7 +4,7 @@
 
 Last updated after commit:
 
-- caf748c feat(web): add software version delivered vs current indicators
+- e33b3f0 feat(web): add quote request flow UI
 
 Current branch:
 
@@ -12,11 +12,11 @@ Current branch:
 
 Current phase:
 
-- Phase 9 complete — Phase 10 next
+- Phase 10 complete — Phase 11 next
 
 Current full beta roadmap completion:
 
-- about 88%
+- about 95%
 
 Phase 5 completion:
 
@@ -24,9 +24,9 @@ Phase 5 completion:
 
 ## Product / Roadmap Truth
 
-BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, QR customer portal, service tickets, software version timeline, and later spare parts intelligence, quotes, and feedback.
+BuildTrace Beta is a professional B2B vertical SaaS for machine handover, machine documentation, private document storage, signed document downloads, classification suggestions, QR customer portal, service tickets, software version timeline, spare parts intelligence, quote tracking, and later private feedback.
 
-Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is complete. Phase 9 is complete. Phase 10 is next.
+Phase 4 is complete. Phase 5 is complete. Phase 6 is complete. Phase 7 is complete. Phase 8 is complete. Phase 9 is complete. Phase 10 is complete. Phase 11 is next.
 
 Do not claim legal/compliance guarantees. Correct wording is evidence readiness, documentation organization, handover records, service history, and software-version traceability.
 
@@ -183,10 +183,26 @@ Do not claim legal/compliance guarantees. Correct wording is evidence readiness,
 - i18n software versions copy (all 7 locales)
 - Activity logging: softwareVersionUploaded, softwareVersionCurrentChanged
 
+## Phase 10 Complete
+
+- DB spare_parts and quote_requests schema + migration
+- DB helpers: createSparePart, listSpareParts, updateSparePart
+- DB helpers: createQuoteRequest, listQuoteRequests, updateQuoteRequestStatus
+- API spare parts endpoints: create, list, update
+- internalCost security rule: never returned in any API response
+- API quote request endpoints: create, list (by machine + org-wide), update status, public portal creation
+- customerAccessToken security rule: never in builder list/get responses
+- Web spare parts API client and UI in machine detail
+- Web quote requests API client and UI in machine detail
+- Web portal quote request form on QR portal page
+- i18n spare parts copy (all 7 locales)
+- i18n quote requests copy (all 7 locales)
+- Activity logging: sparePartCreated, sparePartUpdated, quoteRequestCreated, quoteRequestStatusUpdated
+
 ## Next Exact Engineering Step
 
-Phase 10 - Spare parts intelligence + quote tracking.
-Start with `spare_parts` schema migration.
+Phase 11 - Feedback, audit log, security polish, deployment.
+Start with private feedback per machine/model.
 
 ## Handoff Docs
 
