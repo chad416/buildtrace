@@ -5,6 +5,8 @@ import {
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  quoteRequestStatuses,
+  quoteRequestTypes,
   sparePartCriticalities,
   softwareTypes,
   supportedLocales,
@@ -14,6 +16,8 @@ import {
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
   type MachineStatus,
+  type QuoteRequestStatus,
+  type QuoteRequestType,
   type SparePartCriticality,
   type SoftwareType,
   type SupportedLocale,
@@ -56,6 +60,7 @@ import {
   disableMachineQrPortal,
   rotateMachineQrToken,
 } from '@/qr-portal-builder-api';
+import { createQuoteRequest, updateQuoteRequestStatus } from '@/quote-requests-api';
 import {
   addTicketComment,
   createServiceTicket,
@@ -880,6 +885,16 @@ function redirectMachineTicketActionWithError(
   );
 }
 
+function redirectMachineQuoteRequestActionWithError(
+  locale: string,
+  machineId: string,
+  error: unknown,
+): never {
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?quoteError=${encodeURIComponent(formatActionError(error))}`,
+  );
+}
+
 function readLocaleFromForm(formData: FormData): SupportedLocale {
   const requestedLocale = ((formData.get('locale') as string | null) ?? '').trim();
   return supportedLocales.includes(requestedLocale as SupportedLocale)
@@ -963,6 +978,30 @@ function readOptionalSparePartCriticality(formData: FormData): SparePartCritical
   }
 
   return criticality as SparePartCriticality;
+}
+
+function readOptionalQuoteRequestType(formData: FormData): QuoteRequestType | undefined {
+  const type = readOptionalFormText(formData, 'type');
+
+  if (type === undefined) {
+    return undefined;
+  }
+
+  if (!(quoteRequestTypes as readonly string[]).includes(type)) {
+    throw new Error(`Invalid quote request type: ${type}`);
+  }
+
+  return type as QuoteRequestType;
+}
+
+function readRequiredQuoteRequestStatus(formData: FormData): QuoteRequestStatus {
+  const status = readRequiredFormText(formData, 'status', 'Status');
+
+  if (!(quoteRequestStatuses as readonly string[]).includes(status)) {
+    throw new Error(`Invalid quote request status: ${status}`);
+  }
+
+  return status as QuoteRequestStatus;
 }
 
 export async function createSparePartAction(formData: FormData): Promise<void> {
@@ -1068,6 +1107,72 @@ export async function updateSparePartAction(formData: FormData): Promise<void> {
   }
 
   redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?sparePartAction=updated`);
+}
+
+export async function createQuoteRequestAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?quoteError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const type = readOptionalQuoteRequestType(formData);
+    const description = readOptionalNullableFormText(formData, 'description');
+    const currency = readOptionalFormText(formData, 'currency');
+
+    await createQuoteRequest({
+      organizationId: session.organizationId,
+      machineId: readRequiredFormText(formData, 'machineId', 'Machine ID'),
+      title: readRequiredFormText(formData, 'title', 'Title'),
+      ...(type !== undefined ? { type } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(currency !== undefined ? { currency } : {}),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineQuoteRequestActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?quoteAction=created`);
+}
+
+export async function updateQuoteRequestStatusAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?quoteError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const quotedPrice = readOptionalNullableDecimalFormText(
+      formData,
+      'quotedPrice',
+      'Quoted price',
+    );
+    const currency = readOptionalFormText(formData, 'currency');
+
+    await updateQuoteRequestStatus({
+      organizationId: session.organizationId,
+      quoteRequestId: readRequiredFormText(formData, 'quoteRequestId', 'Quote request ID'),
+      status: readRequiredQuoteRequestStatus(formData),
+      ...(quotedPrice !== undefined ? { quotedPrice } : {}),
+      ...(currency !== undefined ? { currency } : {}),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineQuoteRequestActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?quoteAction=status-updated`);
 }
 
 function redirectMachineSoftwareVersionActionWithError(

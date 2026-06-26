@@ -14,6 +14,8 @@ export { handoverCompletenessCopy } from './handover-completeness-copy';
 export type { HandoverCompletenessCopy } from './handover-completeness-copy';
 export { qrPortalCopy } from './qr-portal-copy';
 export type { QrPortalCopy } from './qr-portal-copy';
+export { quoteRequestsCopy } from './quote-requests-copy';
+export type { QuoteRequestsCopy } from './quote-requests-copy';
 export { qrPortalBuilderCopy } from './qr-portal-builder-copy';
 export type { QrPortalBuilderCopy } from './qr-portal-builder-copy';
 export { serviceTicketsCopy } from './service-tickets-copy';

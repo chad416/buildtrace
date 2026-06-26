@@ -16,7 +16,9 @@
     "service-tickets:smoke": "tsx src/service-tickets-api-smoke-check.ts",
     "software-versions:smoke": "tsx src/software-versions-api-smoke-check.ts",
     "spare-parts:smoke": "tsx src/spare-parts-api-smoke-check.ts",
+    "quote-requests:smoke": "tsx src/quote-requests-api-smoke-check.ts",
     "portal-service-tickets:smoke": "tsx src/portal-service-tickets-api-smoke-check.ts",
+    "portal-quote-requests:smoke": "tsx src/portal-quote-requests-api-smoke-check.ts",
     "build": "next build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"

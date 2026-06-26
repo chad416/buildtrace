@@ -4,12 +4,14 @@ import {
   handoverCompletenessCopy,
   isSupportedLocale,
   qrPortalBuilderCopy,
+  quoteRequestsCopy,
   serviceTicketsCopy,
   softwareVersionsCopy,
   sparePartsCopy,
   type DocumentLabels,
   type HandoverCompletenessCopy,
   type QrPortalBuilderCopy,
+  type QuoteRequestsCopy,
   type ServiceTicketsCopy,
   type SoftwareVersionsCopy,
   type SparePartsCopy,
@@ -19,6 +21,8 @@ import {
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  quoteRequestStatuses,
+  quoteRequestTypes,
   sparePartCriticalities,
   softwareTypes,
   ticketPriorities,
@@ -26,6 +30,7 @@ import {
   type CustomerHandoverCompleteness,
   type DocumentClassificationStatus,
   type DocumentVisibilityLevel,
+  type QuoteRequestStatus,
   type SparePartCriticality,
 } from '@buildtrace/shared';
 import Link from 'next/link';
@@ -39,6 +44,7 @@ import {
   createCustomerHandoverExportDownloadUrlAction,
   createCustomerHandoverExportPdfDownloadUrlAction,
   createMachineDocumentDownloadUrlAction,
+  createQuoteRequestAction,
   createServiceTicketAction,
   createSoftwareVersionAction,
   createSoftwareVersionFileDownloadUrlAction,
@@ -52,6 +58,7 @@ import {
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
+  updateQuoteRequestStatusAction,
   updateSparePartAction,
   updateTicketMeetingLinkAction,
   updateTicketStatusAction,
@@ -64,6 +71,7 @@ import {
 import { listDocuments, type DocumentMetadataApiModel } from '@/document-records-api';
 import { getHandoverCompleteness } from '@/handover-completeness-api';
 import { getMachineQrToken } from '@/qr-portal-builder-api';
+import { listQuoteRequestsByMachine, type QuoteRequestApiModel } from '@/quote-requests-api';
 import {
   listServiceTickets,
   listTicketComments,
@@ -117,6 +125,8 @@ type MachineDetailSearchParams = {
   readonly versionError?: string;
   readonly sparePartAction?: string;
   readonly sparePartError?: string;
+  readonly quoteAction?: string;
+  readonly quoteError?: string;
 };
 
 type PageProps = {
@@ -149,6 +159,7 @@ type MachineDetailLoadState =
       readonly ticketComments: readonly TicketCommentApiModel[];
       readonly softwareVersions: readonly SoftwareVersionApiModel[];
       readonly spareParts: readonly SparePartApiModel[];
+      readonly quoteRequests: readonly QuoteRequestApiModel[];
     };
 
 const statusClassNames = {
@@ -177,6 +188,14 @@ const sparePartCriticalityClassNames = {
   recommended: 'border-amber-500/40 bg-amber-950/30 text-amber-200',
   optional: 'border-stone-600 bg-stone-900 text-stone-300',
 } satisfies Record<SparePartCriticality, string>;
+
+const quoteRequestStatusClassNames = {
+  requested: 'border-sky-500/40 bg-sky-950/30 text-sky-200',
+  'quote-sent': 'border-amber-500/40 bg-amber-950/30 text-amber-200',
+  approved: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-200',
+  rejected: 'border-red-500/40 bg-red-950/30 text-red-200',
+  completed: 'border-stone-600 bg-stone-900 text-stone-300',
+} satisfies Record<QuoteRequestStatus, string>;
 
 function formatLoadError(error: unknown): string {
   if (error instanceof Error) {
@@ -243,6 +262,8 @@ function normalizeSearchParams(
   const versionError = readStringSearchParam(searchParams, 'versionError');
   const sparePartAction = readStringSearchParam(searchParams, 'sparePartAction');
   const sparePartError = readStringSearchParam(searchParams, 'sparePartError');
+  const quoteAction = readStringSearchParam(searchParams, 'quoteAction');
+  const quoteError = readStringSearchParam(searchParams, 'quoteError');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -272,6 +293,8 @@ function normalizeSearchParams(
     ...(versionError ? { versionError } : {}),
     ...(sparePartAction ? { sparePartAction } : {}),
     ...(sparePartError ? { sparePartError } : {}),
+    ...(quoteAction ? { quoteAction } : {}),
+    ...(quoteError ? { quoteError } : {}),
   };
 }
 
@@ -329,6 +352,17 @@ function formatSparePartActionMessage(sparePartAction: string, copy: SparePartsC
       return copy.submitButtonLabel;
     case 'updated':
       return copy.updateButtonLabel;
+    default:
+      return copy.sectionTitle;
+  }
+}
+
+function formatQuoteRequestActionMessage(quoteAction: string, copy: QuoteRequestsCopy): string {
+  switch (quoteAction) {
+    case 'created':
+      return copy.submitButtonLabel;
+    case 'status-updated':
+      return copy.updateStatusLabel;
     default:
       return copy.sectionTitle;
   }
@@ -1939,6 +1973,202 @@ function renderSparePartsSection({
   );
 }
 
+function formatQuoteRequestPrice(value: string | null, currency: string): string | null {
+  return value === null ? null : `${value} ${currency}`;
+}
+
+function renderQuoteRequestsSection({
+  machine,
+  quoteRequests,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly quoteRequests: readonly QuoteRequestApiModel[];
+  readonly locale: string;
+  readonly copy: QuoteRequestsCopy;
+}) {
+  return (
+    <section
+      id="quote-requests"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {copy.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">{copy.sectionDescription}</p>
+
+      <div className="mt-6 grid gap-6">
+        <div className="rounded-lg border border-stone-700 bg-black/20 p-5">
+          <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.newRequestTitle}
+          </p>
+          <form action={createQuoteRequestAction} className="mt-4 grid gap-4">
+            <input type="hidden" name="machineId" value={machine.id} />
+            <input type="hidden" name="locale" value={locale} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-2">
+                <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.titleLabel}
+                </label>
+                <input
+                  name="title"
+                  required
+                  className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.typeLabel}
+                </label>
+                <select
+                  name="type"
+                  defaultValue="spare-part"
+                  className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+                >
+                  {quoteRequestTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {copy.typeLabels[type]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                  {copy.currencyLabel}
+                </label>
+                <input
+                  name="currency"
+                  defaultValue="EUR"
+                  className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                {copy.descriptionLabel}
+              </label>
+              <textarea
+                name="description"
+                rows={3}
+                className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+            >
+              {copy.submitButtonLabel}
+            </button>
+          </form>
+        </div>
+
+        {quoteRequests.length === 0 ? (
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            {copy.noRequestsMessage}
+          </p>
+        ) : (
+          <div className="grid gap-4">
+            {quoteRequests.map((quoteRequest) => {
+              const price = formatQuoteRequestPrice(
+                quoteRequest.quotedPrice,
+                quoteRequest.currency,
+              );
+
+              return (
+                <article
+                  key={quoteRequest.id}
+                  className="rounded-lg border border-stone-700 bg-black/20 p-5"
+                >
+                  <div className="flex flex-wrap items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold uppercase tracking-normal text-stone-500">
+                        {copy.typeLabels[quoteRequest.type]}
+                      </p>
+                      <h3 className="mt-1 text-base font-semibold text-stone-100">
+                        {quoteRequest.title}
+                      </h3>
+                      {quoteRequest.description ? (
+                        <p className="mt-2 text-sm leading-6 text-stone-300">
+                          {quoteRequest.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${quoteRequestStatusClassNames[quoteRequest.status]}`}
+                    >
+                      {copy.statusLabels[quoteRequest.status]}
+                    </span>
+                  </div>
+
+                  {price ? (
+                    <p className="mt-4 text-sm text-stone-300">
+                      {copy.quotedPriceLabel}: <span className="text-stone-100">{price}</span>
+                    </p>
+                  ) : null}
+
+                  <form
+                    action={updateQuoteRequestStatusAction}
+                    className="mt-5 grid gap-4 border-t border-stone-700 pt-5 md:grid-cols-4 md:items-end"
+                  >
+                    <input type="hidden" name="machineId" value={machine.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="quoteRequestId" value={quoteRequest.id} />
+                    <div className="grid gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.statusLabel}
+                      </label>
+                      <select
+                        name="status"
+                        defaultValue={quoteRequest.status}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+                      >
+                        {quoteRequestStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {copy.statusLabels[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.quotedPriceLabel}
+                      </label>
+                      <input
+                        name="quotedPrice"
+                        type="number"
+                        step="0.01"
+                        defaultValue={quoteRequest.quotedPrice ?? ''}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+                        {copy.currencyLabel}
+                      </label>
+                      <input
+                        name="currency"
+                        defaultValue={quoteRequest.currency}
+                        className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-stone-700 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:border-emerald-400 hover:text-white"
+                    >
+                      {copy.updateStatusLabel}
+                    </button>
+                  </form>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -1963,6 +2193,8 @@ function renderMachineDetail({
   softwareCopy,
   spareParts,
   sparePartsUiCopy,
+  quoteRequests,
+  quoteCopy,
 }: {
   readonly machine: MachineRecordApiModel;
   readonly customers: readonly CustomerRecordApiModel[];
@@ -1995,6 +2227,8 @@ function renderMachineDetail({
   readonly softwareCopy: SoftwareVersionsCopy;
   readonly spareParts: readonly SparePartApiModel[];
   readonly sparePartsUiCopy: SparePartsCopy;
+  readonly quoteRequests: readonly QuoteRequestApiModel[];
+  readonly quoteCopy: QuoteRequestsCopy;
 }) {
   return (
     <>
@@ -2117,6 +2351,13 @@ function renderMachineDetail({
         copy: sparePartsUiCopy,
       })}
 
+      {renderQuoteRequestsSection({
+        machine,
+        quoteRequests,
+        locale,
+        copy: quoteCopy,
+      })}
+
       {renderMachineEditForm({
         machine,
         customers,
@@ -2175,6 +2416,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
   const qrPortalCopy = qrPortalBuilderCopy[locale];
   const softwareCopy = softwareVersionsCopy[locale];
   const sparePartsUiCopy = sparePartsCopy[locale];
+  const quoteCopy = quoteRequestsCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -2230,6 +2472,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         ticketsResponse,
         softwareVersionsResponse,
         sparePartsResponse,
+        quoteRequestsResponse,
       ] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
@@ -2279,6 +2522,11 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           machineId,
           accessToken: session.accessToken,
         }),
+        listQuoteRequestsByMachine({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
 
       let ticketComments: readonly TicketCommentApiModel[] = [];
@@ -2309,6 +2557,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         ticketComments,
         softwareVersions: softwareVersionsResponse.versions,
         spareParts: sparePartsResponse.spareParts,
+        quoteRequests: quoteRequestsResponse.quoteRequests,
       };
     } catch (error) {
       loadState = {
@@ -2603,6 +2852,22 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.quoteAction
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: quoteCopy.sectionTitle,
+            body: formatQuoteRequestActionMessage(normalizedSearchParams.quoteAction, quoteCopy),
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.quoteError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: quoteCopy.errorTitle,
+            body: normalizedSearchParams.quoteError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -2634,6 +2899,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             softwareCopy,
             spareParts: loadState.spareParts,
             sparePartsUiCopy,
+            quoteRequests: loadState.quoteRequests,
+            quoteCopy,
           })
         : null}
     </div>

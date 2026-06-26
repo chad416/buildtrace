@@ -1,9 +1,15 @@
 'use server';
 
-import { isSupportedLocale, qrPortalCopy, type Locale } from '@buildtrace/i18n';
-import { ticketPriorities, type TicketPriority } from '@buildtrace/shared';
+import { isSupportedLocale, qrPortalCopy, quoteRequestsCopy, type Locale } from '@buildtrace/i18n';
+import {
+  quoteRequestTypes,
+  ticketPriorities,
+  type QuoteRequestType,
+  type TicketPriority,
+} from '@buildtrace/shared';
 import { redirect } from 'next/navigation';
 
+import { createPortalQuoteRequest } from '@/portal-quote-requests-api';
 import { createPortalServiceTicket } from '@/portal-service-tickets-api';
 import { createQrPortalDocumentDownloadUrl } from '@/qr-portal-api';
 
@@ -28,6 +34,35 @@ function readLocale(formData: FormData): Locale {
   const normalizedValue = typeof value === 'string' ? value.trim() : '';
 
   return isSupportedLocale(normalizedValue) ? normalizedValue : 'en';
+}
+
+function readOptionalFormText(formData: FormData, name: string): string | undefined {
+  const value = formData.get(name);
+
+  if (value === null || typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalizedValue = value.trim();
+
+  return normalizedValue ? normalizedValue : undefined;
+}
+
+function readOptionalPortalQuoteRequestType(
+  formData: FormData,
+  locale: Locale,
+): QuoteRequestType | undefined {
+  const type = readOptionalFormText(formData, 'type');
+
+  if (type === undefined) {
+    return undefined;
+  }
+
+  if (!(quoteRequestTypes as readonly string[]).includes(type)) {
+    throw new Error(quoteRequestsCopy[locale].portalErrorTitle);
+  }
+
+  return type as QuoteRequestType;
 }
 
 export async function createQrPortalDocumentDownloadUrlAction(formData: FormData): Promise<void> {
@@ -105,6 +140,49 @@ export async function createPortalServiceTicketAction(formData: FormData): Promi
         : qrPortalCopy[locale].ticketErrorTitle;
     const queryParams = new URLSearchParams({
       ticketError: message,
+      lang: locale,
+    });
+    redirectUrl = `/portal/${encodeURIComponent(qrToken)}?${queryParams.toString()}`;
+  }
+
+  redirect(redirectUrl);
+}
+
+export async function createPortalQuoteRequestAction(formData: FormData): Promise<void> {
+  let qrToken = '';
+  let machineId = '';
+  const locale = readLocale(formData);
+  let redirectUrl = '';
+
+  try {
+    qrToken = readRequiredFormText(formData, 'qrToken');
+    machineId = readRequiredFormText(formData, 'machineId');
+    const title = readRequiredFormText(formData, 'title');
+    const type = readOptionalPortalQuoteRequestType(formData, locale);
+    const description = readOptionalFormText(formData, 'description');
+    const currency = readOptionalFormText(formData, 'currency');
+
+    const result = await createPortalQuoteRequest({
+      qrToken,
+      machineId,
+      title,
+      ...(type !== undefined ? { type } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(currency !== undefined ? { currency } : {}),
+    });
+    const queryParams = new URLSearchParams({
+      quoteCreated: '1',
+      quoteRef: result.customerAccessToken,
+      lang: locale,
+    });
+    redirectUrl = `/portal/${encodeURIComponent(qrToken)}?${queryParams.toString()}`;
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : quoteRequestsCopy[locale].portalErrorTitle;
+    const queryParams = new URLSearchParams({
+      quoteError: message,
       lang: locale,
     });
     redirectUrl = `/portal/${encodeURIComponent(qrToken)}?${queryParams.toString()}`;

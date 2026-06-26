@@ -3,12 +3,13 @@ import {
   isSupportedLocale,
   locales,
   qrPortalCopy,
+  quoteRequestsCopy,
   type Locale,
 } from '@buildtrace/i18n';
-import { ticketPriorities, type DocumentCategory } from '@buildtrace/shared';
+import { quoteRequestTypes, ticketPriorities, type DocumentCategory } from '@buildtrace/shared';
 import Link from 'next/link';
 
-import { createPortalServiceTicketAction } from '../actions';
+import { createPortalQuoteRequestAction, createPortalServiceTicketAction } from '../actions';
 import {
   getQrPortalMachine,
   listQrPortalDocuments,
@@ -26,6 +27,9 @@ type PortalPageProps = {
     ticketCreated?: string | readonly string[];
     ticketError?: string | readonly string[];
     ticketRef?: string | readonly string[];
+    quoteCreated?: string | readonly string[];
+    quoteError?: string | readonly string[];
+    quoteRef?: string | readonly string[];
   }>;
 };
 
@@ -70,6 +74,7 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const locale = readLocale(resolvedSearchParams?.lang);
   const copy = qrPortalCopy[locale];
+  const quoteCopy = quoteRequestsCopy[locale];
   const downloadError =
     typeof resolvedSearchParams?.downloadError === 'string'
       ? resolvedSearchParams.downloadError
@@ -86,6 +91,16 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
     typeof resolvedSearchParams?.ticketRef === 'string'
       ? resolvedSearchParams.ticketRef
       : undefined;
+  const quoteCreated =
+    typeof resolvedSearchParams?.quoteCreated === 'string'
+      ? resolvedSearchParams.quoteCreated
+      : undefined;
+  const quoteError =
+    typeof resolvedSearchParams?.quoteError === 'string'
+      ? resolvedSearchParams.quoteError
+      : undefined;
+  const quoteRef =
+    typeof resolvedSearchParams?.quoteRef === 'string' ? resolvedSearchParams.quoteRef : undefined;
 
   let machine: QrPortalMachineApiModel | null = null;
   let documents: ReadonlyArray<{
@@ -317,6 +332,114 @@ export default async function QrPortalPage({ params, searchParams }: PortalPageP
             className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300 sm:w-fit"
           >
             {copy.ticketSubmitLabel}
+          </button>
+        </form>
+      </section>
+
+      <section
+        id="quote"
+        aria-labelledby="portal-quote-title"
+        className="mt-6 rounded-2xl border border-stone-800 bg-neutral-900/70 p-5 shadow-xl shadow-black/20 sm:p-7"
+      >
+        <h2 id="portal-quote-title" className="text-xl font-semibold text-white sm:text-2xl">
+          {quoteCopy.portalSectionTitle}
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-stone-300">
+          {quoteCopy.portalSectionDescription}
+        </p>
+
+        {quoteCreated ? (
+          <div className="mt-5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-sm text-emerald-100">
+            {quoteCopy.portalCreatedMessage}
+            <span className="break-all font-semibold">{quoteRef}</span>
+          </div>
+        ) : null}
+
+        {quoteError ? (
+          <div className="mt-5 rounded-xl border border-red-500/25 bg-red-950/20 p-4 text-sm text-red-200">
+            <p className="font-semibold">{quoteCopy.portalErrorTitle}</p>
+            <p className="mt-1 break-words">{quoteError}</p>
+          </div>
+        ) : null}
+
+        <form action={createPortalQuoteRequestAction} className="mt-5 grid gap-5">
+          <input type="hidden" name="qrToken" value={qrToken} />
+          <input type="hidden" name="machineId" value={machine.machineId} />
+          <input type="hidden" name="locale" value={locale} />
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-quote-title-input"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {quoteCopy.titleLabel}
+            </label>
+            <input
+              id="portal-quote-title-input"
+              name="title"
+              type="text"
+              required
+              className="rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-quote-type"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {quoteCopy.typeLabel}
+            </label>
+            <select
+              id="portal-quote-type"
+              name="type"
+              defaultValue="spare-part"
+              className="rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            >
+              {quoteRequestTypes.map((type) => (
+                <option key={type} value={type}>
+                  {quoteCopy.typeLabels[type]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-quote-currency"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {quoteCopy.currencyLabel}
+            </label>
+            <input
+              id="portal-quote-currency"
+              name="currency"
+              type="text"
+              defaultValue="EUR"
+              className="rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              htmlFor="portal-quote-description"
+              className="text-xs font-semibold uppercase tracking-wider text-stone-400"
+            >
+              {quoteCopy.descriptionLabel}
+            </label>
+            <textarea
+              id="portal-quote-description"
+              name="description"
+              rows={5}
+              className="resize-y rounded-xl border border-stone-700 bg-neutral-950/70 px-4 py-3 text-sm text-white focus:border-emerald-400 focus:outline-none"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300 sm:w-fit"
+          >
+            {quoteCopy.portalSubmitLabel}
           </button>
         </form>
       </section>
