@@ -5,6 +5,7 @@ import {
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  sparePartCriticalities,
   softwareTypes,
   supportedLocales,
   ticketPriorities,
@@ -13,6 +14,7 @@ import {
   type DocumentLanguageCode,
   type DocumentVisibilityLevel,
   type MachineStatus,
+  type SparePartCriticality,
   type SoftwareType,
   type SupportedLocale,
   type TicketPriority,
@@ -61,6 +63,7 @@ import {
   updateTicketMeetingLink,
   updateTicketStatus,
 } from '@/service-tickets-api';
+import { createSparePart, updateSparePart } from '@/spare-parts-api';
 import {
   createSoftwareVersion,
   createSoftwareVersionFileDownloadUrl,
@@ -882,6 +885,189 @@ function readLocaleFromForm(formData: FormData): SupportedLocale {
   return supportedLocales.includes(requestedLocale as SupportedLocale)
     ? (requestedLocale as SupportedLocale)
     : 'en';
+}
+
+function redirectMachineSparePartActionWithError(
+  locale: string,
+  machineId: string,
+  error: unknown,
+): never {
+  redirect(
+    `/${locale}/machines/${encodeURIComponent(machineId)}?sparePartError=${encodeURIComponent(formatActionError(error))}`,
+  );
+}
+
+function readOptionalNullableFormText(formData: FormData, name: string): string | null | undefined {
+  const value = formData.get(name);
+
+  if (value === null || typeof value !== 'string') {
+    return undefined;
+  }
+
+  return value.trim() || null;
+}
+
+function readOptionalPositiveIntegerFormNumber(
+  formData: FormData,
+  name: string,
+  label: string,
+): number | undefined {
+  const value = readOptionalFormText(formData, name);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    throw new Error(`${label} must be a positive integer.`);
+  }
+
+  return parsedValue;
+}
+
+function readOptionalNullableDecimalFormText(
+  formData: FormData,
+  name: string,
+  label: string,
+): string | null | undefined {
+  const value = formData.get(name);
+
+  if (value === null || typeof value !== 'string') {
+    return undefined;
+  }
+
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  if (!Number.isFinite(Number(normalizedValue))) {
+    throw new Error(`${label} must be a valid decimal value.`);
+  }
+
+  return normalizedValue;
+}
+
+function readOptionalSparePartCriticality(formData: FormData): SparePartCriticality | undefined {
+  const criticality = readOptionalFormText(formData, 'criticality');
+
+  if (criticality === undefined) {
+    return undefined;
+  }
+
+  if (!(sparePartCriticalities as readonly string[]).includes(criticality)) {
+    throw new Error(`Invalid criticality: ${criticality}`);
+  }
+
+  return criticality as SparePartCriticality;
+}
+
+export async function createSparePartAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?sparePartError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const manufacturer = readOptionalNullableFormText(formData, 'manufacturer');
+    const partNumber = readOptionalNullableFormText(formData, 'partNumber');
+    const quantity = readOptionalPositiveIntegerFormNumber(formData, 'quantity', 'Quantity');
+    const category = readOptionalFormText(formData, 'category');
+    const criticality = readOptionalSparePartCriticality(formData);
+    const estimatedPrice = readOptionalNullableDecimalFormText(
+      formData,
+      'estimatedPrice',
+      'Estimated price',
+    );
+    const currency = readOptionalFormText(formData, 'currency');
+    const customerVisiblePrice = readOptionalNullableDecimalFormText(
+      formData,
+      'customerVisiblePrice',
+      'Customer price',
+    );
+    const notes = readOptionalNullableFormText(formData, 'notes');
+
+    await createSparePart({
+      organizationId: session.organizationId,
+      machineId: readRequiredFormText(formData, 'machineId', 'Machine ID'),
+      partName: readRequiredFormText(formData, 'partName', 'Part name'),
+      ...(manufacturer !== undefined ? { manufacturer } : {}),
+      ...(partNumber !== undefined ? { partNumber } : {}),
+      ...(quantity !== undefined ? { quantity } : {}),
+      ...(category !== undefined ? { category } : {}),
+      ...(criticality !== undefined ? { criticality } : {}),
+      ...(estimatedPrice !== undefined ? { estimatedPrice } : {}),
+      ...(currency !== undefined ? { currency } : {}),
+      ...(customerVisiblePrice !== undefined ? { customerVisiblePrice } : {}),
+      ...(notes !== undefined ? { notes } : {}),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineSparePartActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?sparePartAction=created`);
+}
+
+export async function updateSparePartAction(formData: FormData): Promise<void> {
+  const session = await readMachineRecordsSession();
+  const locale = readLocaleFromForm(formData);
+  const machineId = ((formData.get('machineId') as string | null) ?? '').trim();
+
+  if (session.status === 'missing') {
+    redirect(
+      `/${locale}/machines/${encodeURIComponent(machineId)}?sparePartError=${encodeURIComponent('Session required')}`,
+    );
+  }
+
+  try {
+    const partName = readOptionalFormText(formData, 'partName');
+    const manufacturer = readOptionalNullableFormText(formData, 'manufacturer');
+    const partNumber = readOptionalNullableFormText(formData, 'partNumber');
+    const quantity = readOptionalPositiveIntegerFormNumber(formData, 'quantity', 'Quantity');
+    const category = readOptionalFormText(formData, 'category');
+    const criticality = readOptionalSparePartCriticality(formData);
+    const estimatedPrice = readOptionalNullableDecimalFormText(
+      formData,
+      'estimatedPrice',
+      'Estimated price',
+    );
+    const currency = readOptionalFormText(formData, 'currency');
+    const customerVisiblePrice = readOptionalNullableDecimalFormText(
+      formData,
+      'customerVisiblePrice',
+      'Customer price',
+    );
+    const notes = readOptionalNullableFormText(formData, 'notes');
+
+    await updateSparePart({
+      organizationId: session.organizationId,
+      sparePartId: readRequiredFormText(formData, 'sparePartId', 'Spare part ID'),
+      ...(partName !== undefined ? { partName } : {}),
+      ...(manufacturer !== undefined ? { manufacturer } : {}),
+      ...(partNumber !== undefined ? { partNumber } : {}),
+      ...(quantity !== undefined ? { quantity } : {}),
+      ...(category !== undefined ? { category } : {}),
+      ...(criticality !== undefined ? { criticality } : {}),
+      ...(estimatedPrice !== undefined ? { estimatedPrice } : {}),
+      ...(currency !== undefined ? { currency } : {}),
+      ...(customerVisiblePrice !== undefined ? { customerVisiblePrice } : {}),
+      ...(notes !== undefined ? { notes } : {}),
+      accessToken: session.accessToken,
+    });
+  } catch (error) {
+    redirectMachineSparePartActionWithError(locale, machineId, error);
+  }
+
+  redirect(`/${locale}/machines/${encodeURIComponent(machineId)}?sparePartAction=updated`);
 }
 
 function redirectMachineSoftwareVersionActionWithError(

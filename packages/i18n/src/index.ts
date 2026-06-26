@@ -20,6 +20,8 @@ export { serviceTicketsCopy } from './service-tickets-copy';
 export type { ServiceTicketsCopy } from './service-tickets-copy';
 export { softwareVersionsCopy } from './software-versions-copy';
 export type { SoftwareVersionsCopy } from './software-versions-copy';
+export { sparePartsCopy } from './spare-parts-copy';
+export type { SparePartsCopy } from './spare-parts-copy';
 
 export const locales = supportedLocales;
 

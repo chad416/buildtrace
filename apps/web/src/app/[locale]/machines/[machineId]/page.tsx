@@ -6,23 +6,27 @@ import {
   qrPortalBuilderCopy,
   serviceTicketsCopy,
   softwareVersionsCopy,
+  sparePartsCopy,
   type DocumentLabels,
   type HandoverCompletenessCopy,
   type QrPortalBuilderCopy,
   type ServiceTicketsCopy,
   type SoftwareVersionsCopy,
+  type SparePartsCopy,
 } from '@buildtrace/i18n';
 import {
   documentCategories,
   documentLanguageCodes,
   documentVisibilityLevels,
   machineStatuses,
+  sparePartCriticalities,
   softwareTypes,
   ticketPriorities,
   ticketStatuses,
   type CustomerHandoverCompleteness,
   type DocumentClassificationStatus,
   type DocumentVisibilityLevel,
+  type SparePartCriticality,
 } from '@buildtrace/shared';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -38,6 +42,7 @@ import {
   createServiceTicketAction,
   createSoftwareVersionAction,
   createSoftwareVersionFileDownloadUrlAction,
+  createSparePartAction,
   createTicketCommentAttachmentDownloadUrlAction,
   disableMachineQrPortalAction,
   markVersionAsCurrentAction,
@@ -47,6 +52,7 @@ import {
   updateMachineDocumentCategoryAction,
   updateMachineDocumentVisibilityAction,
   updateMachineRecordAction,
+  updateSparePartAction,
   updateTicketMeetingLinkAction,
   updateTicketStatusAction,
   uploadMachineDocumentAction,
@@ -65,6 +71,7 @@ import {
   type TicketCommentApiModel,
 } from '@/service-tickets-api';
 import { listSoftwareVersions, type SoftwareVersionApiModel } from '@/software-versions-api';
+import { listSpareParts, type SparePartApiModel } from '@/spare-parts-api';
 import {
   getMachineRecord,
   listCustomers,
@@ -108,6 +115,8 @@ type MachineDetailSearchParams = {
   readonly ticketId?: string;
   readonly versionAction?: string;
   readonly versionError?: string;
+  readonly sparePartAction?: string;
+  readonly sparePartError?: string;
 };
 
 type PageProps = {
@@ -139,6 +148,7 @@ type MachineDetailLoadState =
       readonly tickets: readonly ServiceTicketApiModel[];
       readonly ticketComments: readonly TicketCommentApiModel[];
       readonly softwareVersions: readonly SoftwareVersionApiModel[];
+      readonly spareParts: readonly SparePartApiModel[];
     };
 
 const statusClassNames = {
@@ -161,6 +171,13 @@ const documentClassificationStatusClassNames = {
   'needs-review': 'border-amber-500/40 bg-amber-950/30 text-amber-200',
   'manually-confirmed': 'border-sky-500/40 bg-sky-950/30 text-sky-200',
 } satisfies Record<DocumentClassificationStatus, string>;
+
+const sparePartCriticalityClassNames = {
+  critical: 'border-red-500/40 bg-red-950/30 text-red-200',
+  recommended: 'border-amber-500/40 bg-amber-950/30 text-amber-200',
+  optional: 'border-stone-600 bg-stone-900 text-stone-300',
+} satisfies Record<SparePartCriticality, string>;
+
 function formatLoadError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -224,6 +241,8 @@ function normalizeSearchParams(
   const ticketId = readStringSearchParam(searchParams, 'ticketId');
   const versionAction = readStringSearchParam(searchParams, 'versionAction');
   const versionError = readStringSearchParam(searchParams, 'versionError');
+  const sparePartAction = readStringSearchParam(searchParams, 'sparePartAction');
+  const sparePartError = readStringSearchParam(searchParams, 'sparePartError');
 
   return {
     ...(machineUpdate ? { machineUpdate } : {}),
@@ -251,6 +270,8 @@ function normalizeSearchParams(
     ...(ticketId ? { ticketId } : {}),
     ...(versionAction ? { versionAction } : {}),
     ...(versionError ? { versionError } : {}),
+    ...(sparePartAction ? { sparePartAction } : {}),
+    ...(sparePartError ? { sparePartError } : {}),
   };
 }
 
@@ -297,6 +318,17 @@ function formatSoftwareVersionActionMessage(
       return copy.markAsCurrentLabel;
     case 'marked-delivered':
       return copy.markAsDeliveredLabel;
+    default:
+      return copy.sectionTitle;
+  }
+}
+
+function formatSparePartActionMessage(sparePartAction: string, copy: SparePartsCopy): string {
+  switch (sparePartAction) {
+    case 'created':
+      return copy.submitButtonLabel;
+    case 'updated':
+      return copy.updateButtonLabel;
     default:
       return copy.sectionTitle;
   }
@@ -1628,6 +1660,285 @@ function renderSoftwareVersionsSection({
   );
 }
 
+function formatSparePartPrice(value: string | null, currency: string): string | null {
+  return value === null ? null : `${value} ${currency}`;
+}
+
+function renderSparePartDetailField({
+  label,
+  value,
+}: {
+  readonly label: string;
+  readonly value: string | null;
+}) {
+  if (value === null) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-stone-800 bg-black/20 p-3">
+      <dt className="text-xs font-semibold uppercase tracking-normal text-stone-500">{label}</dt>
+      <dd className="mt-1 text-sm text-stone-200">{value}</dd>
+    </div>
+  );
+}
+
+function renderSparePartFormFields({
+  copy,
+  part,
+  submitLabel,
+}: {
+  readonly copy: SparePartsCopy;
+  readonly part?: SparePartApiModel;
+  readonly submitLabel: string;
+}) {
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.partNameLabel}
+          </label>
+          <input
+            name="partName"
+            required
+            defaultValue={part?.partName ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.manufacturerLabel}
+          </label>
+          <input
+            name="manufacturer"
+            defaultValue={part?.manufacturer ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.partNumberLabel}
+          </label>
+          <input
+            name="partNumber"
+            defaultValue={part?.partNumber ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.quantityLabel}
+          </label>
+          <input
+            name="quantity"
+            type="number"
+            min={1}
+            defaultValue={part?.quantity ?? 1}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.categoryLabel}
+          </label>
+          <input
+            name="category"
+            defaultValue={part?.category ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.criticalityLabel}
+          </label>
+          <select
+            name="criticality"
+            defaultValue={part?.criticality ?? 'recommended'}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 focus:border-emerald-500/50 focus:outline-none"
+          >
+            {sparePartCriticalities.map((criticality) => (
+              <option key={criticality} value={criticality}>
+                {copy.criticalityLabels[criticality]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.estimatedPriceLabel}
+          </label>
+          <input
+            name="estimatedPrice"
+            type="number"
+            step="0.01"
+            defaultValue={part?.estimatedPrice ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.currencyLabel}
+          </label>
+          <input
+            name="currency"
+            defaultValue={part?.currency ?? 'EUR'}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="grid gap-2 md:col-span-2">
+          <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.customerVisiblePriceLabel}
+          </label>
+          <input
+            name="customerVisiblePrice"
+            type="number"
+            step="0.01"
+            defaultValue={part?.customerVisiblePrice ?? ''}
+            className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+          />
+        </div>
+      </div>
+      <div className="grid gap-2">
+        <label className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+          {copy.notesLabel}
+        </label>
+        <textarea
+          name="notes"
+          rows={3}
+          defaultValue={part?.notes ?? ''}
+          className="rounded-md border border-stone-700 bg-black/30 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-600 focus:border-emerald-500/50 focus:outline-none"
+        />
+      </div>
+      <button
+        type="submit"
+        className="inline-flex min-h-10 w-fit items-center justify-center rounded-md border border-emerald-500/50 bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
+      >
+        {submitLabel}
+      </button>
+    </>
+  );
+}
+
+function renderSparePartsSection({
+  machine,
+  spareParts,
+  locale,
+  copy,
+}: {
+  readonly machine: MachineRecordApiModel;
+  readonly spareParts: readonly SparePartApiModel[];
+  readonly locale: string;
+  readonly copy: SparePartsCopy;
+}) {
+  return (
+    <section
+      id="spare-parts"
+      className="rounded-lg border border-stone-800 bg-neutral-900/70 p-5 sm:p-6"
+    >
+      <p className="text-xs font-semibold uppercase tracking-normal text-emerald-300">
+        {copy.sectionTitle}
+      </p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-stone-300">{copy.sectionDescription}</p>
+
+      <div className="mt-6 grid gap-6">
+        <div className="rounded-lg border border-stone-700 bg-black/20 p-5">
+          <p className="text-xs font-semibold uppercase tracking-normal text-stone-400">
+            {copy.newPartTitle}
+          </p>
+          <form action={createSparePartAction} className="mt-4 grid gap-4">
+            <input type="hidden" name="machineId" value={machine.id} />
+            <input type="hidden" name="locale" value={locale} />
+            {renderSparePartFormFields({ copy, submitLabel: copy.submitButtonLabel })}
+          </form>
+        </div>
+
+        {spareParts.length === 0 ? (
+          <p className="rounded-lg border border-stone-800 bg-black/30 p-4 text-sm leading-6 text-stone-300">
+            {copy.noPartsMessage}
+          </p>
+        ) : (
+          <div className="grid gap-4">
+            {spareParts.map((part) => {
+              const criticalityLabel =
+                part.criticality === 'critical'
+                  ? copy.criticalBadgeLabel
+                  : copy.criticalityLabels[part.criticality];
+
+              return (
+                <article
+                  key={part.id}
+                  className="rounded-lg border border-stone-700 bg-black/20 p-5"
+                >
+                  <div className="flex flex-wrap items-start gap-3">
+                    <div className="flex-1">
+                      <h3 className="text-base font-semibold text-stone-100">{part.partName}</h3>
+                      {part.manufacturer ? (
+                        <p className="mt-1 text-xs text-stone-400">
+                          {copy.manufacturerLabel}: {part.manufacturer}
+                        </p>
+                      ) : null}
+                      {part.partNumber ? (
+                        <p className="mt-1 text-xs text-stone-400">
+                          {copy.partNumberLabel}: {part.partNumber}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${sparePartCriticalityClassNames[part.criticality]}`}
+                    >
+                      {criticalityLabel}
+                    </span>
+                  </div>
+
+                  <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {renderSparePartDetailField({
+                      label: copy.quantityLabel,
+                      value: String(part.quantity),
+                    })}
+                    {renderSparePartDetailField({
+                      label: copy.categoryLabel,
+                      value: part.category,
+                    })}
+                    {renderSparePartDetailField({
+                      label: copy.estimatedPriceLabel,
+                      value: formatSparePartPrice(part.estimatedPrice, part.currency),
+                    })}
+                    {renderSparePartDetailField({
+                      label: copy.customerVisiblePriceLabel,
+                      value: formatSparePartPrice(part.customerVisiblePrice, part.currency),
+                    })}
+                  </dl>
+
+                  {part.notes ? (
+                    <p className="mt-4 text-sm leading-6 text-stone-300">
+                      {copy.notesLabel}: {part.notes}
+                    </p>
+                  ) : null}
+
+                  <form
+                    action={updateSparePartAction}
+                    className="mt-5 grid gap-4 border-t border-stone-700 pt-5"
+                  >
+                    <input type="hidden" name="machineId" value={machine.id} />
+                    <input type="hidden" name="locale" value={locale} />
+                    <input type="hidden" name="sparePartId" value={part.id} />
+                    {renderSparePartFormFields({
+                      copy,
+                      part,
+                      submitLabel: copy.updateButtonLabel,
+                    })}
+                  </form>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function renderMachineDetail({
   machine,
   customers,
@@ -1650,6 +1961,8 @@ function renderMachineDetail({
   ticketsCopy,
   softwareVersions,
   softwareCopy,
+  spareParts,
+  sparePartsUiCopy,
 }: {
   readonly machine: MachineRecordApiModel;
   readonly customers: readonly CustomerRecordApiModel[];
@@ -1680,6 +1993,8 @@ function renderMachineDetail({
   readonly ticketsCopy: ServiceTicketsCopy;
   readonly softwareVersions: readonly SoftwareVersionApiModel[];
   readonly softwareCopy: SoftwareVersionsCopy;
+  readonly spareParts: readonly SparePartApiModel[];
+  readonly sparePartsUiCopy: SparePartsCopy;
 }) {
   return (
     <>
@@ -1795,6 +2110,13 @@ function renderMachineDetail({
         copy: softwareCopy,
       })}
 
+      {renderSparePartsSection({
+        machine,
+        spareParts,
+        locale,
+        copy: sparePartsUiCopy,
+      })}
+
       {renderMachineEditForm({
         machine,
         customers,
@@ -1852,6 +2174,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
   const handoverCopy = handoverCompletenessCopy[locale];
   const qrPortalCopy = qrPortalBuilderCopy[locale];
   const softwareCopy = softwareVersionsCopy[locale];
+  const sparePartsUiCopy = sparePartsCopy[locale];
   const session = await readMachineRecordsSession();
 
   const sections = [
@@ -1906,6 +2229,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         machineQrTokenResponse,
         ticketsResponse,
         softwareVersionsResponse,
+        sparePartsResponse,
       ] = await Promise.all([
         getMachineRecord({
           organizationId: session.organizationId,
@@ -1950,6 +2274,11 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           machineId,
           accessToken: session.accessToken,
         }),
+        listSpareParts({
+          organizationId: session.organizationId,
+          machineId,
+          accessToken: session.accessToken,
+        }),
       ]);
 
       let ticketComments: readonly TicketCommentApiModel[] = [];
@@ -1979,6 +2308,7 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
         tickets: ticketsResponse.tickets,
         ticketComments,
         softwareVersions: softwareVersionsResponse.versions,
+        spareParts: sparePartsResponse.spareParts,
       };
     } catch (error) {
       loadState = {
@@ -2254,6 +2584,25 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
           })
         : null}
 
+      {loadState.status === 'ready' && normalizedSearchParams.sparePartAction
+        ? renderFeedbackPanel({
+            tone: 'success',
+            title: sparePartsUiCopy.sectionTitle,
+            body: formatSparePartActionMessage(
+              normalizedSearchParams.sparePartAction,
+              sparePartsUiCopy,
+            ),
+          })
+        : null}
+
+      {loadState.status === 'ready' && normalizedSearchParams.sparePartError
+        ? renderFeedbackPanel({
+            tone: 'error',
+            title: sparePartsUiCopy.errorTitle,
+            body: normalizedSearchParams.sparePartError,
+          })
+        : null}
+
       {loadState.status === 'ready'
         ? renderMachineDetail({
             machine: loadState.machine,
@@ -2273,7 +2622,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
               (section) =>
                 section.id !== 'documents' &&
                 section.id !== 'handover-readiness' &&
-                section.id !== 'software-timeline',
+                section.id !== 'software-timeline' &&
+                section.id !== 'spare-parts',
             ),
             sectionsAriaLabel: messages.sectionsAriaLabel,
             tickets: loadState.tickets,
@@ -2282,6 +2632,8 @@ export default async function MachineDetailPage({ params, searchParams }: PagePr
             ticketsCopy: serviceTicketsCopy[locale],
             softwareVersions: loadState.softwareVersions,
             softwareCopy,
+            spareParts: loadState.spareParts,
+            sparePartsUiCopy,
           })
         : null}
     </div>
