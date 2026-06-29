@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 import { machineRecordsSessionCookieNames } from '@/machine-records-session';
 
@@ -79,8 +79,57 @@ function buildSupabaseAuthUrl(path: string): URL {
   return new URL(path, readRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'));
 }
 
-function buildAppUrl(path: string): string {
-  const appBaseUrl = readRequiredEnv('NEXT_PUBLIC_APP_URL').replace(/\/$/, '');
+function withHttpsProtocol(value: string): string {
+  return value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`;
+}
+
+function normalizeBaseUrl(value: string): string {
+  return withHttpsProtocol(value).replace(/\/$/, '');
+}
+
+function isLocalhostUrl(value: string): boolean {
+  try {
+    const url = new URL(withHttpsProtocol(value));
+
+    return ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+async function resolveAppBaseUrl(): Promise<string> {
+  const headerStore = await headers();
+  const requestOrigin = headerStore.get('origin');
+
+  if (requestOrigin && !isLocalhostUrl(requestOrigin)) {
+    return normalizeBaseUrl(requestOrigin);
+  }
+
+  const forwardedHost = headerStore.get('x-forwarded-host') ?? headerStore.get('host');
+
+  if (forwardedHost && !isLocalhostUrl(forwardedHost)) {
+    const protocol = headerStore.get('x-forwarded-proto') ?? 'https';
+
+    return normalizeBaseUrl(`${protocol}://${forwardedHost}`);
+  }
+
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+
+  if (vercelProductionUrl && !isLocalhostUrl(vercelProductionUrl)) {
+    return normalizeBaseUrl(vercelProductionUrl);
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+
+  if (vercelUrl && !isLocalhostUrl(vercelUrl)) {
+    return normalizeBaseUrl(vercelUrl);
+  }
+
+  return normalizeBaseUrl(readRequiredEnv('NEXT_PUBLIC_APP_URL'));
+}
+
+async function buildAppUrl(path: string): Promise<string> {
+  const appBaseUrl = await resolveAppBaseUrl();
 
   return `${appBaseUrl}${path}`;
 }
@@ -138,7 +187,7 @@ async function signUpWithSupabase({
       data: {
         display_name: displayName,
       },
-      email_redirect_to: buildAppUrl(`/${locale}/login?signup=confirmed`),
+      email_redirect_to: await buildAppUrl(`/${locale}/login?signup=confirmed`),
     }),
   });
 
