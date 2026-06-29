@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthSessionController } from './auth-session.controller.js';
 import { CustomerHandoverExportController } from './customer-handover-export.controller.js';
 import { DocumentRecordsController } from './document-records.controller.js';
 import { HandoverCompletenessController } from './handover-completeness.controller.js';
@@ -14,6 +15,7 @@ import { SparePartsController } from './spare-parts.controller.js';
 @Module({
   controllers: [
     HealthController,
+    AuthSessionController,
     MachineRecordsController,
     DocumentRecordsController,
     HandoverCompletenessController,
