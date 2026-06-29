@@ -1,11 +1,34 @@
+# Dependencies and package-manager state
 node_modules/
+.pnpm-store/
+
+# Framework and build output
 .next/
 dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Local environment and secrets
 .env
 .env.*
 !.env.example
-.turbo/
-coverage/
-.DS_Store
-*.tsbuildinfo
+
+# Generated code
 packages/db/src/generated/
+
+# Internal AI/agent handoff material
+.agents/
+.codex/
+AGENTS.md
+PROGRESS*.md
+*_HANDOFF.md
+docs/internal/
+docs/next-steps.md
+docs/phase-log.md
+docs/project-state.md
+
+# Editor and operating-system noise
+.DS_Store
+Thumbs.db
+*.log
