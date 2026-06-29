@@ -1,6 +1,5 @@
 export type SupabaseAuthConfig = {
   readonly supabaseUrl: string;
-  readonly supabaseAnonKey: string;
   readonly supabaseServiceRoleKey: string;
 };
 
@@ -17,7 +16,6 @@ function readRequiredEnv(name: string): string {
 export function getSupabaseAuthConfig(): SupabaseAuthConfig {
   return {
     supabaseUrl: readRequiredEnv('SUPABASE_URL'),
-    supabaseAnonKey: readRequiredEnv('SUPABASE_ANON_KEY'),
     supabaseServiceRoleKey: readRequiredEnv('SUPABASE_SERVICE_ROLE_KEY'),
   };
 }
