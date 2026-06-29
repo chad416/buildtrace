@@ -1,19 +1,36 @@
-import { Prisma } from './generated/prisma/client';
 import { createSparePart, listSpareParts, updateSparePart } from './spare-part-records';
 import type { SparePartRecordsDatabase } from './spare-part-records';
+
+type CreateArgs = {
+  readonly data: Record<string, unknown>;
+};
+
+type FindFirstArgs = {
+  readonly where: {
+    readonly id?: string;
+    readonly organizationId?: string;
+  };
+};
+
+type UpdateArgs = {
+  readonly where: {
+    readonly id: string;
+  };
+  readonly data: Record<string, unknown>;
+};
 
 function createMockDb(): SparePartRecordsDatabase {
   return {
     sparePart: {
-      create: async (args: any) => ({ id: 'mock-id-1', ...args.data }),
-      findMany: async (args: any) => [{ id: 'mock-id-1', partName: 'Filter' }],
-      findFirst: async (args: any) => {
+      create: async (args: CreateArgs) => ({ id: 'mock-id-1', ...args.data }),
+      findMany: async () => [{ id: 'mock-id-1', partName: 'Filter' }],
+      findFirst: async (args: FindFirstArgs) => {
         if (args.where.id === 'mock-id-1') {
           return { id: 'mock-id-1', organizationId: args.where.organizationId };
         }
         return null;
       },
-      update: async (args: any) => ({ id: args.where.id, ...args.data }),
+      update: async (args: UpdateArgs) => ({ id: args.where.id, ...args.data }),
     },
   } as unknown as SparePartRecordsDatabase;
 }

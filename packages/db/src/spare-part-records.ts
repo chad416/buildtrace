@@ -1,5 +1,4 @@
-import { Prisma } from './generated/prisma/client';
-import type { PrismaClient } from './generated/prisma/client';
+import type { Prisma, PrismaClient } from './generated/prisma/client';
 
 export type SparePartRecordsDatabase = Pick<PrismaClient, 'sparePart'>;
 
@@ -74,7 +73,7 @@ function requireNonEmptyText(value: string, fieldName: string): string {
   return normalizedValue;
 }
 
-function toSparePartRecord(record: any): SparePartRecord {
+function toSparePartRecord(record: SparePartRecord): SparePartRecord {
   return {
     id: record.id,
     organizationId: record.organizationId,

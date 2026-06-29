@@ -1,6 +1,6 @@
-import { Prisma } from './generated/prisma/client';
-import type { PrismaClient } from './generated/prisma/client';
 import type { QuoteRequestStatus, QuoteRequestType } from '@buildtrace/shared';
+
+import type { Prisma, PrismaClient } from './generated/prisma/client';
 
 export type QuoteRequestRecordsDatabase = Pick<PrismaClient, 'quoteRequest'>;
 
@@ -19,6 +19,11 @@ export type QuoteRequestRecord = {
   readonly customerAccessToken: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+};
+
+type QuoteRequestEntity = Omit<QuoteRequestRecord, 'status' | 'type'> & {
+  readonly status: string;
+  readonly type: string;
 };
 
 export type CreateQuoteRequestInput = {
@@ -57,7 +62,7 @@ function requireNonEmptyText(value: string, fieldName: string): string {
   return normalizedValue;
 }
 
-function toQuoteRequestRecord(record: any): QuoteRequestRecord {
+function toQuoteRequestRecord(record: QuoteRequestEntity): QuoteRequestRecord {
   return {
     id: record.id,
     organizationId: record.organizationId,
