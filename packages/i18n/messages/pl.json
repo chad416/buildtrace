@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Symbol zastępczy dostępu",
-      "title": "Shell bezpiecznego logowania",
-      "description": "Ta trasa pokazuje przyszły punkt wejścia bez dodawania uwierzytelniania, kont, obsługi sesji lub pracy z hasłami.",
+      "eyebrow": "Dostęp do obszaru roboczego",
+      "title": "Witamy w BuildTrace",
+      "description": "Utwórz konto lub zaloguj się, aby przejść do bezpiecznego obszaru roboczego BuildTrace.",
       "emptyState": {
         "ariaLabel": "Stan zastępczy logowania",
         "title": "Uwierzytelnianie nie jest jeszcze aktywne",

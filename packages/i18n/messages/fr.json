@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Emplacement d'accès",
-      "title": "Shell d'entrée sécurisée",
-      "description": "Cette route présente le futur point d'entrée sans ajouter d'authentification, de comptes, de gestion de session ou de traitement des mots de passe.",
+      "eyebrow": "Accès à l’espace de travail",
+      "title": "Bienvenue sur BuildTrace",
+      "description": "Créez un compte ou connectez-vous pour ouvrir votre espace de travail BuildTrace sécurisé.",
       "emptyState": {
         "ariaLabel": "État d'attente de la connexion",
         "title": "L'authentification n'est pas encore active",

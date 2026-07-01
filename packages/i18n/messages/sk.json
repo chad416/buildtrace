@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Zástupná stránka prístupu",
-      "title": "Shell bezpečného prihlásenia",
-      "description": "Táto trasa ukazuje budúce vstupné miesto bez pridania autentifikácie, účtov, správy relácií alebo práce s heslami.",
+      "eyebrow": "Prístup do pracovného priestoru",
+      "title": "Vitajte v BuildTrace",
+      "description": "Vytvorte si účet alebo sa prihláste a pokračujte do zabezpečeného pracovného priestoru BuildTrace.",
       "emptyState": {
         "ariaLabel": "Zástupný stav prihlásenia",
         "title": "Autentifikácia zatiaľ nie je aktívna",

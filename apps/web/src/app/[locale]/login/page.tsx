@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { readMachineRecordsSession } from '@/machine-records-session';
 import { signInAction, signOutAction, signUpAction } from './actions';
+import { SignUpConfirmation } from './signup-confirmation';
 
 type PageProps = {
   params: Promise<{
@@ -129,17 +130,11 @@ export default async function LoginPage({ params, searchParams }: PageProps) {
           ? renderFeedbackPanel({
               tone: 'success',
               title: 'Check your email',
-              body: 'Confirm the Supabase email link, then sign in below to create your BuildTrace organisation.',
+              body: 'Click the confirmation link we sent you. BuildTrace will open your workspace automatically.',
             })
           : null}
 
-        {signupStatus === 'confirmed'
-          ? renderFeedbackPanel({
-              tone: 'success',
-              title: 'Email confirmed',
-              body: 'Sign in with the same email and password to open your workspace.',
-            })
-          : null}
+        {signupStatus === 'confirmed' ? <SignUpConfirmation locale={locale} /> : null}
 
         {signedOut
           ? renderFeedbackPanel({
@@ -191,6 +186,12 @@ export default async function LoginPage({ params, searchParams }: PageProps) {
               placeholder: 'you@company.com',
             })}
             {renderTextInput({
+              label: 'Organisation name',
+              name: 'organizationName',
+              autoComplete: 'organization',
+              placeholder: 'BuildTrace Demo',
+            })}
+            {renderTextInput({
               label: 'Password',
               name: 'password',
               type: 'password',
@@ -214,17 +215,9 @@ export default async function LoginPage({ params, searchParams }: PageProps) {
           <p className="text-xs font-semibold uppercase tracking-normal text-amber-200">
             Workspace
           </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-normal text-white">
-            Sign in and create organisation
-          </h2>
+          <h2 className="mt-3 text-2xl font-semibold tracking-normal text-white">Sign in</h2>
 
           <div className="mt-6 grid gap-4">
-            {renderTextInput({
-              label: 'Name',
-              name: 'displayName',
-              autoComplete: 'name',
-              placeholder: 'Chander Singh',
-            })}
             {renderTextInput({
               label: 'Email',
               name: 'email',
@@ -239,19 +232,13 @@ export default async function LoginPage({ params, searchParams }: PageProps) {
               autoComplete: 'current-password',
               placeholder: 'Your password',
             })}
-            {renderTextInput({
-              label: 'Organisation name',
-              name: 'organizationName',
-              autoComplete: 'organization',
-              placeholder: 'BuildTrace Demo',
-            })}
           </div>
 
           <button
             type="submit"
             className="mt-5 inline-flex min-h-11 items-center rounded-md bg-emerald-400 px-5 py-2 text-sm font-semibold text-black transition hover:bg-emerald-300"
           >
-            Open workspace
+            Sign in
           </button>
         </form>
       </section>

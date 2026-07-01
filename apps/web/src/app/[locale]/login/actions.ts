@@ -98,6 +98,21 @@ function isLocalhostUrl(value: string): boolean {
 }
 
 async function resolveAppBaseUrl(): Promise<string> {
+  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (
+    configuredAppUrl &&
+    (process.env.NODE_ENV !== 'production' || !isLocalhostUrl(configuredAppUrl))
+  ) {
+    return normalizeBaseUrl(configuredAppUrl);
+  }
+
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+
+  if (vercelProductionUrl && !isLocalhostUrl(vercelProductionUrl)) {
+    return normalizeBaseUrl(vercelProductionUrl);
+  }
+
   const headerStore = await headers();
   const requestOrigin = headerStore.get('origin');
 
@@ -113,19 +128,17 @@ async function resolveAppBaseUrl(): Promise<string> {
     return normalizeBaseUrl(`${protocol}://${forwardedHost}`);
   }
 
-  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
-
-  if (vercelProductionUrl && !isLocalhostUrl(vercelProductionUrl)) {
-    return normalizeBaseUrl(vercelProductionUrl);
-  }
-
   const vercelUrl = process.env.VERCEL_URL?.trim();
 
   if (vercelUrl && !isLocalhostUrl(vercelUrl)) {
     return normalizeBaseUrl(vercelUrl);
   }
 
-  return normalizeBaseUrl(readRequiredEnv('NEXT_PUBLIC_APP_URL'));
+  if (configuredAppUrl) {
+    return normalizeBaseUrl(configuredAppUrl);
+  }
+
+  throw new Error('A public BuildTrace app URL is not configured.');
 }
 
 async function buildAppUrl(path: string): Promise<string> {
@@ -171,11 +184,13 @@ async function signUpWithSupabase({
   email,
   password,
   displayName,
+  organizationName,
   locale,
 }: {
   readonly email: string;
   readonly password: string;
   readonly displayName: string;
+  readonly organizationName: string;
   readonly locale: string;
 }): Promise<void> {
   const response = await fetch(buildSupabaseAuthUrl('/auth/v1/signup'), {
@@ -186,6 +201,7 @@ async function signUpWithSupabase({
       password,
       data: {
         display_name: displayName,
+        organization_name: organizationName,
       },
       email_redirect_to: await buildAppUrl(`/${locale}/login?signup=confirmed`),
     }),
@@ -229,7 +245,7 @@ async function onboardAppSession({
   displayName,
 }: {
   readonly accessToken: string;
-  readonly organizationName: string;
+  readonly organizationName?: string;
   readonly displayName?: string;
 }): Promise<AuthSessionResponse> {
   const response = await fetch(buildApiUrl('/auth/onboard'), {
@@ -239,7 +255,7 @@ async function onboardAppSession({
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      organizationName,
+      ...(organizationName ? { organizationName } : {}),
       ...(displayName ? { displayName } : {}),
     }),
   });
@@ -291,6 +307,7 @@ export async function signUpAction(locale: string, formData: FormData): Promise<
       email: readRequiredFormText(formData, 'email', 'Email').toLowerCase(),
       password: readPassword(formData),
       displayName: readRequiredFormText(formData, 'displayName', 'Name'),
+      organizationName: readRequiredFormText(formData, 'organizationName', 'Organisation name'),
     });
   } catch (error) {
     buildLoginRedirect(redirectLocale, 'signupError', getErrorMessage(error));
@@ -305,20 +322,12 @@ export async function signInAction(locale: string, formData: FormData): Promise<
   try {
     const email = readRequiredFormText(formData, 'email', 'Email').toLowerCase();
     const password = readPassword(formData);
-    const organizationName = readRequiredFormText(
-      formData,
-      'organizationName',
-      'Organization name',
-    );
-    const displayName = readRequiredFormText(formData, 'displayName', 'Name');
     const { access_token: accessToken } = await signInWithSupabase({
       email,
       password,
     });
     const authSession = await onboardAppSession({
       accessToken,
-      organizationName,
-      displayName,
     });
 
     await setWorkspaceCookies({
@@ -330,6 +339,40 @@ export async function signInAction(locale: string, formData: FormData): Promise<
   }
 
   redirect(`/${redirectLocale}/machines?session=ready`);
+}
+
+export type SignUpConfirmationResult =
+  | { readonly status: 'success' }
+  | { readonly status: 'error'; readonly message: string };
+
+export async function completeSignUpAction(accessToken: string): Promise<SignUpConfirmationResult> {
+  const normalizedAccessToken = accessToken.trim();
+
+  if (!normalizedAccessToken) {
+    return {
+      status: 'error',
+      message: 'This confirmation link is invalid or has expired. Please sign up again.',
+    };
+  }
+
+  try {
+    const authSession = await onboardAppSession({
+      accessToken: normalizedAccessToken,
+    });
+
+    await setWorkspaceCookies({
+      accessToken: normalizedAccessToken,
+      organizationId: authSession.session.organizationId,
+    });
+  } catch {
+    return {
+      status: 'error',
+      message:
+        'Your email was confirmed, but the workspace could not be opened. Please sign in below.',
+    };
+  }
+
+  return { status: 'success' };
 }
 
 export async function signOutAction(locale: string): Promise<void> {

@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Access placeholder",
-      "title": "Secure sign-in entry shell",
-      "description": "This route presents the future entry point without adding authentication, accounts, session handling, or password workflows.",
+      "eyebrow": "Workspace access",
+      "title": "Welcome to BuildTrace",
+      "description": "Create an account or sign in to open your secure BuildTrace workspace.",
       "emptyState": {
         "ariaLabel": "Login placeholder state",
         "title": "Authentication is not active yet",

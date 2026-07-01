@@ -57,6 +57,18 @@ The agent has prepared all code-side changes. Follow these steps in order.
 5. Click **Deploy**
 6. Copy the Vercel URL (e.g. `https://buildtrace.vercel.app`)
 
+### 3a. Configure the Supabase confirmation return URL
+
+In Supabase, open **Authentication → URL Configuration** and set:
+
+- **Site URL**: the stable Vercel production URL (for example, `https://buildtrace.vercel.app`)
+- **Redirect URLs**: the same production URL with a wildcard path (for example,
+  `https://buildtrace.vercel.app/**`)
+
+Use the stable production alias here, not a generated deployment URL. BuildTrace sends this URL with
+every signup request, Supabase validates it against the redirect allow-list, and the confirmation page
+uses the returned one-time session to open the new workspace automatically.
+
 ---
 
 ## Step 4 — Wire CORS and finalize URLs

@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Marcador de acceso",
-      "title": "Shell de entrada segura",
-      "description": "Esta ruta presenta el futuro punto de entrada sin añadir autenticación, cuentas, gestión de sesiones o manejo de contraseñas.",
+      "eyebrow": "Acceso al espacio de trabajo",
+      "title": "Te damos la bienvenida a BuildTrace",
+      "description": "Crea una cuenta o inicia sesión para abrir tu espacio de trabajo seguro de BuildTrace.",
       "emptyState": {
         "ariaLabel": "Estado marcador de inicio de sesión",
         "title": "La autenticación aún no está activa",

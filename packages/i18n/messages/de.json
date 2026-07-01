@@ -101,9 +101,9 @@
   },
   "pages": {
     "login": {
-      "eyebrow": "Zugangsplatzhalter",
-      "title": "Shell für sichere Anmeldung",
-      "description": "Diese Route zeigt den zukünftigen Einstiegspunkt, ohne Authentifizierung, Konten, Sitzungsverwaltung oder Passwortverarbeitung hinzuzufügen.",
+      "eyebrow": "Arbeitsbereich-Zugang",
+      "title": "Willkommen bei BuildTrace",
+      "description": "Erstellen Sie ein Konto oder melden Sie sich an, um Ihren geschützten BuildTrace-Arbeitsbereich zu öffnen.",
       "emptyState": {
         "ariaLabel": "Platzhalterzustand für Anmeldung",
         "title": "Authentifizierung ist noch nicht aktiv",

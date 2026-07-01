@@ -88,6 +88,15 @@ function readDisplayNameFromUserMetadata(user: User): string | undefined {
   return typeof displayName === 'string' && displayName.trim() ? displayName.trim() : undefined;
 }
 
+function readOrganizationNameFromUserMetadata(user: User): string | undefined {
+  const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const organizationName = metadata.organization_name;
+
+  return typeof organizationName === 'string' && organizationName.trim()
+    ? organizationName.trim()
+    : undefined;
+}
+
 function slugifyOrganizationName(name: string): string {
   const slug = name
     .normalize('NFKD')
@@ -184,7 +193,7 @@ export async function resolveAuthSessionFromRequest({
   const email = readUserEmail(user);
   const displayName =
     readOptionalString('displayName', body?.displayName) ?? readDisplayNameFromUserMetadata(user);
-  const organizationName = readOptionalString('organizationName', body?.organizationName);
+  const requestedOrganizationName = readOptionalString('organizationName', body?.organizationName);
 
   const appUser = await dependencies.db.appUser.upsert({
     where: {
@@ -202,6 +211,9 @@ export async function resolveAuthSessionFromRequest({
   });
 
   let memberships = await readUserMemberships(dependencies.db, appUser.id);
+  const organizationName =
+    requestedOrganizationName ??
+    (memberships.length === 0 ? readOrganizationNameFromUserMetadata(user) : undefined);
   const requestedOrganization = organizationName
     ? memberships.find(
         (membership) =>
